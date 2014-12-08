@@ -1,8 +1,8 @@
 { stdenv, fetchurl, ncurses, x11 }:
 
 let
-   useX11 = !stdenv.isArm;
-   useNativeCompilers = !stdenv.isArm;
+   useX11 = !stdenv.isArm && !stdenv.isMips;
+   useNativeCompilers = !stdenv.isMips;
    inherit (stdenv.lib) optionals optionalString;
 in
 
@@ -30,10 +30,15 @@ stdenv.mkDerivation rec {
     ln -sv $out/lib/ocaml/caml $out/include/caml
   '';
 
+  passthru = {
+    nativeCompilers = useNativeCompilers;
+  };
+
   meta = {
     homepage = http://caml.inria.fr/ocaml;
-    licenses = [ "QPL" /* compiler */ "LGPLv2" /* library */ ];
-    description = "OCaml, the most popular variant of the Caml language";
+    branch = "3.12";
+    license = [ "QPL" /* compiler */ "LGPLv2" /* library */ ];
+    description = "Most popular variant of the Caml language";
 
     longDescription =
       ''

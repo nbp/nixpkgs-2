@@ -1,39 +1,41 @@
-{ stdenv, fetchurl, pkgconfig, gnum4, gdbm, libtool, glib, dbus, avahi
-, gconf, gtk, intltool, gettext
-, alsaLib, libsamplerate, libsndfile, speex, bluez, udev
-, jackaudioSupport ? false, jackaudio ? null
+{ stdenv, fetchurl, fetchpatch, pkgconfig, gnum4, gdbm, libtool, glib, dbus, avahi
+, gconf, gtk, intltool, gettext, alsaLib, libsamplerate, libsndfile, speex
+, bluez, sbc, udev, libcap, json_c
+, jackaudioSupport ? false, jack2 ? null
 , x11Support ? false, xlibs
-, json_c
-}:
+, useSystemd ? false, systemd ? null
+, ossWrapper ? false }:
 
-assert jackaudioSupport -> jackaudio != null;
+assert jackaudioSupport -> jack2 != null;
 
 stdenv.mkDerivation rec {
-  name = "pulseaudio-1.1";
+  name = "pulseaudio-5.0";
 
   src = fetchurl {
-    url = "http://freedesktop.org/software/pulseaudio/releases/pulseaudio-1.1.tar.xz";
-    sha256 = "1vpm0681zj2jvhbabvnmrmfxr3172k4x58kjb39y5g3fdw9k3rbg";
+    url = "http://freedesktop.org/software/pulseaudio/releases/${name}.tar.xz";
+    sha256 = "0fgrr8v7yfh0byhzdv4c87v9lkj8g7gpjm8r9xrbvpa92a5kmhcr";
   };
 
-  # Since `libpulse*.la' contain `-lgdbm', it must be propagated.
-  propagatedBuildInputs = [ gdbm ];
+  patches = [(fetchpatch {
+    name = "CVE-2014-3970.patch";
+    url = "http://cgit.freedesktop.org/pulseaudio/pulseaudio/patch/"
+      + "?id=26b9d22dd24c17eb118d0205bf7b02b75d435e3c";
+    sha256 = "13vxp6520djgfrfxkzy5qvabl94sga3yl5pj93xawbkgwzqymdyq";
+  })];
+
+  # Since `libpulse*.la' contain `-lgdbm' and `-lcap', it must be propagated.
+  propagatedBuildInputs
+    = [ gdbm ] ++ stdenv.lib.optionals stdenv.isLinux [ libcap ];
 
   buildInputs =
-    [ pkgconfig gnum4 libtool intltool glib dbus avahi
-      libsamplerate libsndfile speex alsaLib bluez udev
-      json_c
-      #gtk gconf 
-    ]
-    ++ stdenv.lib.optional jackaudioSupport jackaudio
-    ++ stdenv.lib.optionals x11Support [ xlibs.xlibs xlibs.libXtst xlibs.libXi ];
+    [ pkgconfig gnum4 libtool intltool glib dbus avahi libsamplerate libsndfile
+      speex json_c ]
+    ++ stdenv.lib.optional jackaudioSupport jack2
+    ++ stdenv.lib.optionals x11Support [ xlibs.xlibs xlibs.libXtst xlibs.libXi ]
+    ++ stdenv.lib.optional useSystemd systemd
+    ++ stdenv.lib.optionals stdenv.isLinux [ alsaLib bluez sbc udev ];
 
   preConfigure = ''
-    # Change the `padsp' script so that it contains the full path to
-    # `libpulsedsp.so'.
-    sed -i "src/utils/padsp" \
-        -e "s|libpulsedsp\.so|$out/lib/libpulsedsp.so|g"
-
     # Move the udev rules under $(prefix).
     sed -i "src/Makefile.in" \
         -e "s|udevrulesdir[[:blank:]]*=.*$|udevrulesdir = $out/lib/udev/rules.d|g"
@@ -44,19 +46,39 @@ stdenv.mkDerivation rec {
        -e "s|chmod r+s |true |"
   '';
 
-  configureFlags = ''
-    --disable-solaris --disable-hal --disable-jack
-    --disable-oss-output --disable-oss-wrapper
-    --localstatedir=/var --sysconfdir=/etc
-    ${if jackaudioSupport then "--enable-jack" else ""}
-  '';
-
-  installFlags = "sysconfdir=$(out)/etc pulseconfdir=$(out)/etc/pulse";
+  configureFlags = [
+    "--disable-solaris"
+    "--disable-jack"
+    "--disable-oss-output"
+  ] ++ stdenv.lib.optional (!ossWrapper) "--disable-oss-wrapper" ++
+  [
+    "--localstatedir=/var"
+    "--sysconfdir=/etc"
+    "--with-access-group=audio"
+  ]
+    ++ stdenv.lib.optional jackaudioSupport "--enable-jack"
+    ++ stdenv.lib.optional stdenv.isDarwin "--with-mac-sysroot=/";
 
   enableParallelBuilding = true;
 
-  meta = {
-    description = "PulseAudio, a sound server for POSIX and Win32 systems";
+  # not sure what the best practices are here -- can't seem to find a way
+  # for the compiler to bring in stdlib and stdio (etc.) properly
+  # the alternative is to copy the files from /usr/include to src, but there are
+  # probably a large number of files that would need to be copied (I stopped
+  # after the seventh)
+  NIX_CFLAGS_COMPILE = stdenv.lib.optionalString stdenv.isDarwin
+    "-I/usr/include";
+
+  installFlags = "sysconfdir=$(out)/etc pulseconfdir=$(out)/etc/pulse";
+
+  meta = with stdenv.lib; {
+    description = "Sound server for POSIX and Win32 systems";
+    homepage    = http://www.pulseaudio.org/;
+    # Note: Practically, the server is under the GPL due to the
+    # dependency on `libsamplerate'.  See `LICENSE' for details.
+    licenses    = licenses.lgpl2Plus;
+    maintainers = with maintainers; [ lovek323 ];
+    platforms   = platforms.unix;
 
     longDescription = ''
       PulseAudio is a sound server for POSIX and Win32 systems.  A
@@ -67,14 +89,5 @@ stdenv.mkDerivation rec {
       sample format or channel count and mixing several sounds into
       one are easily achieved using a sound server.
     '';
-
-    homepage = http://www.pulseaudio.org/;
-
-    # Note: Practically, the server is under the GPL due to the
-    # dependency on `libsamplerate'.  See `LICENSE' for details.
-    licenses = "LGPLv2+";
-
-    maintainers = [ stdenv.lib.maintainers.ludo ];
-    platforms = stdenv.lib.platforms.gnu;
   };
 }

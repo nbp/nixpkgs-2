@@ -1,4 +1,4 @@
-{ fetchurl, stdenv, ppl }:
+{ fetchurl, stdenv, ppl, autoconf, automake, libtool }:
 
 stdenv.mkDerivation rec {
   name = "cloog-ppl-0.15.11";
@@ -10,10 +10,23 @@ stdenv.mkDerivation rec {
 
   propagatedBuildInputs = [ ppl ];
 
+  buildInputs = [ automake autoconf libtool ];
+
+  patches = [ ./fix-ppl-version.patch ];
+
   configureFlags = "--with-ppl=${ppl}";
 
+  preConfigure = ''
+    touch NEWS ChangeLog AUTHORS
+    ${libtool}/bin/libtoolize -c --force
+    ${automake}/bin/aclocal
+    ${automake}/bin/automake --add-missing
+    ${automake}/bin/automake -a -c --foreign
+    ${autoconf}/bin/autoreconf
+  '';
+
   crossAttrs = {
-    configureFlags = "--with-ppl=${ppl.hostDrv}";
+    configureFlags = "--with-ppl=${ppl.crossDrv}";
   };
 
   doCheck = true;
@@ -38,9 +51,9 @@ stdenv.mkDerivation rec {
     # CLooG-PPL is actually a port of GLooG from PolyLib to PPL.
     homepage = http://www.cloog.org/;
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
 
     /* Leads to an ICE on Cygwin:
 
@@ -61,6 +74,6 @@ stdenv.mkDerivation rec {
        make[3]: *** [Box.lo] Error 1
 
     */
-    platforms = stdenv.lib.platforms.allBut "i686-cygwin";
+    platforms = with stdenv.lib.platforms; allBut cygwin;
   };
 }

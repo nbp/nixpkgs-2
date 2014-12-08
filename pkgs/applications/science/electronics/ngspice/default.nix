@@ -1,11 +1,11 @@
 {stdenv, fetchurl, readline, bison, libX11, libICE, libXaw, libXext}:
 
 stdenv.mkDerivation {
-  name = "ng-spice-rework-21";
+  name = "ng-spice-rework-25";
 
   src = fetchurl {
-    url = mirror://sourceforge/ngspice/ng-spice-rework-21.tar.gz;
-    sha256 = "1hmvfl33dszy8xgbixx0zmiz4rdzjhl7lwlwm953jibd4dgx42j5";
+    url = "mirror://sourceforge/ngspice/ngspice-25.tar.gz";
+    sha256 = "03hlxwvl2j1wlb5yg4swvmph9gja37c2gqvwvzv6z16vg2wvn06h";
   };
 
   buildInputs = [ readline libX11 bison libICE libXaw libXext ];
@@ -13,8 +13,8 @@ stdenv.mkDerivation {
   configureFlags = [ "--enable-x" "--with-x" "--with-readline" ];
 
   meta = {
-    description = "The Next Generation Spice (Electronic Circuit Simulator).";
-    homepage = http://ngspice.sourceforge.net;
+    description = "The Next Generation Spice (Electronic Circuit Simulator)";
+    homepage = "http://ngspice.sourceforge.net";
     license = ["BSD" "GPLv2"];
     maintainers = with stdenv.lib.maintainers; [viric];
     platforms = with stdenv.lib.platforms; linux;

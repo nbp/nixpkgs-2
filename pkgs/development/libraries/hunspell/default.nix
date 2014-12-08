@@ -1,11 +1,11 @@
 { stdenv, fetchurl, ncurses, readline }:
 
 stdenv.mkDerivation rec {
-  name = "hunspell-1.2.12";
+  name = "hunspell-1.3.3";
 
   src = fetchurl {
-    url = "mirror://sf/hunspell/${name}.tar.gz";
-    sha256 = "0s8fh8zanhks6bgkb7dzwscy97fb6wl4ymvjqz7188fz29qjlnaz";
+    url = "mirror://sourceforge/hunspell/${name}.tar.gz";
+    sha256 = "0v14ff9s37vkh45diaddndcrj0hmn67arh8xh8k79q9c1vgc1cm7";
   };
 
   propagatedBuildInputs = [ ncurses readline ];
@@ -13,9 +13,15 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     homepage = http://hunspell.sourceforge.net;
-    description = "The spell checker of OpenOffice.org and Mozilla Firefox 3 & Thunderbird, Google Chrome etc.";
+    description = "Spell checker";
     longDescription = ''
+      Hunspell is the spell checker of LibreOffice, OpenOffice.org, Mozilla
+      Firefox 3 & Thunderbird, Google Chrome, and it is also used by
+      proprietary software packages, like Mac OS X, InDesign, memoQ, Opera and
+      SDL Trados.
+
       Main features:
+
       * Extended support for language peculiarities; Unicode character encoding, compounding and complex morphology.
       * Improved suggestion using n-gram similarity, rule and dictionary based pronounciation data.
       * Morphological analysis, stemming and generation.
@@ -29,6 +35,6 @@ stdenv.mkDerivation rec {
         * Delphi, Java (JNA, JNI), Perl, .NET, Python, Ruby ([1], [2]), UNO.
     '';
     platforms = platforms.all;
-    maintainers = [ maintainers.urkud ];
+    maintainers = with stdenv.lib.maintainers; [ fuuzetsu ];
   };
 }

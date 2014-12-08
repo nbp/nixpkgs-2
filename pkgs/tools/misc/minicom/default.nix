@@ -1,11 +1,11 @@
 { stdenv, fetchurl, ncurses }:
 
 stdenv.mkDerivation rec {
-  name = "minicom-2.4";
+  name = "minicom-2.7";
 
   src = fetchurl {
-    url = "http://alioth.debian.org/frs/download.php/3195/${name}.tar.gz";
-    sha256 = "0j0ayimh3389pciqs60fsfafn87p9gnmmmqz15xq9fkkn10g4ykb";
+    url = "http://alioth.debian.org/frs/download.php/file/3977/${name}.tar.gz";
+    sha256 = "1x04m4k7c71j5cnhzpjrbz43dd96k4mpkd0l87v5skrgp1isdhws";
   };
 
   buildInputs = [ncurses];
@@ -18,7 +18,7 @@ stdenv.mkDerivation rec {
     '';
 
   meta = {
-    description = "Minicom, a modem control and terminal emulation program";
+    description = "Modem control and terminal emulation program";
     homepage = http://alioth.debian.org/projects/minicom/;
 
     longDescription =

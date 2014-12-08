@@ -1,24 +1,28 @@
 { fetchurl, stdenv, gmp, gnum4 }:
 
-stdenv.mkDerivation rec {
-  name = "nettle-2.4";
+stdenv.mkDerivation (rec {
+  name = "nettle-2.7.1";
 
   src = fetchurl {
-    # Eventually use `mirror://gnu/'.
-    url = "ftp://ftp.lysator.liu.se/pub/security/lsh/${name}.tar.gz";
-    sha256 = "0gwwcipmjxkv7p2p01m19n4c3jiczg682w58l5dgg0b8vw494056";
+    url = "mirror://gnu/nettle/${name}.tar.gz";
+    sha256 = "0h2vap31yvi1a438d36lg1r1nllfx3y19r4rfxv7slrm6kafnwdw";
   };
 
   buildInputs = [ gnum4 ];
   propagatedBuildInputs = [ gmp ];
 
-  doCheck = (stdenv.system != "i686-cygwin");
+  doCheck = (stdenv.system != "i686-cygwin" && !stdenv.isDarwin);
+
+  enableParallelBuilding = true;
+
+  # It doesn't build otherwise
+  dontDisableStatic = true;
 
   patches = stdenv.lib.optional (stdenv.system == "i686-cygwin")
               ./cygwin.patch;
 
   meta = {
-    description = "GNU Nettle, a cryptographic library";
+    description = "Cryptographic library";
 
     longDescription = ''
         Nettle is a cryptographic library that is designed to fit
@@ -43,7 +47,7 @@ stdenv.mkDerivation rec {
         I/O.
      '';
 
-     license = "GPLv2+";
+     license = stdenv.lib.licenses.gpl2Plus;
 
      homepage = http://www.lysator.liu.se/~nisse/nettle/;
 
@@ -51,3 +55,13 @@ stdenv.mkDerivation rec {
      platforms = stdenv.lib.platforms.all;
   };
 }
+
+//
+
+stdenv.lib.optionalAttrs stdenv.isSunOS {
+  # Make sure the right <gmp.h> is found, and not the incompatible
+  # /usr/include/mp.h from OpenSolaris.  See
+  # <https://lists.gnu.org/archive/html/hydra-users/2012-08/msg00000.html>
+  # for details.
+  configureFlags = [ "--with-include-path=${gmp}/include" ];
+})

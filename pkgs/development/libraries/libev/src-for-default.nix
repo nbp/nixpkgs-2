@@ -1,8 +1,9 @@
 rec {
-  advertisedUrl="http://dist.schmorp.de/libev/Attic/libev-4.04.tar.gz";
-  version = "4.04";
-  url="http://dist.schmorp.de/libev/Attic/libev-4.04.tar.gz";
-  hash = "ab3a09e967e3b868055cd9363fd236aa093f8643d19cc7042e90e0dfe905b012";
-  name = "libev-4.04";
+   version="4.15";
+   name="libev-4.15";
+   hash="1svgc1hq4i5zsw4i02sf7xb4pk2d8kpvc1gdrd856vsmffh47pdj";
+   url="http://dist.schmorp.de/libev/Attic/libev-${version}.tar.gz";
+   advertisedUrl="http://dist.schmorp.de/libev/Attic/libev-4.15.tar.gz";
+  
   
 }

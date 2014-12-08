@@ -14,6 +14,7 @@ stdenv.mkDerivation {
 
   crossAttrs = {
     patchPhase = ''
+      sed -i -e '/<sys\\stat\.h>/s|\\|/|' bzip2.c
       sed -i -e 's/CC=gcc/CC=${stdenv.cross.config}-gcc/' \
         -e 's/AR=ar/AR=${stdenv.cross.config}-ar/' \
         -e 's/RANLIB=ranlib/RANLIB=${stdenv.cross.config}-ranlib/' \
@@ -24,6 +25,8 @@ stdenv.mkDerivation {
 
   sharedLibrary =
     !stdenv.isDarwin && !(stdenv ? isDietLibC) && !(stdenv ? isStatic) && stdenv.system != "i686-cygwin" && !linkStatic;
+
+  patchPhase = stdenv.lib.optionalString stdenv.isDarwin "substituteInPlace Makefile --replace 'CC=gcc' 'CC=clang'";
 
   preConfigure = "substituteInPlace Makefile --replace '$(PREFIX)/man' '$(PREFIX)/share/man'";
 

@@ -1,13 +1,28 @@
-{stdenv, fetchurl, ant}:
+{ stdenv, fetchurl, ant, jdk }:
 
-stdenv.mkDerivation {
-  name = "postgresql-jdbc-8.2";
-  builder = ./builder.sh;
+let version = "9.3-1100"; in
+
+stdenv.mkDerivation rec {
+  name = "postgresql-jdbc-${version}";
 
   src = fetchurl {
-    url = http://jdbc.postgresql.org/download/postgresql-jdbc-8.2-504.src.tar.gz;
-    sha256 = "1fkza5j4b9pzm69cw1zv35bqk062d92l4l0zhz3qn0g64r08ccm4";
+    url = "http://jdbc.postgresql.org/download/postgresql-jdbc-${version}.src.tar.gz";
+    sha256 = "0mbdzhzg4ws0i7ps98rg0q5n68lsrdm2klj7y7skaix0rpa57gp6";
   };
 
-  buildInputs = [ant];
+  buildInputs = [ ant jdk ];
+
+  buildPhase = "ant";
+
+  installPhase =
+    ''
+      mkdir -p $out/share/java
+      cp jars/*.jar $out/share/java
+    '';
+
+  meta = {
+    homepage = http://jdbc.postgresql.org/;
+    description = "JDBC driver for PostgreSQL allowing Java programs to connect to a PostgreSQL database";
+    license = "bsd";
+  };
 }

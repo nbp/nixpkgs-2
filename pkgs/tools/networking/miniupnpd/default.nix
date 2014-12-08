@@ -1,34 +1,28 @@
-{ stdenv, fetchurl, iptables }:
+{ stdenv, fetchurl, iptables, libnfnetlink }:
 
 assert stdenv.isLinux;
 
 stdenv.mkDerivation rec {
-  name = "miniupnpd-1.4";
+  name = "miniupnpd-1.8.20140401";
 
   src = fetchurl {
     url = "http://miniupnp.free.fr/files/download.php?file=${name}.tar.gz";
-    sha256 = "06q5agkzv2snjxcsszpm27h8bqv41jijahs8jqnarxdrik97rfl5";
+    sha256 = "1gfdbfqcw6ih830si51yzqbyymgcbwkiv9vk5dwnxs78b7xgyv88";
   };
 
-  buildInputs = [ iptables ];
+  buildInputs = [ iptables libnfnetlink ];
 
   NIX_CFLAGS_COMPILE = "-DIPTABLES_143";
 
-  NIX_CFLAGS_LINK = "-liptc";
-  
+  NIX_CFLAGS_LINK = "-liptc -lnfnetlink";
+
   makefile = "Makefile.linux";
 
   makeFlags = "LIBS=";
 
-  postBuild = "cat config.h";
+  buildFlags = "miniupnpd genuuid";
 
   installFlags = "PREFIX=$(out) INSTALLPREFIX=$(out)";
-
-  postInstall =
-    ''
-      mkdir -p $out/share/man/man1
-      cp miniupnpd.1 $out/share/man/man1/
-    '';
 
   meta = {
     homepage = http://miniupnp.free.fr/;

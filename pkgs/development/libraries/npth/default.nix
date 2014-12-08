@@ -1,19 +1,14 @@
-{ stdenv, fetchgit, autoconf, automake, libtool }:
+{ stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "npth-git20120407";
+  name = "npth-1.1";
 
-  src = fetchgit {
-    url = "git://git.gnupg.org/npth.git";
-    rev = "cbb52bd5ada02bbd914869f4540221831358d077";
-    sha256 = "1789b15bc49171d47bbd5a3bccbadc7dde1ae095bb2c205c7ec5d7a36573876d";
+  src = fetchurl {
+    url = "ftp://ftp.gnupg.org/gcrypt/npth/${name}.tar.bz2";
+    sha256 = "0zyzwmk4mp6pas87jz35zx0jvwdz7x5b13w225gs73gcn8g5cv49";
   };
 
-  buildInputs = [ autoconf automake libtool ];
-
-  preConfigure = "autoreconf -vfi";
-
-  meta = {
+  meta = with stdenv.lib; {
     description = "The New GNU Portable Threads Library";
     longDescription = ''
       This is a library to provide the GNU Pth API and thus a non-preemptive
@@ -25,7 +20,7 @@ stdenv.mkDerivation rec {
       that this is a solid way to provide a co-routine based framework.
     '';
     homepage = http://www.gnupg.org;
-    license = "LGPLv3";
-    platforms = stdenv.lib.platforms.all;
+    license = licenses.lgpl3;
+    platforms = platforms.all;
   };
 }

@@ -1,23 +1,27 @@
-{stdenv, fetchurl, SDL, SDL_image, mesa, cmake, physfs, boost, zip, zlib}:
+{stdenv, fetchurl, SDL2, SDL2_image, mesa, cmake, physfs, boost, zip, zlib
+, pkgconfig}:
 stdenv.mkDerivation rec {
-  version = "2.0-RC1";
+  version = "1.0";
   name = "blobby-volley-${version}";
 
   src = fetchurl {
-    url = "mirror://sourceforge/project/blobby/Blobby%20Volley%202%20%28Linux%29/1.0RC1/blobby2-linux-1.0rc1.tar.gz";
-    sha256 = "1cb56bd31vqkc12cmzp43q2aai99505isq2mii95jp0rzdqks4fy";
+    url = "http://softlayer-ams.dl.sourceforge.net/project/blobby/Blobby%20Volley%202%20%28Linux%29/1.0/blobby2-linux-1.0.tar.gz";
+    sha256 = "1qpmbdlyhfbrdsq4vkb6cb3b8mh27fpizb71q4a21ala56g08yms";
   };
 
-  buildInputs = [SDL SDL_image mesa cmake physfs boost zip zlib];
+  buildInputs = [SDL2 SDL2_image mesa cmake physfs boost zip zlib pkgconfig];
 
-  preConfigure = ''
-    sed -re '1i#include <cassert>' -i src/CrossCorrelation.h
+  preConfigure=''
+    sed -e '1i#include <iostream>' -i src/NetworkMessage.cpp
   '';
 
   meta = {
-    description = ''A blobby volleyball game.'';
+    description = ''A blobby volleyball game'';
     license = with stdenv.lib.licenses; bsd3;
     platforms = with stdenv.lib.platforms; linux;
     maintainers = with stdenv.lib.maintainers; [raskin];
+    homepage = "http://blobby.sourceforge.net/";
+    downloadPage = "http://sourceforge.net/projects/blobby/files/Blobby%20Volley%202%20%28Linux%29/";
+    inherit version;
   };
 }

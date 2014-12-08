@@ -19,8 +19,15 @@ stdenv.mkDerivation rec {
 
   doCheck = true;
 
+  preBuild = ''
+    sed -i -e '/gets is a security/d' lib/stdio.in.h
+    sed -i '42 i\
+      #undef false\
+      #undef true' src/complexity.h
+  '';
+
   meta = {
-    description = "GNU Complexity, C code complexity measurement tool";
+    description = "C code complexity measurement tool";
 
     longDescription =
       '' GNU Complexity is a tool designed for analyzing the complexity of C
@@ -28,7 +35,7 @@ stdenv.mkDerivation rec {
          addresses several issues not considered in that scoring scheme.
       '';
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
     homepage = http://www.gnu.org/software/complexity/;
 

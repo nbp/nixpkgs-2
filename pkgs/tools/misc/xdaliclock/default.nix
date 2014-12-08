@@ -3,26 +3,25 @@ x@{builderDefsPackage
   , libSM, libXext
   , ...}:
 builderDefsPackage
-(a :  
-let 
-  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++ 
+(a :
+let
+  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++
     [];
 
   buildInputs = map (n: builtins.getAttr n x)
     (builtins.attrNames (builtins.removeAttrs x helperArgNames));
   sourceInfo = rec {
     baseName="xdaliclock";
-    version="2.35";
+    version = "2.41";
     name="${baseName}-${version}";
     project="${baseName}";
     url="http://www.jwz.org/${project}/${name}.tar.gz";
-    hash="0iybha2d0wqb4wkpw7l1zi3zhw57kqh3y7p4ja1k0fmvrzqc08g7";
   };
 in
 rec {
   src = a.fetchurl {
     url = sourceInfo.url;
-    sha256 = sourceInfo.hash;
+    sha256 = "1crkjvza692irkqm9vwgn58m8ps93n0rxigm6pasgl5dnx3p6d1d";
   };
 
   inherit (sourceInfo) name version;
@@ -36,7 +35,7 @@ rec {
   '' ["minInit" "defEnsureDir"];
 
   goSrcDir = "cd X11";
-      
+
   meta = {
     description = "A clock application that morphs digits when they are changed";
     maintainers = with a.lib.maintainers;
@@ -45,12 +44,9 @@ rec {
     ];
     platforms = with a.lib.platforms;
       linux ++ freebsd;
-    license = "free";
-  };
-  passthru = {
-    updateInfo = {
-      downloadPage = "http://www.jwz.org/xdaliclock/";
-    };
+    license = a.lib.licenses.free; #TODO BSD on Gentoo, looks like MIT
+    downloadPage = "http://www.jwz.org/xdaliclock/";
+    inherit version;
+    updateWalker = true;
   };
 }) x
-

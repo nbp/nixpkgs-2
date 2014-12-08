@@ -27,8 +27,22 @@ rec {
     } // args);
 
   coverageAnalysis = args: nixBuild (
-    { inherit lcov;
+    { inherit lcov enableGCOVInstrumentation makeGCOVReport;
       doCoverageAnalysis = true;
+    } // args);
+
+  clangAnalysis = args: nixBuild (
+    { inherit clangAnalyzer;
+      doClangAnalysis = true;
+    } // args);
+
+  coverityAnalysis = args: nixBuild (
+    { inherit cov-build xz;
+      doCoverityAnalysis = true;
+    } // args);
+
+  gcovReport = args: import ./gcov-report.nix (
+    { inherit runCommand lcov rsync;
     } // args);
 
   rpmBuild = args: import ./rpm-build.nix (
@@ -38,5 +52,25 @@ rec {
   debBuild = args: import ./debian-build.nix (
     { inherit stdenv vmTools checkinstall;
     } // args);
+
+  aggregate =
+    { name, constituents, meta ? { } }:
+    pkgs.runCommand name
+      { inherit constituents meta;
+        preferLocalBuild = true;
+        _hydraAggregate = true;
+      }
+      ''
+        mkdir -p $out/nix-support
+        touch $out/nix-support/hydra-build-products
+        echo $constituents > $out/nix-support/hydra-aggregate-constituents
+
+        # Propagate build failures.
+        for i in $constituents; do
+          if [ -e $i/nix-support/failed ]; then
+            touch $out/nix-support/failed
+          fi
+        done
+      '';
 
 }

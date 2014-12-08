@@ -1,7 +1,10 @@
 {stdenv, fetchurl, libX11, libXinerama, patches ? []}:
 
-stdenv.mkDerivation rec {
+let
   name = "dwm-6.0";
+in
+stdenv.mkDerivation {
+  inherit name;
  
   src = fetchurl {
     url = "http://dl.suckless.org/dwm/${name}.tar.gz";
@@ -20,7 +23,7 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = "www.suckless.org";
     description = "Dynamic window manager for X";
-    license = "MIT";
+    license = stdenv.lib.licenses.mit;
     maintainers = with stdenv.lib.maintainers; [viric];
     platforms = with stdenv.lib.platforms; all;
   };

@@ -26,9 +26,13 @@ if test -z "$nativeLibc"; then
       fi
     fi
 
+    if [ -n "$osxMinVersion" ]; then
+        cflagsCompile="$cflagsCompile -mmacosx-version-min=$osxMinVersion"
+    fi
+
     echo "$cflagsCompile -B$libc/lib/ -idirafter $libc/include -idirafter $gcc/lib/gcc/*/*/include-fixed" > $out/nix-support/libc-cflags
 
-    echo "-L$libc/lib" > $out/nix-support/libc-ldflags
+    echo "-L$libc/lib -rpath $libc/lib -rpath-link $libc/lib" > $out/nix-support/libc-ldflags
 
     # The dynamic linker is passed in `ldflagsBefore' to allow
     # explicit overrides of the dynamic linker by callers to gcc/ld
@@ -86,6 +90,8 @@ mkGccWrapper $out/bin/$crossConfig-gcc $gccPath/$crossConfig-gcc
 
 mkGccWrapper $out/bin/$crossConfig-g++ $gccPath/$crossConfig-g++
 ln -s $crossConfig-g++ $out/bin/$crossConfig-c++
+
+mkGccWrapper $out/bin/$crossConfig-cpp $gccPath/$crossConfig-cpp
 
 mkGccWrapper $out/bin/$crossConfig-g77 $gccPath/$crossConfig-g77
 ln -s $crossConfig-g77 $out/bin/$crossConfig-f77

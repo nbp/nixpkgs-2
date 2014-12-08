@@ -4,9 +4,9 @@ x@{builderDefsPackage
   , xf86dgaproto, xf86miscproto, xf86vidmodeproto, libXxf86vm, openal, mesa
   , ...}:
 builderDefsPackage
-(a :  
-let 
-  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++ 
+(a :
+let
+  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++
     [];
 
   buildInputs = map (n: builtins.getAttr n x)
@@ -36,13 +36,14 @@ rec {
     export NIX_LDFLAGS="$NIX_LDFLAGS -lXext -lX11 -lXpm -lXcursor -lXxf86vm"
     cmake -D CMAKE_INSTALL_PREFIX=$out -D CMAKE_SKIP_RPATH=ON .
   '') ["minInit" "doUnpack" "addInputs"];
-      
+
   makeFlags = [
   ];
 
   meta = {
+    branch = "4";
     description = "A game programming library";
-    license = "free-noncopyleft"; # giftware
+    license = a.lib.licenses.free; # giftware
     maintainers = with a.lib.maintainers;
     [
       raskin
@@ -56,4 +57,3 @@ rec {
     };
   };
 }) x
-

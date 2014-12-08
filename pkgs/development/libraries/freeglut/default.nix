@@ -1,15 +1,27 @@
-{ stdenv, fetchurl, libXi, libXrandr, libXxf86vm, mesa, x11 }:
+{ stdenv, lib, fetchurl, libXi, libXrandr, libXxf86vm, mesa, x11, autoreconfHook }:
 
-stdenv.mkDerivation {
-  name = "freeglut-2.8.0";
+let version = "2.8.1";
+in stdenv.mkDerivation {
+  name = "freeglut-${version}";
 
   src = fetchurl {
-    url = mirror://sourceforge/freeglut/freeglut-2.8.0.tar.gz;
-    sha256 = "197293ff886abe613bc9eb4a762d9161b0c9e64b3e8e613ed7c5e353974fba05";
+    url = "mirror://sourceforge/freeglut/freeglut-${version}.tar.gz";
+    sha256 = "16lrxxxd9ps9l69y3zsw6iy0drwjsp6m26d1937xj71alqk6dr6x";
   };
 
-  configureFlags = "--" + (if stdenv.isDarwin then "disable" else "enable") + "-warnings";
+  buildInputs = [
+    libXi libXrandr libXxf86vm mesa x11
+  ] ++ lib.optionals stdenv.isDarwin [
+    autoreconfHook
+  ];
 
-  buildInputs = [ libXi libXrandr libXxf86vm mesa x11 ];
-  patches = [ ./0001-remove-typedefs-now-living-in-mesa.patch ];
+  postPatch = lib.optionalString stdenv.isDarwin ''
+    substituteInPlace Makefile.am --replace \
+      "SUBDIRS = src include progs doc" \
+      "SUBDIRS = src include doc"
+  '';
+
+  configureFlags = [ "--enable-warnings" ];
+
+  # patches = [ ./0001-remove-typedefs-now-living-in-mesa.patch ];
 }

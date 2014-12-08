@@ -1,16 +1,15 @@
 {stdenv, fetchurl}:
 
 let
-  pname = "polyml";
-  version = "5.4";
+  version = "5.5.2";
 in
 
 stdenv.mkDerivation {
-  name = "${pname}-${version}";
+  name = "polyml-${version}";
 
   src = fetchurl {
-    url = "mirror://sourceforge/${pname}/${pname}.${version}.tar.gz";
-    sha256 = "1ykbm4zk260dkdr8jl7mjaqxy98h65fq0z82k44b1fp5q8zy5d34";
+    url = "mirror://sourceforge/polyml/polyml.${version}.tar.gz";
+    sha256 = "10m680qdad6bd50bav9xjsgmsxw8yxg55vr7grbg0gvykzl2pzbk";
   };
 
   meta = {
@@ -19,7 +18,7 @@ stdenv.mkDerivation {
       Poly/ML is a full implementation of Standard ML.
     '';
     homepage = http://www.polyml.org/;
-    license = "LGPL";
+    license = stdenv.lib.licenses.lgpl21;
     platforms = with stdenv.lib.platforms; linux;
     maintainers = [ #Add your name here!
       stdenv.lib.maintainers.z77z

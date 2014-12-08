@@ -10,16 +10,22 @@
 , libXdamage
 , libXext
 , alsaLib
+, ffmpeg
+, libxkbfile
+#, xmlto, docbook_xml_dtd_412, docbook_xml_xslt
+, libXinerama
+, libXv
+, pulseaudioSupport ? true, pulseaudio
 }:
 
 assert printerSupport -> cups != null;
 stdenv.mkDerivation rec {
   name = "freerdp-${version}";
-  version = "1.0.0";
+  version = "1.0.2";
 
   src = fetchurl {
-    url = "https://github.com/downloads/FreeRDP/FreeRDP/FreeRDP-${version}.tar.gz";
-    sha256 = "1h7b2ykgsp1b04p67syb3p2xgpsb45i6zl1jvm09h0dr5an85awd";
+    url = "https://github.com/FreeRDP/FreeRDP/archive/${version}.tar.gz";
+    sha256 = "1w9dk7dsbppspnnms2xwwmbg7jm61i7aw5nkwzbpdyxngbgkgwf0";
   };
 
   buildInputs = [
@@ -32,11 +38,17 @@ stdenv.mkDerivation rec {
     libXdamage
     libXext
     alsaLib
+    ffmpeg
+    libxkbfile
+#    xmlto docbook_xml_dtd_412 docbook_xml_xslt
+    libXinerama
+    libXv
   ] ++ stdenv.lib.optional printerSupport cups;
 
   configureFlags = [
-    "--with-x"
-  ] ++ stdenv.lib.optional printerSupport "--with-printer=cups";
+    "--with-x" "-DWITH_MANPAGES=OFF"
+  ] ++ stdenv.lib.optional printerSupport "--with-printer=cups"
+    ++ stdenv.lib.optional pulseaudioSupport "-DWITH_PULSEAUDIO=ON";
 
   meta = {
     description = "A Remote Desktop Protocol Client";
@@ -48,8 +60,6 @@ stdenv.mkDerivation rec {
 
     homepage = http://www.freerdp.com/;
 
-    license = "free-non-copyleft";
-
-    maintainers = [ stdenv.lib.maintainers.shlevy ];
+    license = stdenv.lib.licenses.free;
   };
 }

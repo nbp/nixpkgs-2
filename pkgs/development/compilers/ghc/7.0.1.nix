@@ -6,7 +6,7 @@ stdenv.mkDerivation rec {
   name = "ghc-${version}";
 
   src = fetchurl {
-    url = "http://new-www.haskell.org/ghc/dist/${version}/${name}-src.tar.bz2";
+    url = "http://www.haskell.org/ghc/dist/${version}/${name}-src.tar.bz2";
     sha256 = "1iciljngxmqy465cw3pkl6jp0ydiils4bfz6ixfaxk7aqv7r7xsi";
   };
 
@@ -36,7 +36,7 @@ stdenv.mkDerivation rec {
       stdenv.lib.maintainers.marcweber
       stdenv.lib.maintainers.andres
     ];
-    platforms = ghc.meta.platforms;
+    inherit (ghc.meta) license platforms;
   };
 
   # TODO: requires a comment as to what it does and why it is needed.

@@ -3,11 +3,12 @@
 # at runtime, need jdk
 
 stdenv.mkDerivation rec {
-  name = "groovy-1.7.1";
+  name = "groovy-${version}";
+  version = "2.3.8";
 
   src = fetchurl {
-    url = "http://dist.groovy.codehaus.org/distributions/groovy-binary-1.7.1.zip";
-    sha256 = "0a204f6835f07e6a079bd4761e70cd5e0c31ebc0c9eb293fda11dfb2d8bf137c";
+    url = "http://dl.bintray.com/groovy/maven/groovy-binary-${version}.zip";
+    sha256 = "0fgsn1s7vhxcrwb2wa6zvrdzff7zbb2s6f7xj6c9x7gl9mdfcwpn";
   };
 
   installPhase = ''
@@ -20,8 +21,10 @@ stdenv.mkDerivation rec {
 
   buildInputs = [ unzip ];
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "An agile dynamic language for the Java Platform";
     homepage = http://groovy.codehaus.org/;
+    license = licenses.asl20;
+    maintainers = with maintainers; [ pSub ];
   };
 }

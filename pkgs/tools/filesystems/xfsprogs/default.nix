@@ -1,22 +1,58 @@
-{ stdenv, fetchurl, libtool, gettext, libuuid }:
+{ stdenv, fetchurl, gettext, libuuid, readline }:
 
 stdenv.mkDerivation rec {
-  name = "xfsprogs-3.1.3";
+  name = "xfsprogs-3.2.1";
 
   src = fetchurl {
-    urls = [ "ftp://oss.sgi.com/projects/xfs/cmd_tars/${name}.tar.gz" "ftp://oss.sgi.com/projects/xfs/previous/${name}.tar.gz" ];
-    sha256 = "1mazg6sl4gbm204ndgw585xvcsxg3hg22d989ww6lgmycp635l7s";
+    urls = map (dir: "ftp://oss.sgi.com/projects/xfs/${dir}/${name}.tar.gz")
+      [ "cmd_tars" "previous" ];
+    sha256 = "0rsp31qrz0wskr70dwzl5ignkac7j98j7m9cy6wl57zy716fmy43";
   };
 
-  buildInputs = [ libtool gettext libuuid ];
+  prePatch = ''
+    sed -i s,/bin/bash,`type -P bash`,g install-sh
+    sed -i s,ldconfig,`type -P ldconfig`,g configure m4/libtool.m4
 
-  configureFlags = "MAKE=make MSGFMT=msgfmt MSGMERGE=msgmerge XGETTEXT=xgettext ZIP=gzip AWK=gawk --disable-shared";
-  preConfigure = ''
-    configureFlags="$configureFlags root_sbindir=$out/sbin root_libdir=$out/lib"
+    # Fixes from gentoo 3.2.1 ebuild
+    sed -i "/^PKG_DOC_DIR/s:@pkg_name@:${name}:" include/builddefs.in
+    sed -i '1iLLDFLAGS = -static' {estimate,fsr}/Makefile
+    sed -i "/LLDFLAGS/s:-static::" $(find -name Makefile)
+    sed -i '/LIB_SUBDIRS/s:libdisk::' Makefile
   '';
-  disableStatic = false;
 
-  meta = {
+  patches = [
+    # This patch fixes shared libs installation, still not fixed in 3.2.1
+    ./xfsprogs-3.1.11-sharelibs.patch
+  ];
+
+  buildInputs = [ gettext libuuid readline ];
+
+  outputs = [ "out" "lib" ];
+
+  preConfigure = ''
+    NIX_LDFLAGS="$(echo $NIX_LDFLAGS | sed "s,$out,$lib,g")"
+  '';
+
+  configureFlags = [
+    "MAKE=make"
+    "MSGFMT=msgfmt"
+    "MSGMERGE=msgmerge"
+    "XGETTEXT=xgettext"
+    "--disable-lib64"
+    "--enable-readline"
+    "--includedir=$(lib)/include"
+    "--libdir=$(lib)/lib"
+  ];
+
+  installFlags = [ "install-dev" ];
+
+  enableParallelBuilding = true;
+
+  meta = with stdenv.lib; {
+    homepage = http://xfs.org/;
     description = "SGI XFS utilities";
+    license = licenses.lgpl21;
+    platforms = platforms.linux;
+    maintainers = with maintainers; [ wkennington ];
   };
 }

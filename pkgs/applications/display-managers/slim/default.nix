@@ -1,39 +1,43 @@
-{stdenv, fetchurl, x11, libjpeg, libpng12, libXmu, freetype, pam}:
+{ stdenv, fetchurl, cmake, pkgconfig, xorg, libjpeg, libpng
+, fontconfig, freetype, pam, dbus_libs, makeWrapper, pkgs }:
 
 stdenv.mkDerivation rec {
-  name = "slim-1.3.2";
+  name = "slim-1.3.6";
 
   src = fetchurl {
-    url = "http://download.berlios.de/slim/${name}.tar.gz";
-    sha256 = "1f42skdp5k1zrb364s3i0ps5wmx9szz9h192i2dkn9az00jh2mpi";
+    url = "mirror://sourceforge/slim.berlios/${name}.tar.gz";
+    sha256 = "1pqhk22jb4aja4hkrm7rjgbgzjyh7i4zswdgf5nw862l2znzxpi1";
   };
 
-  patches = [
-    # Allow the paths of the configuration file and theme directory to
-    # be set at runtime.
-    ./runtime-paths.patch
+  patches =
+    [ # Allow the paths of the configuration file and theme directory to
+      # be set at runtime.
+      ./runtime-paths.patch
 
-    # Fix a bug in slim's PAM support: the "resp" argument to the
-    # conversation function is a pointer to a pointer to an array of
-    # pam_response structures, not a pointer to an array of pointers to
-    # pam_response structures.  Of course C can't tell the difference...
-    ./pam.patch
+      # Exit after the user's session has finished.  This works around
+      # slim's broken PAM session handling (see
+      # http://developer.berlios.de/bugs/?func=detailbug&bug_id=19102&group_id=2663).
+      ./run-once.patch
+    ];
 
-    # Don't set PAM_RHOST to "localhost", it confuses ConsoleKit
-    # (which assumes that a non-empty string means a remote session).
-    ./pam2.patch
-  ];
+  preConfigure = "substituteInPlace CMakeLists.txt --replace /lib $out/lib";
 
-  buildInputs = [x11 libjpeg libpng12 libXmu freetype pam];
+  cmakeFlags = [ "-DUSE_PAM=1" ];
 
-  NIX_CFLAGS_COMPILE = "-I${freetype}/include/freetype2";
+  NIX_CFLAGS_COMPILE = "-I${freetype}/include/freetype";
 
-  preBuild = ''
-    substituteInPlace Makefile --replace /usr /no-such-path
-    makeFlagsArray=(CC=gcc CXX=g++ PREFIX=$out MANDIR=$out/share/man CFGDIR=$out/etc USE_PAM=1)
-  '';
+  enableParallelBuilding = true;
+
+  buildInputs =
+    [ cmake pkgconfig libjpeg libpng fontconfig freetype
+      pam dbus_libs
+      xorg.libX11 xorg.libXext xorg.libXrandr xorg.libXrender xorg.libXmu xorg.libXft makeWrapper
+    ];
+
+  NIX_CFLAGS_LINK = "-lXmu";
 
   meta = {
-    homepage = http://slim.berlios.de;
+    homepage = http://sourceforge.net/projects/slim.berlios/; # berlios shut down; I found no replacement yet
+    platforms = stdenv.lib.platforms.linux;
   };
 }

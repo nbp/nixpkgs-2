@@ -11,7 +11,7 @@ crossAddCVars () {
     fi
 }
 
-crossEnvHooks=(${crossEnvHooks[@]} crossAddCVars)
+crossEnvHooks+=(crossAddCVars)
 
 crossStripDirs() {
     local dirs="$1"
@@ -74,6 +74,9 @@ fi
 # Disabling the tests when cross compiling, as usually the tests are meant for
 # native compilations.
 doCheck=""
+
+# Don't strip foreign binaries with native "strip" tool.
+dontStrip=1
 
 # Add the output as an rpath.
 if test "$NIX_NO_SELF_RPATH" != "1"; then

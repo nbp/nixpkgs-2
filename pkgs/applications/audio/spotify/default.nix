@@ -1,69 +1,155 @@
-{ fetchurl, stdenv, dpkg, xlibs, qt4, alsaLib, makeWrapper, openssl }:
+{ fetchurl, stdenv, dpkg, xlibs, qt4, alsaLib, makeWrapper, openssl, freetype
+, glib, pango, cairo, atk, gdk_pixbuf, gtk, cups, nspr, nss, libpng, GConf
+, libgcrypt, chromium, sqlite, gst_plugins_base, gstreamer, udev, fontconfig
+, dbus, expat }:
 
 assert stdenv.system == "i686-linux" || stdenv.system == "x86_64-linux";
 
-let version = "0.8.3.278"; in
+let
+  version = if stdenv.system == "i686-linux"
+    then "0.9.4.183.g644e24e.428"
+    else "0.9.11.27.g2b1a638.81";
+
+  qt4webkit =
+    if stdenv.system == "i686-linux" then
+      fetchurl {
+        name = "libqtwebkit4_2.3.2_i386.deb";
+        url = http://ie.archive.ubuntu.com/ubuntu/pool/main/q/qtwebkit-source/libqtwebkit4_2.3.2-0ubuntu7_i386.deb;
+        sha256 = "0q4abhczx91ma57fjss0gn8j6nkfbfsbsh6kxhykzj88dih2s8rn";
+      }
+    else
+      fetchurl {
+        name = "libqtwebkit4_2.3.2_amd64.deb";
+        url = http://ie.archive.ubuntu.com/ubuntu/pool/main/q/qtwebkit-source/libqtwebkit4_2.3.2-0ubuntu7_amd64.deb;
+        sha256 = "0sac88avfivwkfhmd6fik7ili8fdznqas6741dbspf9mfnawbwch";
+      };
+
+  deps = [
+    alsaLib
+    atk
+    cairo
+    cups
+    dbus
+    expat
+    fontconfig
+    freetype
+    GConf
+    gdk_pixbuf
+    glib
+    gst_plugins_base
+    gstreamer
+    gtk
+    libgcrypt
+    libpng
+    nss
+    pango
+    qt4
+    sqlite
+    stdenv.gcc.gcc
+    xlibs.libX11
+    xlibs.libXcomposite
+    xlibs.libXdamage
+    xlibs.libXext
+    xlibs.libXfixes
+    xlibs.libXi
+    xlibs.libXrandr
+    xlibs.libXrender
+    xlibs.libXrender
+    xlibs.libXScrnSaver
+    #xlibs.libXss
+  ];
+
+in
 
 stdenv.mkDerivation {
   name = "spotify-${version}";
 
   src =
-    if stdenv.system == "i686-linux" then 
+    if stdenv.system == "i686-linux" then
       fetchurl {
-        url = "http://repository.spotify.com/pool/non-free/s/spotify/spotify-client_${version}.g21c7566.632-1_i386.deb";
-        sha256 = "7f587585365498c5182bd7f3beafaf511d883102f5cece66cf84f4f94077765b";
+        url = "http://repository.spotify.com/pool/non-free/s/spotify/spotify-client_${version}-1_i386.deb";
+        sha256 = "1wl6v5x8vm74h5lxp8fhvmih8l122aadsf1qxvpk0k3y6mbx0ifa";
       }
-    else if stdenv.system == "x86_64-linux" then 
+    else if stdenv.system == "x86_64-linux" then
       fetchurl {
-        url = "http://repository.spotify.com/pool/non-free/s/spotify/spotify-client_${version}.g21c7566.632-1_amd64.deb";
-        sha256 = "a37a13b1c1a8088a811054c732d85b9d6ccf0bd92ad4da75bfee6d70dc344b5e";
+        url = "http://repository.spotify.com/pool/non-free/s/spotify/spotify-client_${version}-1_amd64.deb";
+        sha256 = "0yfljiw01kssj3qaz8m0ppgrpjs6xrhzlr2wccp64bsnmin7g4sg";
       }
     else throw "Spotify not supported on this platform.";
 
   buildInputs = [ dpkg makeWrapper ];
 
   unpackPhase = "true";
-  
+
   installPhase =
     ''
       mkdir -p $out
       dpkg-deb -x $src $out
-      mv $out/usr/* $out/
-      rmdir $out/usr
+      mv $out/opt/spotify/* $out/
+      rm -rf $out/usr $out/opt
 
       # Work around Spotify referring to a specific minor version of
       # OpenSSL.
       mkdir $out/lib
+
+      ln -s ${nss}/lib/libnss3.so $out/lib/libnss3.so.1d
+      ln -s ${nss}/lib/libnssutil3.so $out/lib/libnssutil3.so.1d
+      ln -s ${nss}/lib/libsmime3.so $out/lib/libsmime3.so.1d
+
+      ${if stdenv.system == "x86_64-linux" then ''
+      ln -s ${openssl}/lib/libssl.so $out/lib/libssl.so.1.0.0
+      ln -s ${openssl}/lib/libcrypto.so $out/lib/libcrypto.so.1.0.0
+      ln -s ${nspr}/lib/libnspr4.so $out/lib/libnspr4.so
+      ln -s ${nspr}/lib/libplc4.so $out/lib/libplc4.so
+      '' else ''
       ln -s ${openssl}/lib/libssl.so $out/lib/libssl.so.0.9.8
       ln -s ${openssl}/lib/libcrypto.so $out/lib/libcrypto.so.0.9.8
+      ln -s ${nspr}/lib/libnspr4.so $out/lib/libnspr4.so.0d
+      ln -s ${nspr}/lib/libplc4.so $out/lib/libplc4.so.0d
+      ''}
+
+      # Work around Spotify trying to open libudev.so.0 (which we don't have)
+      ln -s ${udev}/lib/libudev.so.1 $out/lib/libudev.so.0
+
+      mkdir -p $out/bin
+
+      rpath="$out/spotify-client/Data:$out/lib:$out/spotify-client:${stdenv.gcc.gcc}/lib64"
+
+      ln -s $out/spotify-client/spotify $out/bin/spotify
 
       patchelf \
         --interpreter "$(cat $NIX_GCC/nix-support/dynamic-linker)" \
-        --set-rpath ${stdenv.lib.makeLibraryPath [ xlibs.libXScrnSaver xlibs.libX11 qt4 alsaLib openssl stdenv.gcc.gcc ]}:${stdenv.gcc.gcc}/lib64:$out/lib \
-        $out/bin/spotify
+        --set-rpath $rpath $out/spotify-client/spotify
+
+      patchelf \
+        --interpreter "$(cat $NIX_GCC/nix-support/dynamic-linker)" \
+        --set-rpath $rpath $out/spotify-client/Data/SpotifyHelper
+
+      dpkg-deb -x ${qt4webkit} ./
+      mkdir -p $out/lib/
+      cp -v usr/lib/*/* $out/lib/
 
       preload=$out/libexec/spotify/libpreload.so
+      librarypath="${stdenv.lib.makeLibraryPath deps}:$out/lib"
       mkdir -p $out/libexec/spotify
       gcc -shared ${./preload.c} -o $preload -ldl -DOUT=\"$out\" -fPIC
 
-      wrapProgram $out/bin/spotify --set LD_PRELOAD $preload
+      wrapProgram $out/bin/spotify --set LD_PRELOAD $preload --prefix LD_LIBRARY_PATH : "$librarypath"
+      wrapProgram $out/spotify-client/Data/SpotifyHelper --set LD_PRELOAD $preload --prefix LD_LIBRARY_PATH : "$librarypath"
+
+      # Desktop file
+      mkdir -p "$out/share/applications/"
+      cp "$out/spotify-client/spotify.desktop" "$out/share/applications/"
+      sed -i "s|Icon=.*|Icon=$out/spotify-client/Icons/spotify-linux-512.png|" "$out/share/applications/spotify.desktop"
     ''; # */
 
   dontStrip = true;
   dontPatchELF = true;
 
   meta = {
-    homepage = https://www.spotify.com/download/previews/;
-    description = "Spotify for Linux allows you to play music from the Spotify music service";
-    license = "unfree";
+    homepage = https://www.spotify.com/;
+    description = "Play music from the Spotify music service";
+    license = stdenv.lib.licenses.unfree;
     maintainers = [ stdenv.lib.maintainers.eelco ];
-
-    longDescription =
-      ''
-        Spotify is a digital music streaming service.  This package
-        provides the Spotify client for Linux.  At present, it does not
-        work with free Spotify accounts; it requires a Premium or
-        Unlimited account.
-      '';
   };
 }

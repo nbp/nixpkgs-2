@@ -23,15 +23,15 @@ args : with args;
       meta = {
           description = "unix odbc driver for postgresql";
           homepage = https://projects.commandprompt.com/public/odbcng;
-          license = "GPL2";
+          license = stdenv.lib.licenses.gpl2;
       };
     };
     ini = "";
   };
 # official postgres connector
  psql = rec {
-   deriv = stdenv.mkDerivation {
-    name = "psql-odbc-08.03.0200";
+   deriv = stdenv.mkDerivation rec {
+    name = "psqlodbc-09.03.0100";
     buildInputs = [ unixODBC libtool postgresql openssl ];
     preConfigure="
       export CPPFLAGS=-I${unixODBC}/include
@@ -39,9 +39,8 @@ args : with args;
     ";
     # added -ltdl to resolve missing references `dlsym' `dlerror' `dlopen' `dlclose' 
     src = fetchurl {
-      url = http://wwwmaster.postgresql.org/redir?setmir=53&typ=h&url=http://ftp.de.postgresql.org/mirror/postgresql//odbc/versions/src/psqlodbc-08.03.0200.tar.gz;
-      name = "psqlodbc-08.03.0200.tar.gz";
-      sha256 = "1401hgzvs3m2yr2nbbf9gfy2wwijrk4ihwz972arbn0krsiwxya1";
+      url = "http://ftp.postgresql.org/pub/odbc/versions/src/${name}.tar.gz";
+      sha256 = "0mh10chkmlppidnmvgbp47v5jnphsrls28zwbvyk2crcn8gdx9q1";
     };
     meta = {
         description = "unix odbc driver for postgresql";
@@ -78,19 +77,32 @@ args : with args;
       "FileUsage       = 3\n ";
  };
  sqlite = rec {
-    deriv = stdenv.mkDerivation {
-      name = "sqlite-connector-odbc-3.51.12";
+    deriv = let version = "0.995"; in
+    stdenv.mkDerivation {
+      name = "sqlite-connector-odbc-${version}";
+
       src = fetchurl {
-        url = http://www.ch-werner.de/sqliteodbc/sqliteodbc-0.70.tar.gz;
-        sha256 = "0ysyqdqkxqcqxrxgi15cbrzia9z6yalim5c88faad85bwanx4db8";
+        url = "http://www.ch-werner.de/sqliteodbc/sqliteodbc-${version}.tar.gz";
+        sha256 = "1r97fw6xy5w2f8c0ii7blfqfi6salvd3k8wnxpx9wqc1gxk8jnyy";
       };
+
+      buildInputs = [ sqlite ];
+
       configureFlags = "--with-sqlite3=${sqlite} --with-odbc=${unixODBC}";
-      postInstall = ''mkdir lib; mv $out/* lib; mv lib $out'';
-      buildInputs = [libtool zlib sqlite];
+
+      # move libraries to $out/lib where they're expected to be
+      postInstall = ''
+        mkdir -p "$out/lib"
+        mv "$out"/*.so "$out/lib"
+        mv "$out"/*.la "$out/lib"
+      '';
+
       meta = { 
-        description = "sqlite odbc connector, install using configuration.nix";
-        homepage = http://www.ch-werner.de/sqliteodbc/html/index.html;
-        license = "BSD";
+        description = "ODBC driver for SQLite";
+        homepage = http://www.ch-werner.de/sqliteodbc;
+        license = stdenv.lib.licenses.bsd2;
+        platforms = stdenv.lib.platforms.linux;
+        maintainers = with stdenv.lib.maintainers; [ vlstill ];
       };
     };
     ini =

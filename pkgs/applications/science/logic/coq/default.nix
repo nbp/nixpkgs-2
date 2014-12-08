@@ -1,29 +1,35 @@
 # - coqide compilation can be disabled by setting lablgtk to null;
 
-{stdenv, fetchurl, ocaml, findlib, camlp5, ncurses, lablgtk ? null}:
+{stdenv, fetchurl, pkgconfig, writeText, ocaml, findlib, camlp5, ncurses, lablgtk ? null}:
 
-let 
-  version = "8.3pl4";
+let
+  version = "8.4pl5";
+  coq-version = "8.4";
   buildIde = lablgtk != null;
   ideFlags = if buildIde then "-lablgtkdir ${lablgtk}/lib/ocaml/*/site-lib/lablgtk2 -coqide opt" else "";
-  idePatch = if buildIde then ''
-    substituteInPlace scripts/coqmktop.ml --replace \
-    "\"-I\"; \"+lablgtk2\"" \
-    "\"-I\"; \"$(echo "${lablgtk}"/lib/ocaml/*/site-lib/lablgtk2)\"; \"-I\"; \"$(echo "${lablgtk}"/lib/ocaml/*/site-lib/stublibs)\""
-  '' else "";
 in
 
 stdenv.mkDerivation {
   name = "coq-${version}";
 
+  inherit coq-version;
+  inherit ocaml camlp5;
+
   src = fetchurl {
-    url = "http://coq.inria.fr/V${version}/files/coq-${version}.tar.gz";
-    sha256 = "17d3lmchmqir1rawnr52g78srg4wkd7clzpzfsivxc4y1zp6rwkr";
+    url = "http://coq.inria.fr/distrib/V${version}/files/coq-${version}.tar.gz";
+    sha256 = "0iajsabyrgypk1ncm0kqcxqv02k24xa1bayaxacjgmsqiavmm09m";
   };
 
-  buildInputs = [ ocaml findlib camlp5 ncurses lablgtk ];
+  buildInputs = [ pkgconfig ocaml findlib camlp5 ncurses lablgtk ];
 
-  prefixKey = "-prefix ";
+  patches = [ ./configure.patch ];
+
+  postPatch = ''
+    UNAME=$(type -tp uname)
+    RM=$(type -tp rm)
+    substituteInPlace configure --replace "/bin/uname" "$UNAME"
+    substituteInPlace tools/beautify-archive --replace "/bin/rm" "$RM"
+  '';
 
   preConfigure = ''
     configureFlagsArray=(
@@ -34,28 +40,22 @@ stdenv.mkDerivation {
     )
   '';
 
-  buildFlags = "world"; # Debug with "world VERBOSE=1";
+  prefixKey = "-prefix ";
 
-  patches = [ ./configure.patch ];
+  buildFlags = "revision coq coqide";
 
-  postPatch = ''
-    UNAME=$(type -tp uname)
-    RM=$(type -tp rm)
-    substituteInPlace configure --replace "/bin/uname" "$UNAME"
-    substituteInPlace tools/beautify-archive --replace "/bin/rm" "$RM"
-    ${idePatch}
+  setupHook = writeText "setupHook.sh" ''
+    addCoqPath () {
+      if test -d "''$1/lib/coq/${coq-version}/user-contrib"; then
+        export COQPATH="''${COQPATH}''${COQPATH:+:}''$1/lib/coq/${coq-version}/user-contrib/"
+      fi
+    }
+
+    envHooks=(''${envHooks[@]} addCoqPath)
   '';
 
-  # This post install step is needed to build ssrcoqide from the ssreflect package
-  # It could be made optional, but I see little harm in including it in the default
-  # distribution -- roconnor
-  # This will likely no longer be necessary for coq >= 8.4. -- roconnor
-  postInstall = if buildIde then ''
-   cp ide/*.cmi ide/ide.*a $out/lib/coq/ide/
-  '' else "";
-
-  meta = {
-    description = "Coq proof assistant";
+  meta = with stdenv.lib; {
+    description = "Formal proof management system";
     longDescription = ''
       Coq is a formal proof management system.  It provides a formal language
       to write mathematical definitions, executable algorithms and theorems
@@ -63,7 +63,9 @@ stdenv.mkDerivation {
       machine-checked proofs.
     '';
     homepage = "http://coq.inria.fr";
-    license = "LGPL";
-    maintainers = [ stdenv.lib.maintainers.roconnor ];
+    license = licenses.lgpl21;
+    branch = coq-version;
+    maintainers = with maintainers; [ roconnor thoughtpolice vbgl ];
+    platforms = platforms.unix;
   };
 }

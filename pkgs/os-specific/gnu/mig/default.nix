@@ -15,7 +15,7 @@ stdenv.mkDerivation {
 
   patches = [ ./noyywrap.patch ];
 
-  buildNativeInputs = [ autoconf automake flex bison machHeaders ];
+  nativeBuildInputs = [ autoconf automake flex bison machHeaders ];
 
   preConfigure = "autoreconf -vfi";
 
@@ -25,7 +25,7 @@ stdenv.mkDerivation {
     postInstall =
       # Fix the shebang to point to the cross-built shell.
       '' sed -i "$out/bin/mig" \
-             -e 's|^#!/.*|#!${bash.hostDrv}/bin/sh|g'
+             -e 's|^#!/.*|#!${bash.crossDrv}/bin/sh|g'
       '';
   };
 
@@ -42,7 +42,7 @@ stdenv.mkDerivation {
          Mach-based inter-process communication.
       '';
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
     homepage = http://www.gnu.org/software/hurd/microkernel/mach/mig/gnu_mig.html;
 

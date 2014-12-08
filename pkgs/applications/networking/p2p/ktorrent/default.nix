@@ -5,14 +5,14 @@ stdenv.mkDerivation rec {
   name = pname + "-" + version;
 
   pname = "ktorrent";
-  version = "4.1.3";
+  version = "4.3.1";
 
   src = fetchurl {
     url = "${meta.homepage}/downloads/${version}/${name}.tar.bz2";
-    sha256 = "0ih68bml6ic3mxk5l4ypgmxwyg9mglp57gw5igrnm5yszm7jz19g";
+    sha256 = "66094f6833347afb0c49e332f0ec15ec48db652cbe66476840846ffd5ca0e4a1";
   };
 
-  patches = [ ./find-workspace.diff ./drop-taskmanager-dependency.patch ];
+  patches = [ ./find-workspace.diff ];
 
   KDEDIRS = libktorrent;
 
@@ -25,7 +25,7 @@ stdenv.mkDerivation rec {
 
   meta = {
     description = "KDE integrated BtTorrent client";
-    homepage = http://ktorrent.org;
+    homepage = http://ktorrent.pwsp.net;
     maintainers = with stdenv.lib.maintainers; [ sander urkud ];
     inherit (libktorrent.meta) platforms;
   };

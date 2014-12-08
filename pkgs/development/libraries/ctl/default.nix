@@ -4,16 +4,16 @@ stdenv.mkDerivation {
   name = "ctl-1.4.1";
 
   src = fetchurl {
-    url = http://surfnet.dl.sourceforge.net/sourceforge/ampasctl/ctl-1.4.1.tar.gz;
+    url = mirror://sourceforge/ampasctl/ctl-1.4.1.tar.gz;
     sha256 = "16lzgbpxdyhykdwndj1i9vx3h4bfkxqqcrvasvgg70gb5raxj0mj";
   };
 
-  patches = [ ./patch.patch ];
-  
+  patches = [ ./patch.patch ./gcc47.patch ];
+
   propagatedBuildInputs = [ ilmbase ];
-  
+
   configureFlags = "--with-ilmbase-prefix=${ilmbase}";
-  
+
   #configurePhase = "
     #export CXXFLAGS=\"-I${ilmbase}/include -L${ilmbase}/lib\"
     #echo $CXXFLAGS

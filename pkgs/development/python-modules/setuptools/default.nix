@@ -1,33 +1,39 @@
-{ stdenv, fetchurl, python, wrapPython }:
+{ stdenv, fetchurl, python, wrapPython, distutils-cfg }:
 
 stdenv.mkDerivation rec {
-  name = "setuptools-0.6c11";
+  shortName = "setuptools-${version}";
+  name = "${python.executable}-${shortName}";
+
+  version = "5.8";
 
   src = fetchurl {
-    url = "http://pypi.python.org/packages/source/s/setuptools/${name}.tar.gz";
-    sha256 = "1lx1hwxkhipyh206bgl90ddnfcnb68bzcvyawczbf833fadyl3v3";
+    url = "http://pypi.python.org/packages/source/s/setuptools/${shortName}.tar.gz";
+    sha256 = "15h643gf821b72d0s59cjj60c6dm5l57rggv5za9d05mccp3psff";
   };
 
-  buildInputs = [ python wrapPython ];
+  buildInputs = [ python wrapPython distutils-cfg ];
 
-  buildPhase = "python setup.py build --build-base $out";
+  buildPhase = "${python}/bin/${python.executable} setup.py build";
 
   installPhase =
     ''
       dst=$out/lib/${python.libPrefix}/site-packages
       mkdir -p $dst
-      PYTHONPATH=$dst:$PYTHONPATH
-      python setup.py install --prefix=$out
+      PYTHONPATH="$dst:$PYTHONPATH"
+      ${python}/bin/${python.executable} setup.py install --prefix=$out --install-lib=$out/lib/${python.libPrefix}/site-packages
       wrapPythonPrograms
     '';
 
-  doCheck = false; # doesn't work with Python 2.7
+  doCheck = false;  # requires pytest
 
-  checkPhase = "python setup.py test";
+  checkPhase = ''
+    ${python}/bin/${python.executable} setup.py test
+  '';
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Utilities to facilitate the installation of Python packages";
     homepage = http://pypi.python.org/pypi/setuptools;
-    licenses = [ "PSF" "ZPL" ];
+    license = [ "PSF" "ZPL" ];
+    platforms = platforms.all;
   };    
 }

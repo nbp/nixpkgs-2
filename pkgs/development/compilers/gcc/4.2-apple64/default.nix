@@ -4,6 +4,7 @@
 , gmp ? null, mpfr ? null, bison ? null, flex ? null
 }:
 
+assert false;
 assert stdenv.isDarwin;
 assert langF77 -> gmp != null;
 
@@ -12,7 +13,7 @@ let
   revision = "5666.3";  # Apple's fork revision number.
 in
 
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   name = "gcc-apple-${version}.${revision}";
 
   builder = ./builder.sh;
@@ -33,8 +34,10 @@ stdenv.mkDerivation {
 
   sourceRoot = "gcc-${revision}/";
 
+  # The floor_log2_patch is from a Gentoo fix for the same issue:
+  #   https://bugs.gentoo.org/attachment.cgi?id=363174&action=diff
   patches =
-    [ ./pass-cxxcpp.patch ]
+    [ ./pass-cxxcpp.patch ./floor_log2_patch.diff ]
     ++ stdenv.lib.optional noSysDirs ./no-sys-dirs.patch
     ++ stdenv.lib.optional langCC ./fix-libstdc++-link.patch;
 
@@ -42,4 +45,6 @@ stdenv.mkDerivation {
   langC = true;
 
   buildInputs = stdenv.lib.optionals langF77 [ gmp mpfr bison flex ];
+
+  #meta.broken = true;
 }

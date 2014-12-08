@@ -16,13 +16,13 @@ stdenv.mkDerivation rec {
     ++ (if gtkGUI then [pkgconfig gtk] else []);
 
   meta = {
-    description = "Aumix, an audio mixer for X and the console";
+    description = "Audio mixer for X and the console";
     longDescription = ''
       Aumix adjusts an audio mixer from X, the console, a terminal,
       the command line or a script.
     '';
     homepage = http://www.jpj.net/~trevor/aumix.html;
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
     maintainers = [ stdenv.lib.maintainers.ludo ];
     platforms = stdenv.lib.platforms.linux;

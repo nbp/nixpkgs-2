@@ -1,24 +1,24 @@
-{ stdenv, fetchurl, pythonPackages, intltool, libvirt, libxml2Python, curl }:
+{ stdenv, fetchurl, pythonPackages, intltool, libxml2Python, curl }:
 
 with stdenv.lib;
 
-let version = "0.600.1"; in
+let version = "0.600.4"; in
 
 stdenv.mkDerivation rec {
   name = "virtinst-${version}";
 
   src = fetchurl {
     url = "http://virt-manager.org/download/sources/virtinst/virtinst-${version}.tar.gz";
-    sha256 = "db342cf93aae1f23df02001bdb0b0cc2c5bf675dca37b4417f5a79bf5a374716";
+    sha256 = "175laiy49dni8hzi0cn14bbsdsigvgr9h6d9z2bcvbpa29spldvf";
   };
 
   pythonPath = with pythonPackages;
     [ setuptools eventlet greenlet gflags netaddr sqlalchemy carrot routes
-      paste_deploy m2crypto ipy boto_1_9 twisted sqlalchemy_migrate
+      paste_deploy m2crypto ipy twisted sqlalchemy_migrate
       distutils_extra simplejson readline glance cheetah lockfile httplib2
       # !!! should libvirt be a build-time dependency?  Note that
       # libxml2Python is a dependency of libvirt.py. 
-      libvirt libxml2Python
+      libvirt libxml2Python urlgrabber
     ];
 
   buildInputs =
@@ -30,23 +30,16 @@ stdenv.mkDerivation rec {
 
   buildPhase = "python setup.py build";
 
-  PYTHON_EGG_CACHE = "`pwd`/.egg-cache";
-
-#      substituteInPlace nova/api/ec2/cloud.py \
-#        --replace 'sh genrootca.sh' $out/libexec/nova/genrootca.sh
-#    '';
-
   installPhase =
-    ''    
+    ''
        python setup.py install --prefix="$out";
+       wrapPythonPrograms
     '';
-
-  #checkPhase = "python setup.py test";
 
   meta = {
     homepage = http://virt-manager.org;
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
     maintainers = with stdenv.lib.maintainers; [qknight];
-    description = "The Virt Install tool (virt-install for short command name, virtinst for package name) is a command line tool which provides an easy way to provision operating systems into virtual machines.";
+    description = "Command line tool which provides an easy way to provision operating systems into virtual machines";
   };
 }

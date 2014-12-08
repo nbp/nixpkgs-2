@@ -18,18 +18,12 @@
 assert useKerberos -> kerberos != null;
 
 stdenv.mkDerivation rec {
-  name = "samba-3.6.5";
+  name = "samba-3.6.24";
 
   src = fetchurl {
-    url = "http://us3.samba.org/samba/ftp/stable/${name}.tar.gz";
-    sha256 = "1i40mf5rvz055zp7fy5rqp1lwlsm65g8k6n8jxw5w5f1p3rmzxla";
+    url = "http://samba.org/samba/ftp/stable/${name}.tar.gz";
+    sha256 = "19rln8m1k359bz6dhmlv39kzyjg7p296dz4y4mq1jwrlnw2bvl0i";
   };
-
-  patches =
-    [
-      # Allow cross-builds for GNU/Hurd.
-      ./libnss-wins-pthread.patch
-    ];
 
   buildInputs = [ readline pam openldap popt iniparser libunwind fam acl cups ]
     ++ stdenv.lib.optional useKerberos kerberos;
@@ -39,7 +33,7 @@ stdenv.mkDerivation rec {
   postPatch =
     # XXX: Awful hack to allow cross-compilation.
     '' sed -i source3/configure \
-           -e 's/^as_fn_error \("cannot run test program while cross compiling\)/$as_echo \1/g'
+           -e 's/^as_fn_error .. \("cannot run test program while cross compiling\)/$as_echo \1/g'
     ''; # "
 
   preConfigure =
@@ -69,11 +63,27 @@ stdenv.mkDerivation rec {
     ''
       mkdir -p $out
       mv $TMPDIR/inst/$out/* $out/
-  
+
+      mkdir -p "$out/lib/pkgconfig"
+      cp pkgconfig/*.pc "$out/lib/pkgconfig"
+
       mkdir -pv $out/lib/cups/backend
       ln -sv ../../../bin/smbspool $out/lib/cups/backend/smb
       mkdir -pv $out/etc/openldap/schema
       cp ../examples/LDAP/samba.schema $out/etc/openldap/schema
+
+      # For nsswitch. Glibc >= 2.1 looks for libnss_<name>.so.2 (see man
+      # nsswitch.conf), so provide that too.
+      cp -v ../nsswitch/libnss_wins.so "$out/lib"
+      cp -v ../nsswitch/libnss_winbind.so "$out/lib"
+      (cd "$out/lib" && ln -s libnss_winbind.so libnss_winbind.so.2)
+      (cd "$out/lib" && ln -s libnss_wins.so libnss_wins.so.2)
     '' # */
     + stdenv.lib.optionalString (configDir == "") "touch $out/lib/smb.conf";
+
+  meta = {
+    homepage = http://www.samba.org/;
+    description = "The standard Windows interoperability suite of programs for Linux and Unix";
+    platforms = stdenv.lib.platforms.linux;
+  };
 }

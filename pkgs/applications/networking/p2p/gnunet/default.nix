@@ -1,24 +1,20 @@
-{ stdenv, fetchurl, libextractor, libmicrohttpd, libgcrypt
-, zlib, gmp, curl, libtool, adns, sqlite, pkgconfig
-, libxml2, ncurses, gettext, libunistring
-, gtkSupport ? false, gtk ? null, libglade ? null
-, makeWrapper }:
-
-assert gtkSupport -> (gtk != null) && (libglade != null);
+{ stdenv, fetchurl, adns, curl, gettext, gmp, gnutls, libextractor
+, libgcrypt, libgnurl, libidn, libmicrohttpd, libtool, libunistring
+, makeWrapper, ncurses, pkgconfig, libxml2, sqlite, zlib }:
 
 stdenv.mkDerivation rec {
-  name = "gnunet-0.9.2";
+  name = "gnunet-0.10.1";
 
   src = fetchurl {
     url = "mirror://gnu/gnunet/${name}.tar.gz";
-    sha256 = "1sa7xc85l7lkd0s7vyxnqhnm7cngnycrvp7zc6yj4b3qjg5z3x94";
+    sha256 = "04wxzm3wkgqbn42b8ksr4cx6m5cckyig5cls1adh0nwdczwvnp7n";
   };
 
   buildInputs = [
-    libextractor libmicrohttpd libgcrypt gmp curl libtool
-    zlib adns sqlite libxml2 ncurses
-    pkgconfig gettext libunistring makeWrapper
-  ] ++ (if gtkSupport then [ gtk libglade ] else []);
+    adns curl gettext gmp gnutls libextractor libgcrypt libgnurl libidn
+    libmicrohttpd libtool libunistring libxml2 makeWrapper ncurses
+    pkgconfig sqlite zlib
+  ];
 
   preConfigure = ''
     # Brute force: since nix-worker chroots don't provide
@@ -39,6 +35,10 @@ stdenv.mkDerivation rec {
       echo "$i: replacing references to \`/tmp' by \`$TMPDIR'..."
       substituteInPlace "$i" --replace "/tmp" "$TMPDIR"
     done
+
+    # Ensure NSS installation works fine
+    configureFlags="$configureFlags --with-nssdir=$out/lib"
+    patchShebangs src/gns/nss/install-nss-plugin.sh
   '';
 
   doCheck = false;
@@ -54,7 +54,7 @@ stdenv.mkDerivation rec {
   */
 
   meta = {
-    description = "GNUnet, GNU's decentralized anonymous and censorship-resistant P2P framework";
+    description = "GNU's decentralized anonymous and censorship-resistant P2P framework";
 
     longDescription = ''
       GNUnet is a framework for secure peer-to-peer networking that
@@ -73,9 +73,9 @@ stdenv.mkDerivation rec {
 
     homepage = http://gnunet.org/;
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = with stdenv.lib.maintainers; [ ludo viric ];
     platforms = stdenv.lib.platforms.gnu;
   };
 }

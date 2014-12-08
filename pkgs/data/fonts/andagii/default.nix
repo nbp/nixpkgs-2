@@ -12,16 +12,18 @@ let
   sourceInfo = rec {
     url="http://www.i18nguy.com/unicode/andagii.zip";
     name="andagii";
+    version="1.0.2";
     hash="0cknb8vin15akz4ahpyayrpqyaygp9dgrx6qw7zs7d6iv9v59ds1";
   };
 in
 rec {
   src = a.fetchurl {
     url = sourceInfo.url;
+    curlOpts = "--user-agent 'Mozilla/5.0'";
     sha256 = sourceInfo.hash;
   };
 
-  inherit (sourceInfo) name version;
+  name = "${sourceInfo.name}-${sourceInfo.version}";
   inherit buildInputs;
 
   /* doConfigure should be removed if not needed */
@@ -42,8 +44,7 @@ rec {
     [
       raskin
     ];
-    platforms = with a.lib.platforms;
-      [];
+    hydraPlatforms = [];
     # There are multiple claims that the font is GPL, 
     # so I include the package; but I cannot find the
     # original source, so use it on your own risk

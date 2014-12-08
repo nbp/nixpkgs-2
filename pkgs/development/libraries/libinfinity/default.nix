@@ -3,7 +3,7 @@
 , documentation ? false # build documentation
 , avahiSupport ? false # build support for Avahi in libinfinity
 , stdenv, fetchurl, pkgconfig, glib, libxml2, gnutls, gsasl
-, gtk ? null, gtkdoc ? null, avahi ? null, libdaemon ? null }:
+, gtk ? null, gtkdoc ? null, avahi ? null, libdaemon ? null, libidn, gss }:
 
 let
   edf = flag: feature: (if flag then "--with-" else "--without-") + feature;
@@ -11,13 +11,13 @@ let
 
 in stdenv.mkDerivation rec {
 
-  name = "libinfinity-0.4.1";
+  name = "libinfinity-0.5.5";
   src = fetchurl {
     url = "http://releases.0x539.de/libinfinity/${name}.tar.gz";
-    sha256 = "1vdyj6xvwkisrc222i84mq93gasywad4i0ismafdjq2wapxn30r6";
+    sha256 = "1i4cnwbvfv56m7zyyf9wki2bj000r8md414yv3cf1jdz4jbyxij7";
   };
 
-  buildInputs = [ pkgconfig glib libxml2 gsasl ]
+  buildInputs = [ pkgconfig glib libxml2 gsasl libidn gss ]
     ++ optional gtkWidgets gtk
     ++ optional documentation gtkdoc
     ++ optional avahiSupport avahi
@@ -37,9 +37,8 @@ in stdenv.mkDerivation rec {
   meta = {
     homepage = http://gobby.0x539.de/;
     description = "An implementation of the Infinote protocol written in GObject-based C";
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
     maintainers = [ stdenv.lib.maintainers.phreedom ];
   };
 
 }
-

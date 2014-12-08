@@ -1,17 +1,18 @@
 args: with args;
 rec {
-  name = "moderncv-1.0";
+  version = "1.5.1";
+  name = "moderncv-${version}";
   src = fetchurl {
-    url = "http://mirror.ctan.org/macros/latex/contrib/moderncv.zip";
-    sha256 = "0yq0ss3qnwk71rcxvch7r5phxfx00s3v80ddpbpc0a0rkh124w53";
+    url = "https://launchpad.net/moderncv/trunk/${version}/+download/moderncv-${version}.zip";
+    sha256 = "0k26s0z8hmw3h09vnpndim7gigwh8q6n9nbbihb5qbrw5qg2yqck";
   };
 
   buildInputs = [texLive unzip];
   phaseNames = ["doCopy"];
   doCopy = fullDepEntry (''
-    mkdir -p $out/texmf/tex/latex/moderncv $out/texmf/doc $out/share
-    mv *.cls *.sty $out/texmf/tex/latex/moderncv/
-    mv examples $out/texmf/doc/moderncv
+    mkdir -p $out/texmf-dist/tex/latex/moderncv $out/texmf-dist/doc $out/share
+    mv *.cls *.sty $out/texmf-dist/tex/latex/moderncv/
+    mv examples $out/texmf-dist/doc/moderncv
     ln -s $out/texmf* $out/share/
   '') ["minInit" "addInputs" "doUnpack" "defEnsureDir"];
 
@@ -20,6 +21,6 @@ rec {
     maintainers = [ args.lib.maintainers.simons ];
 
     # Actually, arch-independent..
-    platforms = [] ;
+    hydraPlatforms = [];
   };
 }

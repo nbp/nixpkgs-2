@@ -1,11 +1,11 @@
 { stdenv, fetchurl, libpng }:
 
 stdenv.mkDerivation rec {
-  name = "pngcrush-1.7.22";
+  name = "pngcrush-1.7.77";
 
   src = fetchurl {
     url = "mirror://sourceforge/pmt/${name}-nolib.tar.xz";
-    sha256 = "1sngz34cssni4j7hvqhq5ms6h4ydb3b0s5y7fidv3kjms9g1xcsp";
+    sha256 = "0404275rb6934aiwrysgapg0irbimcb2y8giqlc63gfspnvy67fa";
   };
 
   configurePhase = ''
@@ -17,7 +17,8 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = http://pmt.sourceforge.net/pngcrush;
     description = "A PNG optimizer";
-    license = "free";
+    license = stdenv.lib.licenses.free;
     platforms = with stdenv.lib.platforms; linux;
+    maintainers = with stdenv.lib.maintainers; [ the-kenny ];
   };
 }

@@ -1,26 +1,29 @@
-{ stdenv, fetchhg, qt4, flex, bison }:
+{ stdenv, fetchurl, qt4, flex, bison, docutils }:
 
-stdenv.mkDerivation {
-  name = "xxdiff-4.0-beta1-20110723";
+stdenv.mkDerivation rec {
+  name = "xxdiff-4.0";
 
-  src = fetchhg {
-    name = "xxdiff";
-    tag = "fdc247a7d9e5";
-    url = https://hg.furius.ca/public/xxdiff;
-    sha256 = "7ae7d81becc25b1adabc9383bb5b9005dddb31510cdc404ce8a0d6ff6c3dc47e";
+  src = fetchurl {
+    url = "mirror://sourceforge/xxdiff/${name}.tar.bz2";
+    sha256 = "0c0k8cwxyv5byw7va1n9iykvypv435j0isvys21rkj1bx121al4i";
   };
 
-  buildNativeInputs = [ flex bison qt4 ];
+  nativeBuildInputs = [ flex bison qt4 docutils ];
 
   buildInputs = [ qt4 ];
 
   QMAKE = "qmake";
 
-  configurePhase =
-    ''
-      cd src
-      make -f Makefile.bootstrap
-    '';
+  configurePhase = "cd src; make -f Makefile.bootstrap";
 
   installPhase = "mkdir -pv $out/bin; cp -v ../bin/xxdiff $out/bin";
+
+  meta = {
+    homepage = "http://furius.ca/xxdiff/";
+    description = "graphical file and directories comparator and merge tool";
+    license = stdenv.lib.licenses.gpl2;
+
+    platforms = stdenv.lib.platforms.linux;
+    maintainers = [];
+  };
 }

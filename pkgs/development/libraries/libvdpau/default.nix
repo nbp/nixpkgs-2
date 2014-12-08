@@ -1,18 +1,22 @@
-{ stdenv, fetchurl, pkgconfig, xlibs }:
+{ stdenv, fetchurl, pkgconfig, xorg }:
 
 stdenv.mkDerivation rec {
-  name = "libvdpau-0.4.1";
-  
+  name = "libvdpau-0.8";
+
   src = fetchurl {
     url = "http://people.freedesktop.org/~aplattner/vdpau/${name}.tar.gz";
-    sha256 = "16zmmbawfnvrxjqvgfwxjfd1wh3vyz2cmvxza6cgf4j9qs36y6q6";
+    sha256 = "1v81875hppablq9gpsmvhnyl7z80zihx6arry758pvdbq4fd39vk";
   };
 
-  buildInputs = [ pkgconfig xlibs.libX11 ];
+  buildInputs = with xorg; [ pkgconfig dri2proto libXext ];
 
-  meta = {
+  propagatedBuildInputs = [ xorg.libX11 ];
+
+  configureFlags = stdenv.lib.optional stdenv.isDarwin [ "--build=x86_64" ];
+
+  meta = with stdenv.lib; {
     homepage = http://people.freedesktop.org/~aplattner/vdpau/;
     description = "Library to use the Video Decode and Presentation API for Unix (VDPAU)";
-    license = "bsd";
+    license = licenses.mit;
   };
 }

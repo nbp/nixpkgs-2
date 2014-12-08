@@ -1,0 +1,6 @@
+#! @shell@ -e
+
+chrootenvDest=/run/chrootenv/@name@
+
+# Enter the LFS chroot environment
+sudo chroot --userspec "$USER:${GROUPS[0]}" --groups "${GROUPS[0]}" $chrootenvDest /usr/bin/env -i PS1="$PS1" TERM="$TERM" DISPLAY="$DISPLAY" HOME="$HOME" PATH="/bin:/sbin" XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" /bin/bash --login

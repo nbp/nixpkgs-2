@@ -4,7 +4,7 @@ let edf = composableDerivation.edf;
     wwf = composableDerivation.wwf; in
     
 composableDerivation.composableDerivation {} {
-  name = "hugs98";
+  name = "hugs98-200609";
 
   src = fetchurl {
     url = http://cvs.haskell.org/Hugs/downloads/2006-09/hugs98-Sep2006.tar.gz;
@@ -47,7 +47,7 @@ composableDerivation.composableDerivation {} {
 
   meta = {
     license = "as-is"; # gentoo is calling it this way..
-    description = "The HUGS 98 Haskell interpreter";
+    description = "Haskell interpreter";
     homepage = http://www.haskell.org/hugs;
   };
 }

@@ -1,17 +1,27 @@
-{ stdenv, fetchurl, pkgconfig, dbus, dbus_glib, gtk, glib }:
- 
+{ stdenv, fetchurl, pkgconfig, automake, autoconf, libtool
+, glib, gdk_pixbuf, gobjectIntrospection, autoreconfHook }:
+
 stdenv.mkDerivation rec {
-  name = "libnotify-0.4.5";
+  ver_maj = "0.7";
+  ver_min = "6";
+  name = "libnotify-${ver_maj}.${ver_min}";
 
   src = fetchurl {
-    url = "http://www.galago-project.org/files/releases/source/libnotify/${name}.tar.gz";
-    sha256 = "1ndh7wpm9qh12vm5avjrq2xv1j681j9qq6j2fyj6a2shl67dp687";
+    url = "mirror://gnome/sources/libnotify/${ver_maj}/${name}.tar.xz";
+    sha256 = "0dyq8zgjnnzcah31axnx6afb21kl7bks1gvrg4hjh3nk02j1rxhf";
   };
 
-  buildInputs = [ pkgconfig dbus.libs dbus_glib gtk glib ];
+  # see Gentoo ebuild - we don't need to depend on gtk+(2/3)
+  preAutoreconf = ''
+    sed -i -e 's:noinst_PROG:check_PROG:' tests/Makefile.am || die
+    sed -i -e '/PKG_CHECK_MODULES(TESTS/d' configure.ac || die
+  '';
+
+  buildInputs = [ pkgconfig automake autoconf autoreconfHook
+                  libtool glib gdk_pixbuf gobjectIntrospection ];
 
   meta = {
-    homepage = http://galago-project.org/;
+    homepage = http://galago-project.org/; # very obsolete but found no better
     description = "A library that sends desktop notifications to a notification daemon";
   };
 }

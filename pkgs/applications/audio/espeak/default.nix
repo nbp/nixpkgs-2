@@ -1,10 +1,11 @@
-{stdenv, fetchurl, unzip, portaudio }:
+{ stdenv, fetchurl, unzip, portaudio }:
 
-stdenv.mkDerivation {
-  name = "espeak-1.44.03";
+stdenv.mkDerivation rec {
+  name = "espeak-1.48.04";
+
   src = fetchurl {
-    url = mirror://sourceforge/espeak/espeak-1.44.03-source.zip;
-    sha256 = "0lnv89xmsq3bax0qpabd0z2adaag7mdl973bkw3gdszidafmfyx4";
+    url = "mirror://sourceforge/espeak/${name}-source.zip";
+    sha256 = "0n86gwh9pw0jqqpdz7mxggllfr8k0r7pc67ayy7w5z6z79kig6mz";
   };
 
   buildInputs = [ unzip portaudio ];
@@ -18,12 +19,13 @@ stdenv.mkDerivation {
 
   configurePhase = ''
     cd src
-    makeFlags="PREFIX=$out"
+    makeFlags="PREFIX=$out DATADIR=$out/share/espeak-data"
   '';
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Compact open source software speech synthesizer";
     homepage = http://espeak.sourceforge.net/;
-    license = "GPLv3+";
+    license = licenses.gpl3Plus;
+    platforms = platforms.linux;
   };
 }

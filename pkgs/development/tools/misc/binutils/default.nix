@@ -1,12 +1,19 @@
-{ stdenv, fetchurl, noSysDirs, zlib, cross ? null, gold ? false, bison ? null, flex2535 ? null, bc ? null, dejagnu ? null }:
+{ stdenv, fetchurl, noSysDirs, zlib
+, cross ? null, gold ? true, bison ? null
+}:
 
-let basename = "binutils-2.21.1a"; in
+assert !stdenv.isDarwin;
+
+let basename = "binutils-2.23.1"; in
+
+with { inherit (stdenv.lib) optional optionals optionalString; };
+
 stdenv.mkDerivation rec {
-  name = basename + stdenv.lib.optionalString (cross != null) "-${cross.config}";
+  name = basename + optionalString (cross != null) "-${cross.config}";
 
   src = fetchurl {
     url = "mirror://gnu/binutils/${basename}.tar.bz2";
-    sha256 = "0m7nmd7gc9d9md43wbrv65hz6lbi2crqwryzpigv19ray1lzmv6d";
+    sha256 = "06bs5v5ndb4g5qx96d52lc818gkbskd1m0sz57314v887sqfbcia";
   };
 
   patches = [
@@ -14,23 +21,36 @@ stdenv.mkDerivation rec {
     # RUNPATH instead of RPATH on binaries.  This is important because
     # RUNPATH can be overriden using LD_LIBRARY_PATH at runtime.
     ./new-dtags.patch
+
+    # Since binutils 2.22, DT_NEEDED flags aren't copied for dynamic outputs.
+    # That requires upstream changes for things to work. So we can patch it to
+    # get the old behaviour by now.
+    ./dtneeded.patch
+
+    # Make binutils output deterministic by default.
+    ./deterministic.patch
+
+    # Always add PaX flags section to ELF files.
+    # This is needed, for instance, so that running "ldd" on a binary that is
+    # PaX-marked to disable mprotect doesn't fail with permission denied.
+    ./pt-pax-flags-20121023.patch
   ];
 
   buildInputs =
     [ zlib ]
-    ++ stdenv.lib.optional gold [dejagnu flex2535 bison /* Some Gold tests require this: */ bc];
+    ++ optional gold bison;
 
   inherit noSysDirs;
 
   preConfigure = ''
     # Clear the default library search path.
     if test "$noSysDirs" = "1"; then
-	echo 'NATIVE_LIB_DIRS=' >> ld/configure.tgt
+        echo 'NATIVE_LIB_DIRS=' >> ld/configure.tgt
     fi
 
     # Use symlinks instead of hard links to save space ("strip" in the
     # fixup phase strips each hard link separately).
-    for i in binutils/Makefile.in gas/Makefile.in ld/Makefile.in; do
+    for i in binutils/Makefile.in gas/Makefile.in ld/Makefile.in gold/Makefile.in; do
         sed -i "$i" -e 's|ln |ln -s |'
     done
   '';
@@ -39,16 +59,17 @@ stdenv.mkDerivation rec {
   # to the bootstrap-tools libgcc (as uses to happen on arm/mips)
   NIX_CFLAGS_COMPILE = "-static-libgcc";
 
-  configureFlags = "--disable-werror" # needed for dietlibc build
-      + stdenv.lib.optionalString (stdenv.system == "mips64el-linux")
-        " --enable-fix-loongson2f-nop"
-      + stdenv.lib.optionalString (cross != null) " --target=${cross.config}"
-      + stdenv.lib.optionalString gold " --enable-gold";
+  configureFlags =
+    [ "--enable-shared" "--enable-deterministic-archives" ]
+    ++ optional (stdenv.system == "mips64el-linux") "--enable-fix-loongson2f-nop"
+    ++ optional (cross != null) "--target=${cross.config}"
+    ++ optionals gold [ "--enable-gold" "--enable-plugins" ]
+    ++ optional (stdenv.system == "i686-linux") "--enable-targets=x86_64-linux-gnu";
 
   enableParallelBuilding = true;
-      
+
   meta = {
-    description = "GNU Binutils, tools for manipulating binaries (linker, assembler, etc.)";
+    description = "Tools for manipulating binaries (linker, assembler, etc.)";
 
     longDescription = ''
       The GNU Binutils are a collection of binary tools.  The main
@@ -59,7 +80,7 @@ stdenv.mkDerivation rec {
 
     homepage = http://www.gnu.org/software/binutils/;
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
     /* Give binutils a lower priority than gcc-wrapper to prevent a
        collision due to the ld/as wrappers/symlinks in the latter. */

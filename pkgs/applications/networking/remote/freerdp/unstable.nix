@@ -1,67 +1,42 @@
-{ stdenv
-, fetchgit
-, openssl
-, printerSupport ? true, cups
-, pkgconfig
-, zlib
-, libX11
-, libXcursor
-, alsaLib
-, cmake
-, libxkbfile
-, libXinerama
-, libXext
-, directfb
-, cunit
+{ stdenv, fetchFromGitHub, cmake, pkgconfig, openssl, zlib, libX11, libXcursor
+, libXdamage, libXext, glib, alsaLib, ffmpeg, libxkbfile, libXinerama, libXv
+, pulseaudio ? null, cups ? null, pcsclite ? null
 }:
 
-assert printerSupport -> cups != null;
-
-let rev = "498b88a1da748a4a2b4dbd12c795ca87fee24bab"; in
-
 stdenv.mkDerivation rec {
-  name = "freerdp-1.0pre${rev}";
+  name = "freerdp-1.2.0-beta1";
 
-  src = fetchgit {
-    url = git://github.com/FreeRDP/FreeRDP.git;
-    inherit rev;
-    sha256 = "91ef562e96db483ada28236e524326a75b6942becce4fd2a65ace386186eccf7";
+  src = fetchFromGitHub {
+    owner = "FreeRDP";
+    repo = "FreeRDP";
+    rev = "1.2.0-beta1+android7";
+    sha256 = "08nn18jydblrif1qs92pakzd3ww7inr0i378ssn1bjp09lm1bkk0";
   };
 
   buildInputs = [
-    openssl
-    pkgconfig
-    zlib
-    libX11
-    libXcursor
-    libxkbfile
-    libXinerama
-    libXext
-    directfb
-    alsaLib
-    cmake
-    cunit
-  ] ++ stdenv.lib.optional printerSupport cups;
+    cmake pkgconfig openssl zlib libX11 libXcursor libXdamage libXext glib
+    alsaLib ffmpeg libxkbfile libXinerama libXv cups pulseaudio pcsclite
+  ];
 
   doCheck = false;
 
-  checkPhase = ''LD_LIBRARY_PATH="libfreerdp-cache:libfreerdp-chanman:libfreerdp-common:libfreerdp-core:libfreerdp-gdi:libfreerdp-kbd:libfreerdp-rail:libfreerdp-rfx:libfreerdp-utils" cunit/test_freerdp'';
+  cmakeFlags = [
+    "-DCMAKE_INSTALL_LIBDIR=lib"
+    "-DWITH_CUNIT=OFF"
+  ] ++ stdenv.lib.optional (pulseaudio != null) "-DWITH_PULSE=ON"
+    ++ stdenv.lib.optional (cups != null) "-DWITH_CUPS=ON"
+    ++ stdenv.lib.optional (pcsclite != null) "-DWITH_PCSC=ON";
 
-  cmakeFlags = [ "-DWITH_DIRECTFB=ON" "-DWITH_CUNIT=ON" ];
-
-  meta = {
+  meta = with stdenv.lib; {
     description = "A Remote Desktop Protocol Client";
-
     longDescription = ''
       FreeRDP is a client-side implementation of the Remote Desktop Protocol (RDP)
       following the Microsoft Open Specifications.
     '';
-
     homepage = http://www.freerdp.com/;
-
-    license = "free-non-copyleft";
-
-    maintainers = [ stdenv.lib.maintainers.shlevy ];
+    license = licenses.asl20;
+    maintainers = with maintainers; [ wkennington ];
+    platforms = platforms.unix;
   };
 }
 

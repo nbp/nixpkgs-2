@@ -1,19 +1,22 @@
-{ stdenv, fetchurl, cmake, gtk, libjpeg, libpng, libtiff, jasper, ffmpeg
-, pkgconfig, gstreamer, xineLib, glib }:
+{ lib, stdenv, fetchurl, cmake, gtk, libjpeg, libpng, libtiff, jasper, ffmpeg
+, pkgconfig, gstreamer, xineLib, glib, python27, python27Packages, unzip
+, enableBloat ? false }:
 
-let v = "2.3.1a"; in
+let v = "2.4.9"; in
 
 stdenv.mkDerivation rec {
   name = "opencv-${v}";
 
   src = fetchurl {
-    url = "mirror://sourceforge/opencvlibrary/OpenCV-${v}.tar.bz2";
-    sha256 = "0325s7pa2npcw2gc06pr6q5ik4xdyf08rvkfc0myn10w20lzb8m9";
+    url = "mirror://sourceforge/opencvlibrary/opencv-${v}.zip";
+    sha256 = "0wacpc00dr57w4lxfvllqa177cnbgy2zmcx8pnf8x62lh6210c40";
   };
 
-  buildInputs = [ gtk glib libjpeg libpng libtiff jasper ffmpeg xineLib gstreamer ];
+  buildInputs =
+    [ unzip libjpeg libpng libtiff ]
+    ++ lib.optionals enableBloat [ gtk glib jasper ffmpeg xineLib gstreamer python27 python27Packages.numpy ];
 
-  buildNativeInputs = [ cmake pkgconfig ];
+  nativeBuildInputs = [ cmake pkgconfig ];
 
   enableParallelBuilding = true;
 

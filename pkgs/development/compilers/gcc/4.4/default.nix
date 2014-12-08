@@ -31,7 +31,7 @@ assert langVhdl     -> gnat != null;
 
 with stdenv.lib;
 
-let version = "4.4.6";
+let version = "4.4.7";
     javaEcj = fetchurl {
       # The `$(top_srcdir)/ecj.jar' file is automatically picked up at
       # `configure' time.
@@ -84,9 +84,9 @@ let version = "4.4.6";
         " --enable-nls" +
         " --disable-decimal-float" # No final libdecnumber (it may work only in 386)
         );
-    stageNameAddon = if (crossStageStatic) then "-stage-static" else
+    stageNameAddon = if crossStageStatic then "-stage-static" else
       "-stage-final";
-    crossNameAddon = if (cross != null) then "-${cross.config}" + stageNameAddon else "";
+    crossNameAddon = if cross != null then "-${cross.config}" + stageNameAddon else "";
 
 in
 
@@ -104,16 +104,19 @@ stdenv.mkDerivation ({
   };
 
   patches =
-    [./pass-cxxcpp.patch
+    [ ./pass-cxxcpp.patch
 
-     # libmudflap and libstdc++ receive the build CPP,
-     # and not the target.
-     # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=42279
-     ./target-cpp.patch
+      # libmudflap and libstdc++ receive the build CPP,
+      # and not the target.
+      # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=42279
+      ./target-cpp.patch
 
-     # Bad mixture of build/target flags
-     ./libstdc++-target.patch
-     ]
+      # Bad mixture of build/target flags
+      ./libstdc++-target.patch
+
+      # Compatibility with newer Glibc.
+      ./siginfo_t_fix.patch
+    ]
     ++ optional noSysDirs ./no-sys-dirs.patch
     # The GNAT Makefiles did not pay attention to CFLAGS_FOR_TARGET for its
     # target libraries and tools.
@@ -124,7 +127,7 @@ stdenv.mkDerivation ({
   inherit noSysDirs profiledCompiler staticCompiler langJava crossStageStatic
     libcCross;
 
-  buildNativeInputs = [ texinfo which ];
+  nativeBuildInputs = [ texinfo which ];
 
   buildInputs = [ gmp mpfr gettext ]
     ++ (optional (ppl != null) ppl)
@@ -163,11 +166,11 @@ stdenv.mkDerivation ({
       )
     }
     ${if langAda then " --enable-libada" else ""}
-    ${if (cross == null && stdenv.isi686) then "--with-arch=i686" else ""}
+    ${if cross == null && stdenv.isi686 then "--with-arch=i686" else ""}
     ${if cross != null then crossConfigureFlags else ""}
   ";
 
-  targetConfig = if (cross != null) then cross.config else null;
+  targetConfig = if cross != null then cross.config else null;
 
   # Needed for the cross compilation to work
   AR = "ar";
@@ -189,13 +192,13 @@ stdenv.mkDerivation ({
     configureFlags = "
       ${if enableMultilib then "" else "--disable-multilib"}
       ${if enableShared then "" else "--disable-shared"}
-      ${if ppl != null then "--with-ppl=${ppl.hostDrv}" else ""}
-      ${if cloogppl != null then "--with-cloog=${cloogppl.hostDrv}" else ""}
-      ${if langJava then "--with-ecj-jar=${javaEcj.hostDrv}" else ""}
+      ${if ppl != null then "--with-ppl=${ppl.crossDrv}" else ""}
+      ${if cloogppl != null then "--with-cloog=${cloogppl.crossDrv}" else ""}
+      ${if langJava then "--with-ecj-jar=${javaEcj.crossDrv}" else ""}
       ${if javaAwtGtk then "--enable-java-awt=gtk" else ""}
-      ${if langJava && javaAntlr != null then "--with-antlr-jar=${javaAntlr.hostDrv}" else ""}
-      --with-gmp=${gmp.hostDrv}
-      --with-mpfr=${mpfr.hostDrv}
+      ${if langJava && javaAntlr != null then "--with-antlr-jar=${javaAntlr.crossDrv}" else ""}
+      --with-gmp=${gmp.crossDrv}
+      --with-mpfr=${mpfr.crossDrv}
       --disable-libstdcxx-pch
       --without-included-gettext
       --with-system-zlib
@@ -211,7 +214,7 @@ stdenv.mkDerivation ({
         )
       }
       ${if langAda then " --enable-libada" else ""}
-      ${if (cross == null && stdenv.isi686) then "--with-arch=i686" else ""}
+      ${if cross == null && stdenv.isi686 then "--with-arch=i686" else ""}
       ${if cross != null then crossConfigureFlags else ""}
       --target=${stdenv.cross.config}
     ";
@@ -243,11 +246,12 @@ stdenv.mkDerivation ({
       enableMultilib version; };
 
   # ghdl does not build fine with parallel building
-  enableParallelBuilding = if langVhdl then false else true;
+  # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46173
+  #enableParallelBuilding = !langVhdl && !langAda;
 
   meta = {
     homepage = http://gcc.gnu.org/;
-    license = "GPLv3+";  # runtime support libraries are typically LGPLv3+
+    license = stdenv.lib.licenses.gpl3Plus;  # runtime support libraries are typically LGPLv3+
     description = "GNU Compiler Collection, version ${version}";
 
     longDescription = ''
@@ -298,7 +302,7 @@ stdenv.mkDerivation ({
 
   meta = {
     homepage = "http://ghdl.free.fr/";
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
     description = "Complete VHDL simulator, using the GCC technology (gcc ${version})";
     maintainers = with stdenv.lib.maintainers; [viric];
     platforms = with stdenv.lib.platforms; linux;

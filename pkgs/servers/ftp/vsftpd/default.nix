@@ -1,22 +1,32 @@
 { stdenv, fetchurl, openssl, sslEnable ? false, libcap, pam }:
 
-stdenv.mkDerivation (rec {
-  name = "vsftpd-2.3.4";
-  
+stdenv.mkDerivation rec {
+  name = "vsftpd-3.0.2";
+
   src = fetchurl {
-    url = "ftp://vsftpd.beasts.org/users/cevans/${name}.tar.gz";
-    sha256 = "0nhsqwnb8qkbxx5wjahara1ln85hp151v656psra5brpckwysrml";
+    url = "https://security.appspot.com/downloads/${name}.tar.gz";
+    sha256 = "0mjy345wszskz1vnk83360c1y37arwgap3gwz8hy13sjqpig0imy";
   };
+
+  preConfigure = stdenv.lib.optionalString sslEnable ''
+    echo "Will enable SSL"
+    sed -i "/VSF_BUILD_SSL/s/^#undef/#define/" builddefs.h
+  '';
 
   # The gcc-wrappers use -idirafter for glibc, and vsftpd also, and
   # their dummyinc come before those of glibc, then the build works bad.
   prePatch = ''
     sed -i -e 's/-idirafter.*//' Makefile
   '';
-  
-  preBuild =''
-    makeFlagsArray=( "LIBS=${if sslEnable then "-lcrypt -lssl -lcrypto " else ""}-lpam -lcap" )
-  '';
+
+  preBuild =
+    let
+      sslLibs = if sslEnable then "-lcrypt -lssl -lcrypto" else "";
+    in ''
+      makeFlagsArray=( "LIBS=${sslLibs} -lpam -lcap -fstack-protector" )
+    '';
+
+  # It won't link without this flag, used in CFLAGS
 
   buildInputs = [ openssl libcap pam ];
 
@@ -31,11 +41,4 @@ stdenv.mkDerivation (rec {
     mkdir -pv $out/etc/xinetd.d
     install -v -m 644 xinetd.d/vsftpd $out/etc/xinetd.d/vsftpd
   '';
-} // (if sslEnable then {
-  preConfigure = ''
-    echo "Will enable SSL"
-    sed -i "/VSF_BUILD_SSL/s/^#undef/#define/" builddefs.h
-  '';
-
-} else { })
-)
+}

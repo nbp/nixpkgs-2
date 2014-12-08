@@ -14,9 +14,9 @@ stdenv.mkDerivation rec {
   # GCC 4.6 raises a number of set-but-unused warnings.
   configureFlags = [ "--disable-error-on-warning" ];
 
-  buildNativeInputs = [ makeWrapper gawk ];
+  nativeBuildInputs = [ makeWrapper gawk ];
   propagatedBuildInputs = [ readline gmp libtool ];
-  selfBuildNativeInput = true;
+  selfNativeBuildInput = true;
 
   postInstall = ''
     wrapProgram $out/bin/guile-snarf --prefix PATH : "${gawk}/bin"
@@ -51,7 +51,7 @@ stdenv.mkDerivation rec {
     '';
 
     homepage = http://www.gnu.org/software/guile/;
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
 
     maintainers = [ stdenv.lib.maintainers.ludo ];
   };

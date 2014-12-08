@@ -14,7 +14,7 @@ stdenv.mkDerivation {
 
   meta = {
     homepage = "http://www.lua.org";
-    description = "Lua is a powerful, fast, lightweight, embeddable scripting language.";
+    description = "Powerful, fast, lightweight, embeddable scripting language";
     longDescription = ''
       Lua combines simple procedural syntax with powerful data
       description constructs based on associative arrays and extensible
@@ -23,8 +23,7 @@ stdenv.mkDerivation {
       management with incremental garbage collection, making it ideal
       for configuration, scripting, and rapid prototyping.
     '';
-    license = "MIT";
-    platforms = stdenv.lib.platforms.unix;
-    maintainers = [ ];
+    license = stdenv.lib.licenses.mit;
+    platforms = stdenv.lib.platforms.linux;
   };
 }

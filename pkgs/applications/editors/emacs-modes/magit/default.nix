@@ -1,22 +1,38 @@
-{ stdenv, fetchurl, emacs, texinfo }:
+{ stdenv, fetchFromGitHub, emacs, texinfo, gitModes, git }:
 
-let
-  version = "1.1.1";
-in
-stdenv.mkDerivation {
-  name = "magit-${version}";
+stdenv.mkDerivation rec {
+  name = "magit-90141025";
 
-  src = fetchurl {
-    url = "http://github.com/downloads/magit/magit/magit-${version}.tar.gz";
-    sha256 = "0zp5qxippmalin2fr73w2alf2w7ilcahmybzdvgn4ch2s3dgvzcz";
+  src = fetchFromGitHub {
+    owner = "magit";
+    repo = "magit";
+    rev = "50c08522c8a3c67e0f3b821fe4df61e8bd456ff9";
+    sha256 = "0mzyx72pidzvla1x2qszn3c60n2j0n8i5k875c4difvd1n4p0vsk";
   };
 
-  buildInputs = [emacs texinfo];
+  buildInputs = [ emacs texinfo git ];
+  propagatedUserEnvPkgs = [ gitModes ];
 
-  configurePhase = "makeFlagsArray=( PREFIX=$out SYSCONFDIR=$out/etc )";
+  configurePhase = ''
+    makeFlagsArray=(
+      PREFIX="$out"
+      EFLAGS="-L ${gitModes}/share/emacs/site-lisp"
+      lispdir="$out/share/emacs/site-lisp"
+    )
+  '';
+
+  doCheck = true;
+  checkTarget = "test";
+
+  postInstall = ''
+    mkdir -p $out/bin
+    mv "bin/"* $out/bin/
+  '';
 
   meta = {
+    homepage = "https://github.com/magit/magit";
     description = "Magit, an Emacs interface to Git";
+    license = stdenv.lib.licenses.gpl3Plus;
 
     longDescription = ''
       With Magit, you can inspect and modify your Git repositories with
@@ -30,9 +46,6 @@ stdenv.mkDerivation {
       save you from learning Git itself.
     '';
 
-    license = "GPLv3+";
-    homepage = "https://github.com/magit/magit";
-    platforms = stdenv.lib.platforms.all;
-    maintainers = with stdenv.lib.maintainers; [ simons ludo ];
+    maintainers = with stdenv.lib.maintainers; [ simons ];
   };
 }

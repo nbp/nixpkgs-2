@@ -1,11 +1,11 @@
 { stdenv, fetchurl, pcre }:
 
 stdenv.mkDerivation rec {
-  name = "swig-2.0.4";
+  name = "swig-2.0.11";
 
   src = fetchurl {
     url = "mirror://sourceforge/swig/${name}.tar.gz";
-    sha256 = "12pcw4whi36vd41c43v8c62bn7vnq331hmvzsrg8wvyj61vi2fkn";
+    sha256 = "0kj21b6syp62vx68r1j6azv9033kng68pxm1k79pm4skkzr0ny33";
   };
 
   buildInputs = [ pcre ];
@@ -28,6 +28,8 @@ stdenv.mkDerivation rec {
     # Licensing is a mess: http://www.swig.org/Release/LICENSE .
     license = "BSD-style";
 
-    maintainers = with stdenv.lib.maintainers; [ ludo urkud ];
+    platforms = stdenv.lib.platforms.linux;
+
+    maintainers = with stdenv.lib.maintainers; [ urkud ];
   };
 }

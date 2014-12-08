@@ -1,22 +1,22 @@
 { stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  pname = "redis";
-  version = "2.4.7";
-  name = "${pname}-${version}";
+  name = "redis-2.8.17";
 
   src = fetchurl {
-    url = "http://redis.googlecode.com/files/redis-2.4.7.tar.gz";
-    sha256 = "f91956377b7ff23cc23e0c8758e0b873032f36545c61d88436ebb741bf4dd5e1";
+    url = "http://download.redis.io/releases/${name}.tar.gz";
+    sha256 = "19rnwapbsvfhd9pwdjdshrpqimf1ms0pzakvgnjrywkijmiwrisk";
   };
 
   makeFlags = "PREFIX=$(out)";
 
-  meta = {
+  enableParallelBuilding = true;
+
+  meta = with stdenv.lib; {
     homepage = http://redis.io;
     description = "An open source, advanced key-value store";
     license = "BSD";
-
-    platforms = stdenv.lib.platforms.unix;
+    platforms = platforms.unix;
+    maintainers = [ maintainers.berdario ];
   };
 }

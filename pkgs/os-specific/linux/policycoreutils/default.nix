@@ -1,25 +1,49 @@
-{ stdenv, fetchurl, libsepol, libselinux }:
+{ stdenv, fetchurl, intltool, pcre, libcap_ng, libcgroup
+, libsepol, libselinux, libsemanage, setools
+, python, sepolgen }:
 stdenv.mkDerivation rec {
 
   name = "policycoreutils-${version}";
-  version = "2.0.85";
+  version = "2.3";
+  inherit (libsepol) se_release se_url;
 
   src = fetchurl {
-    url = http://userspace.selinuxproject.org/releases/20101221/devel/policycoreutils-2.0.85.tar.gz;
-    sha256 = "01q5ifacg24k9jdz85j9m17ps2l1p7abvh8pzy6qz55y68rycifb";
+    url = "${se_url}/${se_release}/policycoreutils-${version}.tar.gz";
+    sha256 = "1lpwxr5hw3dwhlp2p7y8jcr18mvfcrclwd8c2idz3lmmb3pglk46";
   };
 
-  buildInputs = [ libsepol libselinux ];
+  preConfigure = ''
+    substituteInPlace po/Makefile --replace /usr/bin/install install
+    find . -type f -exec sed -i 's,/usr/bin/python,${python}/bin/python,' {} \;
+  '';
 
-  NIX_LDFLAGS = "-lsepol";
+  buildInputs = [ intltool pcre libcap_ng libcgroup
+    libsepol libselinux libsemanage setools
+    python sepolgen # ToDo? these are optional
+  ];
 
-  makeFlags = "LOCALEDIR=$(out)/share/locale";
+  preBuild = ''
+    mkdir -p "$out/lib" && cp -s "${libsepol}/lib/libsepol.a" "$out/lib"
+  '';
+
+  # Creation of the system-config-selinux directory is broken
+  preInstall = ''
+    mkdir -p $out/share/system-config-selinux
+  '';
+
+  NIX_CFLAGS_COMPILE = "-fstack-protector-all";
+  NIX_LDFLAGS = "-lsepol -lpcre";
+
+  makeFlags = "PREFIX=$(out) DESTDIR=$(out) LOCALEDIR=$(out)/share/locale";
+
+  patches = [ ./size_format.patch ];
+
+  patchFlags = [ "-p0" ];
 
   meta = with stdenv.lib; {
-    homepage = http://userspace.selinuxproject.org/;
     description = "SELinux policy core utilities";
     license = licenses.gpl2;
-    maintainers = [ maintainers.phreedom ];
-    platforms = platforms.linux;
+    inherit (libsepol.meta) homepage platforms maintainers;
   };
 }
+

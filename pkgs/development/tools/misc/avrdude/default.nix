@@ -1,31 +1,33 @@
-{ composableDerivation, fetchurl, yacc, flex, texLive }:
+{ stdenv, fetchurl, yacc, flex, libusb, libelf, libftdi1, readline
+# docSupport is a big dependency, disabled by default
+, docSupport ? false, texLive ? null, texinfo ? null, texi2html ? null
+}:
 
-let edf = composableDerivation.edf; in
+assert docSupport -> texLive != null && texinfo != null && texi2html != null;
 
-composableDerivation.composableDerivation {} rec {
-  name="avrdude-5.10";
+stdenv.mkDerivation rec {
+  name = "avrdude-6.1";
 
   src = fetchurl {
-    url = "http://download.savannah.gnu.org/releases/avrdude/${name}.tar.gz";
-    sha256 = "0pmy73777x8p7f2aj2w2q1dnk1bvhd1cm7hcs1s9hsdqsmiinl41";
+    url = "mirror://savannah/avrdude/${name}.tar.gz";
+    sha256 = "0frxg0q09nrm95z7ymzddx7ysl77ilfbdix1m81d9jjpiv5bm64y";
   };
 
-  configureFlags = [ "--disable-dependency-tracking" ];
+  configureFlags = stdenv.lib.optionalString docSupport "--enable-doc";
 
-  buildInputs = [ yacc flex ];
+  buildInputs = [ yacc flex libusb libelf libftdi1 readline ]
+    ++ stdenv.lib.optionals docSupport [ texLive texinfo texi2html ];
 
-  flags =
-       edf { name = "doc"; enable = { buildInputs = texLive; configureFlags = ["--enable-doc"]; }; }
-    // edf { name = "parport"; };
-
-  cfg = {
-    docSupport = false; # untested
-    parportSupport = true;
-  };
-
-  meta = {
-    license = "GPL-2";
-    description = "AVR Downloader/UploaDEr";
-    homepage = http://savannah.nongnu.org/projects/avrdude;
+  meta = with stdenv.lib; {
+    description = "Command-line tool for programming Atmel AVR microcontrollers";
+    longDescription = ''
+      AVRDUDE (AVR Downloader/UploaDEr) is an utility to
+      download/upload/manipulate the ROM and EEPROM contents of AVR
+      microcontrollers using the in-system programming technique (ISP).
+    '';
+    homepage = http://www.nongnu.org/avrdude/;
+    license = licenses.gpl2Plus;
+    platforms = platforms.linux;
+    maintainers = [ maintainers.bjornfor ];
   };
 }

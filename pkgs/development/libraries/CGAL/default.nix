@@ -1,25 +1,24 @@
-{stdenv, fetchurl, cmake, boost, gmp, mpfr
-  }:
+{ stdenv, fetchurl, cmake, boost, gmp, mpfr }:
 
 stdenv.mkDerivation rec {
-  version = "3.9";
+  version = "4.5";
+
   name = "cgal-${version}";
+
   src = fetchurl {
-    url = "https://gforge.inria.fr/frs/download.php/29125/CGAL-${version}.tar.gz";
-    sha256 = "193vjhzlf7f2kw6dbg5yw8v0izdvmnrylqzqhw92vml7jjnr8494";
+    url = "https://gforge.inria.fr/frs/download.php/34139/CGAL-${version}.tar.xz";
+    sha256 = "00shds5yph4s09lqdrb6n60wnw9kpiwa25ghg9mbsgq3fnr8p7kr";
   };
 
-  buildInputs = [cmake boost gmp mpfr ];
+  buildInputs = [ cmake boost gmp mpfr ];
 
   doCheck = false;
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Computational Geometry Algorithms Library";
     homepage = "http://cgal.org/";
-    platforms = with stdenv.lib.platforms;
-      linux;
-    maintainers = with stdenv.lib.maintainers; 
-      [raskin];
+    license = licenses.gpl3Plus; # some parts are GPLv3+, some are LGPLv3+
+    platforms = platforms.linux;
+    maintainers = [ maintainers.raskin ];
   };
 }
-

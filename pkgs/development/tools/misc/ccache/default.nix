@@ -1,12 +1,14 @@
 {stdenv, fetchurl, runCommand, gcc, zlib}:
 
+assert stdenv.isLinux;
+
 let
   ccache =
 stdenv.mkDerivation {
-  name = "ccache-3.1.7";
+  name = "ccache-3.1.10";
   src = fetchurl {
-    url = http://samba.org/ftp/ccache/ccache-3.1.7.tar.gz;
-    sha256 = "04ax6ks49b6rn57hx4v9wbvmsfmw6ipn0wyfqwhh4lzw70flv3r7";
+    url = http://samba.org/ftp/ccache/ccache-3.1.10.tar.gz;
+    sha256 = "0fzxa45q7wfm63zrak65wh31w7pnsp0k65fxv00cgmf454as4dza";
   };
 
   buildInputs = [ zlib ];
@@ -14,11 +16,10 @@ stdenv.mkDerivation {
   passthru = {
     # A derivation that provides gcc and g++ commands, but that
     # will end up calling ccache for the given cacheDir
-    links = extraConfig : (runCommand "ccache-links"
-        { inherit (gcc) langC langCC; }
+    links = extraConfig : (runCommand "ccache-links" { }
       ''
         mkdir -p $out/bin
-        if [ $langC -eq 1 ]; then
+        if [ -x "${gcc.gcc}/bin/gcc" ]; then
           cat > $out/bin/gcc << EOF
           #!/bin/sh
           ${extraConfig}
@@ -26,7 +27,7 @@ stdenv.mkDerivation {
         EOF
           chmod +x $out/bin/gcc
         fi
-        if [ $langCC -eq 1 ]; then
+        if [ -x "${gcc.gcc}/bin/g++" ]; then
           cat > $out/bin/g++ << EOF
           #!/bin/sh
           ${extraConfig}
@@ -38,9 +39,9 @@ stdenv.mkDerivation {
   };
 
   meta = {
-    description = "ccache, a tool that caches compilation results.";
+    description = "Compiler cache for fast recompilation of C/C++ code";
     homepage = http://ccache.samba.org/;
-    license = "GPL";
+    license = stdenv.lib.licenses.gpl3Plus;
   };
 };
 in

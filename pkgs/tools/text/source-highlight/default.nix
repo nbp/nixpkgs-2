@@ -2,27 +2,27 @@
 
 let
   name = "source-highlight";
-  version = "3.1.6";
+  version = "3.1.7";
 in
 stdenv.mkDerivation {
   name = "${name}-${version}";
 
   src = fetchurl {
-      url = "mirror://gnu/src-highlite/${name}-${version}.tar.gz";
-      sha256 = "0a5zh876nc1gig8z586b953r8ahh9zbs1lmi8vxjrkwp6zqzf4xm";
-    };
+    url = "mirror://gnu/src-highlite/${name}-${version}.tar.gz";
+    sha256 = "1s49ld8cnpzhhwq0r7s0sfm3cg3nhhm0wla27lwraifrrl3y1cp1";
+  };
 
-  configureFlags = [ "--with-boost=${boost}" ];
+  buildInputs = [ boost ];
 
-  buildInputs = [boost];
-  doCheck = true;
+  configureFlags = [ "--with-boost=${boost.lib}" ];
+
+  enableParallelBuilding = false;
 
   meta = {
-    description = "GNU Source-Highlight, source code renderer with syntax highlighting";
-    homepage = "http://www.gnu.org/software/src-highlite/";
-    license = "GPLv3+";
-    maintainers = [ stdenv.lib.maintainers.ludo ];
-    platforms = stdenv.lib.platforms.all;
+    description = "Source code renderer with syntax highlighting";
+    homepage = http://www.gnu.org/software/src-highlite/;
+    license = stdenv.lib.licenses.gpl3Plus;
+    platforms = stdenv.lib.platforms.linux;
     longDescription =
       ''
         GNU Source-highlight, given a source file, produces a document

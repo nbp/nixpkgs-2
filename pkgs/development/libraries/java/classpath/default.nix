@@ -41,7 +41,7 @@ stdenv.mkDerivation rec {
   configureFlags = "--disable-Werror --disable-plugin --with-antlr-jar=${antlr}/lib/antlr.jar";
 
   meta = {
-    description = "GNU Classpath, essential libraries for Java";
+    description = "Essential libraries for Java";
 
     longDescription = ''
       GNU Classpath, Essential Libraries for Java, is a GNU project to create
@@ -52,8 +52,8 @@ stdenv.mkDerivation rec {
     homepage = http://www.gnu.org/software/classpath/;
 
     # The exception makes it similar to LGPLv2+ AFAICS.
-    license = "GPLv2+ + exception";
+    license = stdenv.lib.licenses.gpl2ClasspathPlus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
   };
 }

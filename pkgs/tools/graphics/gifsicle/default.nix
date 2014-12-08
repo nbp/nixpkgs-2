@@ -1,18 +1,23 @@
-{ stdenv, fetchurl, xproto, libXt, libX11 }:
+{ stdenv, fetchurl, xproto, libXt, libX11, gifview ? false, static ? false }:
+
+with stdenv.lib;
 
 stdenv.mkDerivation {
-  name = "gifsicle-1.52";
+  name = "gifsicle-1.86";
 
   src = fetchurl {
-    url = http://www.lcdf.org/gifsicle/gifsicle-1.52.tar.gz;
-    sha256 = "1fp47grvk46bkj22zixrhgpgs3qbkmijicf3wkjk4y8fsx0idbgk";
+    url = http://www.lcdf.org/gifsicle/gifsicle-1.86.tar.gz;
+    sha256 = "153knkff04wh1szbmqklyq371m9whib007j0lq0dwh4jc5g6s15h";
   };
 
-  buildInputs = [ xproto libXt libX11 ];
+  buildInputs = optional gifview [ xproto libXt libX11 ];
 
-  meta = { 
+  LDFLAGS = optional static "-static";
+
+  meta = {
     description = "Command-line tool for creating, editing, and getting information about GIF images and animations";
     homepage = http://www.lcdf.org/gifsicle/;
-    license = "GPL2";
+    license = stdenv.lib.licenses.gpl2;
+    maintainers = with stdenv.lib.maintainers; [ fuuzetsu ];
   };
 }

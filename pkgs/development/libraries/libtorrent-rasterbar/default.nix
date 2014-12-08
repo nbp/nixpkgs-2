@@ -1,22 +1,6 @@
-{ stdenv, fetchurl, boost, openssl, pkgconfig, zlib }:
+{ callPackage, ... } @ args:
 
-stdenv.mkDerivation rec {
-  name = "libtorrent-rasterbar-${version}";
-  version = "0.15.8";
-  
-  src = fetchurl {
-    url = "http://libtorrent.googlecode.com/files/${name}.tar.gz";
-    sha256 = "0767i20igrfadscw3vdyadd4qidybwx9h898rkaq95zlwhaygpzm";
-  };
-
-  buildInputs = [ boost pkgconfig openssl zlib ];
-
-  configureFlags = [ "--with-boost=${boost}/include/boost" "--with-boost-libdir=${boost}/lib" ];
-  
-  meta = with stdenv.lib; {
-    homepage = http://www.rasterbar.com/products/libtorrent/;
-    description = "A C++ BitTorrent implementation focusing on efficiency and scalability";
-    license = licenses.bsd3;
-    maintainers = [ maintainers.phreedom ];
-  };
-}
+callPackage ./generic.nix (args // {
+  version = "1.0.2";
+  sha256 = "1ph4cb6nrk2hiy89j3kz1wj16ph0b9yixrf4f4935rnzhha8x31w";
+})

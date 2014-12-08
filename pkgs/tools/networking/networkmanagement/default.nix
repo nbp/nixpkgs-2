@@ -2,7 +2,7 @@
 
 let
   pname = "networkmanagement";
-  version = "0.9.0";
+  version = "0.9.0.9";
   name = "${pname}-${version}";
 in
 stdenv.mkDerivation {
@@ -10,11 +10,11 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "mirror://kde/unstable/${pname}/${version}/src/${name}.tar.bz2";
-    sha256 = "0bxb5hzygf4szv01903zirzxjb3r2nzza9ya3rag4lkxxpwaynpd";
+    sha256 = "1jiij9iz8v9mgcq811svmlyfvmvkazpclkf4yk7193m4y8yn19yn";
   };
 
   buildInputs = [ kdelibs kde_workspace networkmanager ];
-  buildNativeInputs = [ gettext pkgconfig ];
+  nativeBuildInputs = [ gettext pkgconfig ];
 
   NIX_CFLAGS_COMPILE="-I${kde_workspace}/include/solid/control";
 

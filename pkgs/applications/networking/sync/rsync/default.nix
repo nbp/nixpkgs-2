@@ -6,29 +6,34 @@
 assert enableACLs -> acl != null;
 
 stdenv.mkDerivation rec {
-  name = "rsync-3.0.9";
+  name = "rsync-${version}";
+  version = "3.1.1";
 
   mainSrc = fetchurl {
-    url = http://rsync.samba.org/ftp/rsync/src/rsync-3.0.9.tar.gz;
-    sha256 = "01bw4klqsrlhh3i9lazd485sd9qx5djvnwa21lj2h3a9sn6hzw9h";
+    # signed with key 0048 C8B0 26D4 C96F 0E58  9C2F 6C85 9FB1 4B96 A8C5
+    url = "http://rsync.samba.org/ftp/rsync/src/rsync-${version}.tar.gz";
+    sha256 = "0896iah6w72q5izpxgkai75bn40dqkqifi2ivcxjzr2zrx7kdr3x";
   };
 
   patchesSrc = fetchurl {
-    url = http://rsync.samba.org/ftp/rsync/rsync-patches-3.0.9.tar.gz;
-    sha256 = "0c1e9b56e99667dfc47641124460bac61a04c5d2ee89f575c6bc78c7a69005a9";
+    # signed with key 0048 C8B0 26D4 C96F 0E58  9C2F 6C85 9FB1 4B96 A8C5
+    url = "http://rsync.samba.org/ftp/rsync/rsync-patches-${version}.tar.gz";
+    sha256 = "0iij996xbyn20yr4w3kv3rw3cx4jwkg2k85x6w5hb5xlgsis8zjl";
   };
 
   srcs = [mainSrc] ++ stdenv.lib.optional enableCopyDevicesPatch patchesSrc;
-  patches = [] ++ stdenv.lib.optional enableCopyDevicesPatch "./patches/copy-devices.diff";
+  patches = stdenv.lib.optional enableCopyDevicesPatch "./patches/copy-devices.diff";
 
   buildInputs = stdenv.lib.optional enableACLs acl;
-  buildNativeInputs = [perl];
+  nativeBuildInputs = [perl];
 
-  meta = {
-    homepage = http://samba.anu.edu.au/rsync/;
+  configureFlags = "--with-nobody-group=nogroup";
+
+  meta = with stdenv.lib; {
+    homepage = http://rsync.samba.org/;
     description = "A fast incremental file transfer utility";
-
-    platforms = stdenv.lib.platforms.unix;
-    maintainers = [ stdenv.lib.maintainers.simons ];
+    license = licenses.gpl3Plus;
+    platforms = platforms.unix;
+    maintainers = with maintainers; [ simons emery ];
   };
 }

@@ -1,5 +1,5 @@
 {stdenv, fetchurl, gfortran, readline, ncurses, perl, flex,
- bison, autoconf, automake, sourceFromHead, getConfig, lib, atlas, gperf, python, glibc, gnuplot, texinfo, texLive, qhull, libX11}:
+ bison, autoconf, automake, sourceFromHead, config, lib, atlas, gperf, python, glibc, gnuplot, texinfo, texLive, qhull, libX11}:
 
 let commonBuildInputs = [gfortran readline ncurses perl glibc qhull libX11 texinfo]; in
 
@@ -9,10 +9,10 @@ stdenv.mkDerivation ({
   meta = { 
       description = "High-level interactive language for numerical computations";
       homepage = http://www.octave.org;
-      license = "GPL-3";
+      license = stdenv.lib.licenses.gpl3;
     };
 } // (
-  if (getConfig ["octave" "devVersion"] false) then {
+  if config.octave.devVersion or false then {
     name = "octave-hg"; # developement version mercurial repo
     # REGION AUTO UPDATE:   { name="octave"; type = "hg"; url = "http://www.octave.org/hg/octave"; }
     src = sourceFromHead "octave-03b414516dd8.tar.gz"
@@ -27,7 +27,7 @@ stdenv.mkDerivation ({
         export HOME=$TMP
         '';
     buildInputs = commonBuildInputs ++ [ flex bison autoconf automake gperf gnuplot texLive ]
-                  ++ lib.optionals (getConfig ["octave" "atlas"] true) [ python atlas ];
+                  ++ lib.optionals (config.octave.atlas or true) [ python atlas ];
     # it does build, but documentation doesn't.. So just remove that directory
     # from the buildfile
     buildPhase = ''
@@ -44,6 +44,6 @@ stdenv.mkDerivation ({
       sha256 = "1lm4v85kdic4n5yxwzrdb0v6dc6nw06ljgx1q8hfkmi146kpg7s6";
     };
     buildInputs = commonBuildInputs ++ [ flex bison autoconf automake python ]
-                  ++ lib.optionals (getConfig ["octave" "atlas"] true) [ python atlas ];
+                  ++ lib.optionals (config.octave.atlas or true) [ python atlas ];
   }
 ))

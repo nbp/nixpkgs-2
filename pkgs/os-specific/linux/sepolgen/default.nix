@@ -1,22 +1,22 @@
-{ stdenv, fetchurl, python }:
-stdenv.mkDerivation rec {
+{ stdenv, fetchurl, libsepol, python }:
 
+stdenv.mkDerivation rec {
   name = "sepolgen-${version}";
-  version = "1.0.23";
+  version = "1.2.1";
+  inherit (libsepol) se_release se_url;
 
   src = fetchurl {
-    url = http://userspace.selinuxproject.org/releases/20101221/devel/sepolgen-1.0.23.tar.gz;
-    sha256 = "04d11l091iclp8lnay9as7y473ydrjz7171h95ddsbn0ihj5if2p";
+    url = "${se_url}/${se_release}/sepolgen-${version}.tar.gz";
+    sha256 = "1c41hz4a64mjvbfhgc7c7plydahsc161z0qn46qz2g3bvimj9323";
   };
 
+  makeFlags = "PREFIX=$(out) DESTDIR=$(out) PYTHONLIBDIR=lib/${python.libPrefix}/site-packages";
+
   buildInputs = [ python ];
-  preBuild = '' makeFlags="$makeFlags DESTDIR=$out PACKAGEDIR=$out/lib/${python.libPrefix}/site-packages/sepolgen" '';
 
   meta = with stdenv.lib; {
-    homepage = http://userspace.selinuxproject.org/;
-    description = "Python module for SELinux policy generation";
+    inherit (libsepol.meta) homepage platforms maintainers;
+    description = "SELinux policy generation library";
     license = licenses.gpl2;
-    maintainers = [ maintainers.phreedom ];
-    platforms = platforms.linux;
   };
 }

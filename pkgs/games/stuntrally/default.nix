@@ -1,28 +1,37 @@
-{ fetchurl, stdenv, cmake, boost, ogre, myguiSvn, ois, SDL, libvorbis, pkgconfig
-, makeWrapper }:
+{ fetchgit, stdenv, cmake, boost, ogre, mygui, ois, SDL2, libvorbis, pkgconfig
+, makeWrapper, enet, libXcursor }:
 
 stdenv.mkDerivation rec {
-  name = "stunt-rally-1.4";
+  name = "stunt-rally-${version}";
+  version = "2.5";
 
-  src = fetchurl {
-    url = mirror://sourceforge/stuntrally/StuntRally-1.4-sources.tar.bz2;
-    sha256 = "1am5af4l1qliyrq1183sqvwzqwcjx0v6gkzsxhfmk6ygp7yhw7kq";
+  src = fetchgit {
+    url = git://github.com/stuntrally/stuntrally.git;
+    rev = "refs/tags/${version}";
+    sha256 = "0zyzkac11dv9c1rxknydkisg2iw1rmi72psidl7jmq8v3rrqxk4r";
   };
 
-  buildInputs = [ cmake boost ogre myguiSvn ois SDL libvorbis pkgconfig makeWrapper ];
+  tracks = fetchgit {
+    url = git://github.com/stuntrally/tracks.git;
+    rev = "refs/tags/${version}";
+    sha256 = "1j237dbhd1ik5mj8whbvlff5da9vzzgiskcj5nzfpw1vb1jpdjvd";
+  };
 
-  # I think they suppose cmake should give them OGRE_PLUGIN_DIR defined, but
-  # the cmake code I saw is not ready for that. Therefore, we use the env var.
-  postInstall = ''
-    wrapProgram $out/bin/stuntrally --set OGRE_PLUGIN_DIR ${ogre}/lib/OGRE
-    wrapProgram $out/bin/sr-editor --set OGRE_PLUGIN_DIR ${ogre}/lib/OGRE
+  preConfigure = ''
+    cp -R ${tracks} data/tracks
+    chmod u+rwX -R data
   '';
+
+  buildInputs = [ cmake boost ogre mygui ois SDL2 libvorbis pkgconfig 
+    makeWrapper enet libXcursor
+  ];
 
   enableParallelBuilding = true;
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Stunt Rally game with Track Editor, based on VDrift and OGRE";
     homepage = http://code.google.com/p/vdrift-ogre/;
-    license = "GPLv3+";
+    license = licenses.gpl3Plus;
+    maintainers = with maintainers; [ pSub ];
   };
 }

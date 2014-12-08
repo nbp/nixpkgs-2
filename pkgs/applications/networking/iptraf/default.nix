@@ -1,12 +1,16 @@
 {stdenv, fetchurl, ncurses}:
 
 stdenv.mkDerivation rec {
-  name = "iptraf-3.0.0";
+  name = "iptraf-3.0.1";
   
   src = fetchurl {
-    url = ftp://iptraf.seul.org/pub/iptraf/iptraf-3.0.0.tar.gz;
-    sha256 = "0qsi5f8d84mgdszvz22acyv6mjnbrpk55d54km9i5mkkapck7r4y";
+    url = ftp://iptraf.seul.org/pub/iptraf/iptraf-3.0.1.tar.gz;
+    sha256 = "12n059j9iihhpf6spmlaspqzxz3wqan6kkpnhmlj08jdijpnk84m";
   };
+
+  patchPhase = ''
+    sed -i -e 's,#include <linux/if_tr.h>,#include <netinet/if_tr.h>,' src/*
+  '';
 
   preConfigure = "cd src";
 
@@ -19,7 +23,7 @@ stdenv.mkDerivation rec {
 
   meta = {
     homepage = http://iptraf.seul.org/;
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
     description = "Console-based network statistics utility for Linux";
   };
 }

@@ -1,23 +1,40 @@
-{ stdenv, fetchurl, pkgconfig, openssl, curl, intltool, libevent, gtkClient ? true, gtk }:
+{ stdenv, fetchurl, pkgconfig, intltool, file, makeWrapper
+, openssl, curl, libevent, inotifyTools, systemd
+, enableGTK3 ? false, gtk3
+}:
+
+let
+  version = "2.84";
+in
+
+with { inherit (stdenv.lib) optional optionals optionalString; };
 
 stdenv.mkDerivation rec {
-  name = "transmission-2.31";
-  
-  src = fetchurl {
-    url = "http://download.transmissionbt.com/files/${name}.tar.bz2";
-    sha256 = "0z0npasbrbii5qnjyk31v0kfr04kwm57dmnl2542bpx615q212zk";
-  };
-  
-  buildInputs = [ pkgconfig openssl curl intltool libevent ] ++
-                stdenv.lib.optional gtkClient gtk;
-  
-  configureFlags = if gtkClient then "--enable-gtk" else "--disable-gtk";
+  name = "transmission-" + optionalString enableGTK3 "gtk-" + version;
 
-  postInstall = ''
-    rm $out/share/icons/hicolor/icon-theme.cache
+  src = fetchurl {
+    url = "http://download.transmissionbt.com/files/transmission-${version}.tar.xz";
+    sha256 = "1sxr1magqb5s26yvr5yhs1f7bmir8gl09niafg64lhgfnhv1kz59";
+  };
+
+  buildInputs = [ pkgconfig intltool file openssl curl libevent inotifyTools ]
+    ++ optionals enableGTK3 [ gtk3 makeWrapper ]
+    ++ optional stdenv.isLinux systemd;
+
+  preConfigure = ''
+    sed -i -e 's|/usr/bin/file|${file}/bin/file|g' configure
   '';
-  
-  meta = {
+
+  configureFlags = [ "--with-systemd-daemon" ]
+    ++ optional enableGTK3 "--with-gtk";
+
+  preFixup = optionalString enableGTK3 /* gsettings schemas for file dialogues */ ''
+    rm "$out/share/icons/hicolor/icon-theme.cache"
+    wrapProgram "$out/bin/transmission-gtk" \
+      --prefix XDG_DATA_DIRS : "$GSETTINGS_SCHEMAS_PATH"
+  '';
+
+  meta = with stdenv.lib; {
     description = "A fast, easy and free BitTorrent client";
     longDescription = ''
       Transmission is a BitTorrent client which features a simple interface
@@ -31,8 +48,9 @@ stdenv.mkDerivation rec {
         * Full encryption, DHT, and PEX support
     '';
     homepage = http://www.transmissionbt.com/;
-    license = [ "GPLv2" ];
-    maintainers = [ stdenv.lib.maintainers.astsmtl ];
-    platforms = stdenv.lib.platforms.linux;
+    license = licenses.gpl2; # parts are under MIT
+    maintainers = with maintainers; [ astsmtl vcunat wizeman ];
+    platforms = platforms.linux;
   };
 }
+

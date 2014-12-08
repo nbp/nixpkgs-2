@@ -1,52 +1,43 @@
-{ stdenv, fetchurl, libX11, inputproto, libXt, libXpm, libXft, fontconfig, freetype
-, libXtst, xextproto, readline, libXi, pkgconfig, perl, autoconf, automake }:
+{ stdenv, fetchurl, pkgconfig, perl, autoconf, automake
+, libX11, inputproto, libXt, libXpm, libXft, libXtst, xextproto, libXi
+, fontconfig, freetype, readline
+}:
 
 stdenv.mkDerivation rec {
-  name = "ratpoison-1.4.5";
+  name = "ratpoison-${version}";
+  version = "1.4.8";
 
   src = fetchurl {
-    url = "mirror://savannah/ratpoison/${name}.tar.gz";
-    sha256 = "7391079db20b8613eecfd81d64d243edc9d3c586750c8f2da2bb9db14d260f03";
+    url = "mirror://savannah/ratpoison/${name}.tar.xz";
+    sha256 = "1w502z55vv7zs45l80nsllqh9fvfwjfdfi11xy1qikhzdmirains";
   };
 
-  patches =
-    [ (fetchurl {
-         url = "http://git.savannah.gnu.org/cgit/ratpoison.git/patch/?id=4ad0b38fb53506d613c4b4f7268dadfcedae9b8e";
-         sha256 = "118c5b481fa22b8fefbe34e3dbb157f621a3bf5de0c7beb540001c99ff403a5f";
-       })
-    ];
-
-  preConfigure = "autoreconf -vf";	# needed because of the patch above
-
-  NIX_CFLAGS_COMPILE = "-I${freetype}/include/freetype2"; # urgh
-  
   buildInputs =
-    [ libX11 inputproto libXt libXpm libXft fontconfig freetype libXtst
-      xextproto readline libXi pkgconfig perl autoconf automake
-    ];
+    [ pkgconfig perl autoconf automake
+      libX11 inputproto libXt libXpm libXft libXtst xextproto libXi
+      fontconfig freetype readline ];
 
-  meta = {
-    description = "Ratpoison, a simple mouse-free tiling window manager";
-    longDescription =
-      '' Ratpoison is a simple window manager with no fat library
-         dependencies, no fancy graphics, no window decorations, and no
-         rodent dependence.  It is largely modelled after GNU Screen which
-         has done wonders in the virtual terminal market.
+  meta = with stdenv.lib; {
+    homepage = "http://www.nongnu.org/ratpoison/";
+    description = "Simple mouse-free tiling window manager";
+    license = licenses.gpl2Plus;
 
-         The screen can be split into non-overlapping frames.  All windows
-         are kept maximized inside their frames to take full advantage of
-         your precious screen real estate.
+    longDescription = ''
+       Ratpoison is a simple window manager with no fat library
+       dependencies, no fancy graphics, no window decorations, and no
+       rodent dependence.  It is largely modelled after GNU Screen which
+       has done wonders in the virtual terminal market.
 
-         All interaction with the window manager is done through keystrokes.
-         Ratpoison has a prefix map to minimize the key clobbering that
-         cripples Emacs and other quality pieces of software.
-      '';
+       The screen can be split into non-overlapping frames.  All windows
+       are kept maximized inside their frames to take full advantage of
+       your precious screen real estate.
 
-    license = "GPLv2+";
+       All interaction with the window manager is done through keystrokes.
+       Ratpoison has a prefix map to minimize the key clobbering that
+       cripples Emacs and other quality pieces of software.
+    '';
 
-    homepage = http://www.nongnu.org/ratpoison/;
-
-    maintainers = [ stdenv.lib.maintainers.ludo stdenv.lib.maintainers.simons ];
-    platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
+    platforms = platforms.linux;
+    maintainers = [ maintainers.AndersonTorres ];
   };
 }

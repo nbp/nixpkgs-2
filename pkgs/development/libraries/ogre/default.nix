@@ -1,4 +1,4 @@
-{ fetchurl, stdenv
+{ fetchhg, stdenv
 , cmake, mesa
 , freetype, freeimage, zziplib, randrproto, libXrandr
 , libXaw, freeglut, libXt, libpng, boost, ois
@@ -8,11 +8,12 @@
 , nvidia_cg_toolkit }:
 
 stdenv.mkDerivation {
-  name = "ogre-1.7.2";
+  name = "ogre-1.9.0";
 
-  src = fetchurl {
-    url = "mirror://sourceforge/ogre/1.7/ogre_src_v1-7-2.tar.bz2";
-    sha256 = "10q8jx842s4aws9py6q67rb4dh5vli5vvg54jl8manjb4f388jh5";
+  src = fetchhg {
+    url = "https://bitbucket.org/sinbad/ogre/src/";
+    rev = "v1-9-0";
+    sha256 = "06hnf4c2kpycm3mglwdyywvj931k8ym808c15xighpyd8h9j4xdi";
   };
 
   cmakeFlags = [ "-DOGRE_INSTALL_SAMPLES=yes" ]
@@ -37,6 +38,6 @@ stdenv.mkDerivation {
     homepage = http://www.ogre3d.org/;
     maintainers = [ stdenv.lib.maintainers.raskin ];
     platforms = stdenv.lib.platforms.linux;
-    license = "MIT";
+    license = stdenv.lib.licenses.mit;
   };
 }

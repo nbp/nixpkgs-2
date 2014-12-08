@@ -1,34 +1,37 @@
-{ stdenv, fetchurl, zlib }:
+{ stdenv, fetchurl, pkgconfig, zlib, kmod, which }:
 
-stdenv.mkDerivation rec {
-  name = "pciutils-3.1.7";
-  
-  src = fetchurl {
-    url = "mirror://kernel/software/utils/pciutils/${name}.tar.bz2";
-    sha256 = "0i7mqf1fkmdqsawdk2badv6k3xrkryq0i2xknclvy6kcjsv27znq";
-  };
-  
-  buildInputs = [ zlib ];
-
+let
   pciids = fetchurl {
     # Obtained from http://pciids.sourceforge.net/v2.2/pci.ids.bz2.
-    url = http://nixos.org/tarballs/pci.ids.20100714.bz2;
-    sha256 = "0vll4svr60l6217yna7bfhcjm3prxr2b62ynq4jaagdp1rilfbap";
+    url = http://tarballs.nixos.org/pci.ids.20131006.bz2;
+    sha256 = "1vmshcgxqminiyh52pdcak24lm24qlic49py9cmkp96y1s48lvsc";
+  };
+in
+stdenv.mkDerivation rec {
+  name = "pciutils-3.3.0"; # with database from 2014-11-10
+
+  src = fetchurl {
+    url = "mirror://kernel/software/utils/pciutils/${name}.tar.xz";
+    sha256 = "008kh33kbpkk1wr9srrapw93imqx7l4djglrdkfxwvy6ppa9acs1";
   };
 
-  # Override broken auto-detect logic.
-  # Note: we can't compress pci.ids (ZLIB=yes) because udev requires
-  # an uncompressed pci.ids.
-  makeFlags = "ZLIB=no DNS=yes SHARED=yes PREFIX=\${out}";
+  buildInputs = [ pkgconfig zlib kmod which ];
 
-  preBuild = ''
-    bunzip2 < $pciids > pci.ids
-  '';
+  #preBuild = "bunzip2 < ${pciids} > pci.ids";
+
+  makeFlags = "SHARED=yes PREFIX=\${out}";
 
   installTargets = "install install-lib";
 
-  meta = {
-    homepage = http://mj.ucw.cz/pciutils.shtml;
+  # Get rid of update-pciids as it won't work.
+  postInstall = "rm $out/sbin/update-pciids $out/man/man8/update-pciids.8";
+
+  meta = with stdenv.lib; {
+    homepage = http://mj.ucw.cz/pciutils.html;
     description = "A collection of programs for inspecting and manipulating configuration of PCI devices";
+    license = licenses.gpl2Plus;
+    platforms = platforms.unix;
+    maintainers = [ maintainers.vcunat ]; # not really, but someone should watch it
   };
 }
+

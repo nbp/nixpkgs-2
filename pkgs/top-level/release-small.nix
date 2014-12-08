@@ -1,38 +1,34 @@
 /* A small release file, with few packages to be built.  The aim is to reduce
-   the load on Hydra when testing the `stdenv-updates' branch.
+   the load on Hydra when testing the `stdenv-updates' branch. */
 
+{ nixpkgs ? { outPath = (import ./all-packages.nix {}).lib.cleanSource ../..; revCount = 1234; shortRev = "abcdef"; }
+, supportedSystems ? [ "x86_64-linux" "i686-linux" "x86_64-darwin" ]
+}:
 
-   This file will be evaluated by hydra with a call like this:
-   hydra_eval_jobs --gc-roots-dir \
-     /nix/var/nix/gcroots/per-user/hydra/hydra-roots --argstr \
-     system i686-linux --argstr system x86_64-linux --arg \
-     nixpkgs "{outPath = ./}" .... release.nix
-
-   Hydra can be installed with "nix-env -i hydra".  */
-with (import ./release-lib.nix);
+with import ./release-lib.nix { inherit supportedSystems; };
 
 {
 
-  tarball = import ./make-tarball.nix;
+  tarball = import ./make-tarball.nix {
+    inherit nixpkgs;
+    officialRelease = false;
+  };
 
 } // (mapTestOn (rec {
 
   aspell = all;
   at = linux;
+  atlas = linux;
   aterm25 = all;
   aterm28 = all;
   autoconf = all;
-  automake110x = all;
-  automake111x = all;
-  automake19x = all;
-  avahi = allBut "i686-cygwin";  # Cygwin builds fail
+  automake = all;
+  avahi = allBut cygwin;  # Cygwin builds fail
   bash = all;
   bashInteractive = all;
   bc = all;
   binutils = linux;
   bind = linux;
-  bison24 = all;
-  boostFull = all;
   bsdiff = all;
   bzip2 = all;
   classpath = linux;
@@ -44,30 +40,25 @@ with (import ./release-lib.nix);
   dhcp = linux;
   diffutils = all;
   e2fsprogs = linux;
-  emacs23 = gtkSupported;
+  emacs24 = gtkSupported;
   enscript = all;
   file = all;
   findutils = all;
   flex = all;
-  flex2535 = all;
   gcc = all;
-  gcc33 = linux;
   gcc34 = linux;
-  gcc41 = linux;
-  gcc42 = linux;
-  gcc43_multi = ["x86_64-linux"];
   gcc44 = linux;
-  gcj44 = linux;
+  gcj = linux;
   ghdl = linux;
   glibc = linux;
   glibcLocales = linux;
-  gnat44 = linux;
+  gnat = linux;
   gnugrep = all;
   gnum4 = all;
   gnumake = all;
   gnupatch = all;
   gnupg = linux;
-  gnuplot = allBut "i686-cygwin";
+  gnuplot = allBut cygwin;
   gnused = all;
   gnutar = all;
   gnutls = linux;
@@ -77,14 +68,11 @@ with (import ./release-lib.nix);
   gsl = linux;
   guile = linux;  # tests fail on Cygwin
   gzip = all;
-  hal = linux;
-  hal_info = linux;
   hddtemp = linux;
   hdparm = linux;
   hello = all;
   host = linux;
   iana_etc = linux;
-  icecat3Xul = linux;
   icewm = linux;
   idutils = all;
   ifplugd = linux;
@@ -99,6 +87,7 @@ with (import ./release-lib.nix);
   qemu_kvm = linux;
   less = all;
   lftp = all;
+  liblapack = linux;
   libtool = all;
   libtool_2 = all;
   libxml2 = all;
@@ -141,7 +130,6 @@ with (import ./release-lib.nix);
   openssl = all;
   pam_console = linux;
   pam_login = linux;
-  pam_unix2 = linux;
   pan = gtkSupported;
   par2cmdline = all;
   pciutils = linux;
@@ -152,8 +140,7 @@ with (import ./release-lib.nix);
   policykit = linux;
   portmap = linux;
   procps = linux;
-  pwdutils = linux;
-  python = allBut "i686-cygwin";
+  python = allBut cygwin;
   pythonFull = linux;
   readline = all;
   rlwrap = all;
@@ -163,10 +150,9 @@ with (import ./release-lib.nix);
   scrot = linux;
   sdparm = linux;
   sharutils = all;
-  sloccount = allBut "i686-cygwin";
+  sloccount = allBut cygwin;
   smartmontools = all;
-  splashutils = linux;
-  sqlite = allBut "i686-cygwin";
+  sqlite = allBut cygwin;
   squid = linux;
   ssmtp = linux;
   stdenv = prio 175 all;
@@ -185,9 +171,8 @@ with (import ./release-lib.nix);
   texLiveExtra = linux;
   texinfo = all;
   time = linux;
-  tinycc = ["i686-linux"];
+  tinycc = linux;
   udev = linux;
-  uml = ["i686-linux"];
   unrar = linux;
   unzip = all;
   upstart = linux;
@@ -207,17 +192,10 @@ with (import ./release-lib.nix);
   zile = linux;
   zip = all;
 
-  dbus_all = {
+  dbus = {
     libs = linux;
+    daemon = linux;
     tools = linux;
   };
 
-  emacs23Packages = {
-    bbdb = linux;
-    cedet = linux;
-    ecb = linux;
-    emacsw3m = linux;
-    emms = linux;
-    nxml = all;
-  };
 } ))

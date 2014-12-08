@@ -1,23 +1,27 @@
-{stdenv, fetchurl, openssl, cyrus_sasl, db4, groff}:
+{stdenv, fetchurl, openssl, cyrus_sasl, db, groff}:
 
-stdenv.mkDerivation {
-  name = "openldap-2.4.13";
-  
+stdenv.mkDerivation rec {
+  name = "openldap-2.4.40";
+
   src = fetchurl {
-    url = ftp://ftp.nl.uu.net/pub/unix/db/openldap/openldap-release/openldap-2.4.13.tgz;
-    sha256 = "18l06v8z5wnr92m28bwxd27l6kw3i0gi00yivv603da6m76cm0ic";
+    url = "http://www.openldap.org/software/download/OpenLDAP/openldap-release/${name}.tgz";
+    sha256 = "1nyslrgwxwilgv5sixc37svls5rbvhsv9drb7hlrjr2vqaji29ni";
   };
-  
-  buildInputs = [openssl cyrus_sasl db4 groff];
-  
+
+  buildInputs = [ openssl cyrus_sasl db groff ];
+
+  configureFlags =
+    [ "--enable-overlays"
+      "--disable-dependency-tracking"   # speeds up one-time build
+    ] ++ stdenv.lib.optional (openssl == null) "--without-tls"
+      ++ stdenv.lib.optional (cyrus_sasl == null) "--without-cyrus-sasl";
+
   dontPatchELF = 1; # !!!
 
-  # Build on Glibc 2.9.
-  # http://www.openldap.org/lists/openldap-bugs/200808/msg00130.html
-  NIX_CFLAGS_COMPILE = "-D_GNU_SOURCE";
-
-  meta = {
-    homepage = http://www.openldap.org/;
+  meta = with stdenv.lib; {
+    homepage    = http://www.openldap.org/;
     description = "An open source implementation of the Lightweight Directory Access Protocol";
+    maintainers = with maintainers; [ lovek323 mornfall ];
+    platforms   = platforms.unix;
   };
 }

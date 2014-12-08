@@ -1,15 +1,17 @@
-{ stdenv, fetchurl, gettext, perl, LWP, gnutls ? null }:
+{ stdenv, fetchurl, gettext, libidn
+, perl, perlPackages, LWP, python3
+, gnutls ? null }:
 
 stdenv.mkDerivation rec {
-  name = "wget-1.13.4";
+  name = "wget-1.16";
 
   src = fetchurl {
-    url = "mirror://gnu/wget/${name}.tar.gz";
-    sha256 = "1kadjg63x1mm741dxdidwsn1rz0f7dkzbq59v0iww87jr45p3ir4";
+    url = "mirror://gnu/wget/${name}.tar.xz";
+    sha256 = "1rxhr3jmgbwryzl51di4avqxw9m9j1z2aak8q1npns0p184xsqcj";
   };
 
   preConfigure = stdenv.lib.optionalString doCheck
-    '' for i in "doc/texi2pod.pl" "tests/run-px" "util/rmold.pl"
+    '' for i in "doc/texi2pod.pl" "util/rmold.pl"
        do
          sed -i "$i" -e 's|/usr/bin.*perl|${perl}/bin/perl|g'
        done
@@ -21,9 +23,9 @@ stdenv.mkDerivation rec {
        done
     '';
 
-  buildNativeInputs = [ gettext ];
-  buildInputs =
-    stdenv.lib.optionals doCheck [ perl LWP ]
+  nativeBuildInputs = [ gettext ];
+  buildInputs = [ libidn ]
+    ++ stdenv.lib.optionals doCheck [ perl perlPackages.IOSocketSSL LWP python3 ]
     ++ stdenv.lib.optional (gnutls != null) gnutls;
 
   configureFlags =
@@ -31,10 +33,10 @@ stdenv.mkDerivation rec {
     then "--with-ssl=gnutls"
     else "--without-ssl";
 
-  doCheck = (perl != null);
+  doCheck = (perl != null && python3 != null);
 
-  meta = {
-    description = "GNU Wget, a tool for retrieving files using HTTP, HTTPS, and FTP";
+  meta = with stdenv.lib; {
+    description = "Tool for retrieving files using HTTP, HTTPS, and FTP";
 
     longDescription =
       '' GNU Wget is a free software package for retrieving files using HTTP,
@@ -43,11 +45,11 @@ stdenv.mkDerivation rec {
          scripts, cron jobs, terminals without X-Windows support, etc.
       '';
 
-    license = "GPLv3+";
+    license = licenses.gpl3Plus;
 
     homepage = http://www.gnu.org/software/wget/;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
-    platforms = stdenv.lib.platforms.all;
+    maintainers = with maintainers; [ fpletz ];
+    platforms = platforms.all;
   };
 }

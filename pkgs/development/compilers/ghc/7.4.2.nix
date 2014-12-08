@@ -1,18 +1,17 @@
 { stdenv, fetchurl, ghc, perl, gmp, ncurses }:
 
 stdenv.mkDerivation rec {
-  version = "7.4.1.20120508";
+  version = "7.4.2";
 
   name = "ghc-${version}";
 
   src = fetchurl {
-    url = "http://haskell.org/ghc/dist/7.4.2-rc1/${name}-src.tar.bz2";
-    sha256 = "0i55003p6ns5vzx8dpni5jv45kxwjqqgspf76505l2vcilra8j2c";
+    url = "http://haskell.org/ghc/dist/7.4.2/${name}-src.tar.bz2";
+    sha256 = "0vc3zmxqi4gflssmj35n5c8idbvyrhd88abi50whbirwlf4i5vpj";
   };
 
   buildInputs = [ ghc perl gmp ncurses ];
 
-  enableParallelBuilding = true;
 
   buildMK = ''
     libraries/integer-gmp_CONFIGURE_OPTS += --configure-option=--with-gmp-libraries="${gmp}/lib"
@@ -22,6 +21,8 @@ stdenv.mkDerivation rec {
   preConfigure = ''
     echo "${buildMK}" > mk/build.mk
     sed -i -e 's|-isysroot /Developer/SDKs/MacOSX10.5.sdk||' configure
+  '' + stdenv.lib.optionalString (!stdenv.isDarwin) ''
+    export NIX_LDFLAGS="$NIX_LDFLAGS -rpath $out/lib/ghc-${version}"
   '';
 
   configureFlags=[
@@ -40,7 +41,7 @@ stdenv.mkDerivation rec {
       stdenv.lib.maintainers.andres
       stdenv.lib.maintainers.simons
     ];
-    platforms = ghc.meta.platforms;
+    inherit (ghc.meta) license platforms;
   };
 
 }

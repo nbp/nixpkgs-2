@@ -1,62 +1,73 @@
-{ stdenv, fetchurl, pkgconfig, glib, expat, pam, intltool, gettext
-, gobjectIntrospection }:
+{ stdenv, fetchurl, pkgconfig, glib, expat, pam, intltool, spidermonkey
+, gobjectIntrospection, libxslt, docbook_xsl, docbook_xml_dtd_412
+, useSystemd ? stdenv.isLinux, systemd }:
 
 let
 
   system = "/var/run/current-system/sw";
-  
+  setuid = "/var/setuid-wrappers"; #TODO: from <nixos> config.security.wrapperDir;
+
   foolVars = {
-    LOCALSTATE = "/var";
     SYSCONF = "/etc";
-    LIB = "${system}/lib";
-    DATA = "${system}/share";
+    DATA = "${system}/share"; # to find share/polkit-1/actions of other apps at runtime
   };
-  
+
 in
 
 stdenv.mkDerivation rec {
-  name = "polkit-0.104";
+  name = "polkit-0.112";
 
   src = fetchurl {
-    url = "http://hal.freedesktop.org/releases/${name}.tar.gz";
-    sha256 = "1yf7307svs8qk76qdlgww1bhgdcia5cm92n16xz7njhy73c162kb";
+    url = "http://www.freedesktop.org/software/polkit/releases/${name}.tar.gz";
+    sha256 = "1xkary7yirdcjdva950nqyhmsz48qhrdsr78zciahj27p8yg95fn";
   };
 
   buildInputs =
-    [ pkgconfig glib expat pam intltool gobjectIntrospection ];
-
-  configureFlags = "--libexecdir=$(out)/libexec/polkit-1";
+    [ pkgconfig glib expat pam intltool spidermonkey gobjectIntrospection ]
+    ++ [ libxslt docbook_xsl docbook_xml_dtd_412 ] # man pages
+    ++ stdenv.lib.optional useSystemd systemd;
 
   # Ugly hack to overwrite hardcoded directories
   # TODO: investigate a proper patch which will be accepted upstream
+  # After update it's good to check the sources via:
+  #   grep '\<PACKAGE_' '--include=*.[ch]' -R
   CFLAGS = stdenv.lib.concatStringsSep " "
     ( map (var: ''-DPACKAGE_${var}_DIR=\""${builtins.getAttr var foolVars}"\"'')
         (builtins.attrNames foolVars) );
 
-  preBuild =
-    ''
-      # ‘libpolkit-agent-1.so’ should call the setuid wrapper on
-      # NixOS.  Hard-coding the path is kinda ugly.  Maybe we can just
-      # call through $PATH, but that might have security implications.
-      substituteInPlace src/polkitagent/polkitagentsession.c \
-        --replace PACKAGE_LIBEXEC_DIR '"/var/setuid-wrappers"'
-    '';
+  preConfigure = ''
+    patchShebangs .
+  '' + stdenv.lib.optionalString useSystemd /* bogus chroot detection */ ''
+    sed '/libsystemd-login autoconfigured, but system does not appear to use systemd/s/.*/:/' -i configure
+  ''
+    # ‘libpolkit-agent-1.so’ should call the setuid wrapper on
+    # NixOS.  Hard-coding the path is kinda ugly.  Maybe we can just
+    # call through $PATH, but that might have security implications.
+  + ''
+    substituteInPlace src/polkitagent/polkitagentsession.c \
+      --replace   'PACKAGE_PREFIX "/lib/polkit-1/'   '"${setuid}/'
+  '';
 
-  makeFlags =
-    ''
-      INTROSPECTION_GIRDIR=$(out)/share/gir-1.0
-      INTROSPECTION_TYPELIBDIR=$(out)lib/girepository-1.0
-    '';
-        
-  postInstall =
-    ''
-      # Allow some files with paranoid permissions to be stripped in
-      # the fixup phase.
-      chmod a+rX -R $out
-    '';
+  configureFlags = [
+    #"--libexecdir=$(out)/libexec/polkit-1" # this and localstatedir are ignored by configure
+    "--with-systemdsystemunitdir=$(out)/etc/systemd/system"
+    "--with-polkitd-user=polkituser" #TODO? <nixos> config.ids.uids.polkituser
+    "--with-os-type=NixOS" # not recognized but prevents impurities on non-NixOS
+    "--enable-introspection"
+  ];
+
+  makeFlags = "INTROSPECTION_GIRDIR=$(out)/share/gir-1.0 INTROSPECTION_TYPELIBDIR=$(out)/lib/girepository-1.0";
+
+  # The following is required on grsecurity/PaX due to spidermonkey's JIT
+  postBuild = ''
+    paxmark mr src/polkitbackend/.libs/polkitd
+    paxmark mr test/polkitbackend/.libs/polkitbackendjsauthoritytest
+  '';
+
+  #doCheck = true; # some /bin/bash problem that isn't auto-solved by patchShebangs
 
   meta = with stdenv.lib; {
-    homepage = http://www.freedesktop.org/wiki/Software/PolicyKit;
+    homepage = http://www.freedesktop.org/wiki/Software/polkit;
     description = "A toolkit for defining and handling the policy that allows unprivileged processes to speak to privileged processes";
     platforms = platforms.linux;
     maintainers = [ maintainers.urkud ];

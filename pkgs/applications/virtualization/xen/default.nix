@@ -30,7 +30,7 @@ let
       }
     ];
 
-in 
+in
 
 stdenv.mkDerivation {
   name = "xen-${version}";
@@ -78,6 +78,9 @@ stdenv.mkDerivation {
 
       substituteInPlace tools/xenstat/Makefile \
         --replace /usr/include/curses.h ${ncurses}/include/curses.h
+
+      substituteInPlace tools/ioemu-qemu-xen/xen-hooks.mak \
+        --replace /usr/include/pci ${pciutils}/include/pci
 
       # Work around a bug in our GCC wrapper: `gcc -MF foo -v' doesn't
       # print the GCC version number properly.
@@ -133,5 +136,6 @@ stdenv.mkDerivation {
     description = "Xen hypervisor and management tools for Dom0";
     platforms = [ "i686-linux" "x86_64-linux" ];
     maintainers = [ stdenv.lib.maintainers.eelco ];
+    broken = true; # bump to at least 4.1.6.1 to fix security issues
   };
 }

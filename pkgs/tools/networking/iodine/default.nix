@@ -10,13 +10,13 @@ stdenv.mkDerivation rec {
 
   buildInputs = [ zlib ];
 
-  patchPhase = ''sed -i "s,/sbin/ifconfig,${nettools}/sbin/ifconfig,; s,/sbin/route,${nettools}/sbin/route," src/tun.c'';
+  patchPhase = ''sed -i "s,/sbin/ifconfig,${nettools}/bin/ifconfig,; s,/sbin/route,${nettools}/bin/route," src/tun.c'';
 
   installFlags = "prefix=\${out}";
 
   meta = {
     homepage = http://code.kryo.se/iodine/;
     description = "Tool to tunnel IPv4 data through a DNS server";
-    license = "ISC";
+    license = stdenv.lib.licenses.isc;
   };
 }

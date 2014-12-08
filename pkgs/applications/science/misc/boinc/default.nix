@@ -1,18 +1,20 @@
-{ fetchsvn, stdenv, autoconf, automake, pkgconfig, m4, curl,
-mesa, libXmu, libXi, freeglut, libjpeg, libtool, wxGTK,
-sqlite, gtk, patchelf, libXScrnSaver, libnotify, libX11 }:
+{ fetchgit, stdenv, autoconf, automake, pkgconfig, m4, curl,
+mesa, libXmu, libXi, freeglut, libjpeg, libtool, wxGTK, xcbutil,
+sqlite, gtk, patchelf, libXScrnSaver, libnotify, libX11, libxcb }:
 
 stdenv.mkDerivation rec {
-  name = "boinc-6.12.39";
+  name = "boinc-7.4.14";
 
-  src = fetchsvn {
-    url = "http://boinc.berkeley.edu/svn/tags/boinc_core_release_6_12_39";
-    rev = 24341;
-    sha256 = "158fkm4mr7wljsy8gav20km8jamf00mxjk1wsiqw6kx62bih37yb";
+  src = fetchgit {
+    url = "git://boinc.berkeley.edu/boinc-v2.git";
+    rev = "fb31ab18f94f3b5141bea03e8537d76c606cd276";
+    sha256 = "1465zl8l87fm1ps5f2may6mcc3pp40mpd6wphpxnwwk1lmv48x96";
   };
 
   buildInputs = [ libtool automake autoconf m4 pkgconfig curl mesa libXmu libXi
-    freeglut libjpeg wxGTK sqlite gtk libXScrnSaver libnotify patchelf libX11 ];
+    freeglut libjpeg wxGTK sqlite gtk libXScrnSaver libnotify patchelf libX11 
+    libxcb xcbutil
+  ];
 
   postConfigure = ''
     sed -i -e s,/etc,$out/etc, client/scripts/Makefile
@@ -27,24 +29,14 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  configureFlags = "--disable-server --disable-fast-install";
-
-  postInstall = "
-    # Remove a leading rpath to /tmp/... I don't know how it got there
-    # I could not manage to get rid of that through autotools.
-    for a in $out/bin/*; do
-      RPATH=$(patchelf --print-rpath $a)
-      NEWRPATH=$(echo $RPATH | sed 's/^[^:]*://')
-      patchelf --set-rpath $out/lib:$NEWRPATH $a
-    done
-  ";
+  configureFlags = "--disable-server";
 
   meta = {
     description = "Free software for distributed and grid computing";
 
     homepage = http://boinc.berkeley.edu/;
 
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
 
     platforms = stdenv.lib.platforms.linux;  # arbitrary choice
   };

@@ -1,26 +1,29 @@
-{stdenv, fetchurl, pcsclite, pkgconfig, libusb, perl}:
-stdenv.mkDerivation {
-  name = "ccid-1.3.11";
+{ stdenv, fetchurl, pcsclite, pkgconfig, libusb1, perl }:
+
+stdenv.mkDerivation rec {
+  version = "1.4.18";
+  name = "ccid-${version}";
 
   src = fetchurl {
-    url = https://alioth.debian.org/frs/download.php/3080/ccid-1.3.11.tar.bz2;
-    sha256 = "01l9956wids087d38bprr8jqcl05j48cdp25k9q7vzran215mgzp";
+    url = "http://ftp.de.debian.org/debian/pool/main/c/ccid/ccid_${version}.orig.tar.bz2";
+    sha256 = "1aj14lkmfaxkhk5swqfgn2x18j7fijxs0jnxnx9cdc9f5mxaknsz";
   };
 
   patchPhase = ''
     sed -i 's,/usr/bin/env perl,${perl}/bin/perl,' src/*.pl
+    substituteInPlace src/Makefile.in --replace /bin/echo echo
   '';
   preConfigure = ''
     configureFlags="$configureFlags --enable-usbdropdir=$out/pcsc/drivers"
   '';
 
-  buildInputs = [ pcsclite pkgconfig libusb ];
+  buildInputs = [ pcsclite pkgconfig libusb1 ];
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "ccid drivers for pcsclite";
     homepage = http://pcsclite.alioth.debian.org/;
-    license = "GPLv2+";
-    maintainers = with stdenv.lib.maintainers; [viric];
-    platforms = with stdenv.lib.platforms; linux;
+    license = licenses.gpl2Plus;
+    maintainers = with maintainers; [ viric wkennington ];
+    platforms = with platforms; linux;
   };
 }

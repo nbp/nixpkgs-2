@@ -1,12 +1,14 @@
-{stdenv, fetchurl}:
+{stdenv, fetchurl, unzip}:
 
 stdenv.mkDerivation rec {
-  name = "freefont-ttf-20100919";
+  name = "freefont-ttf-20120503";
 
   src = fetchurl {
-    url = "mirror://gnu/freefont/${name}.tar.gz";
-    sha256 = "1q3h5jp1mbdkinkwxy0lfd0a1q7azlbagraydlzaa2ng82836wg4";
+    url = "mirror://gnu/freefont/${name}.zip";
+    sha256 = "1bw9mrf5pqi2a29b7qw4nhhj566aqqmi28hkbn2a38c2pzqvm1bw";
   };
+
+  buildInputs = [ unzip ];
 
   installPhase = ''
     mkdir -p $out/share/fonts/truetype
@@ -23,9 +25,9 @@ stdenv.mkDerivation rec {
     '';
 
     homepage = http://www.gnu.org/software/freefont/;
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
     platforms = stdenv.lib.platforms.all;
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
   };
 }

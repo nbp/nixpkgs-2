@@ -9,11 +9,11 @@ let
 in
    
 stdenv.mkDerivation rec {
-  name = "bluez-4.98";
+  name = "bluez-4.101";
    
   src = fetchurl {
     url = "mirror://kernel/linux/bluetooth/${name}.tar.gz";
-    sha256 = "9a5b655bada7c7a1921cb3bac83b8a32bbe49893e4c7a1377cdc1b0d35f7d233";
+    sha256 = "11vldy255zkmmpj0g0a1m6dy9bzsmyd7vxy02cdfdw79ml888wsr";
   };
 
   buildInputs =
@@ -24,7 +24,11 @@ stdenv.mkDerivation rec {
       # gstreamer gst_plugins_base 
     ];
 
-  configureFlags = "--localstatedir=/var --enable-cups";
+  configureFlags = [
+    "--localstatedir=/var"
+    "--enable-cups"
+    "--with-systemdunitdir=$(out)/etc/systemd/system"
+    ];
 
   # Work around `make install' trying to create /var/lib/bluetooth.
   installFlags = "statedir=$(TMPDIR)/var/lib/bluetooth";

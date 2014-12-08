@@ -1,11 +1,11 @@
 { fetchurl, stdenv, ncurses, pkgconfig, emacs}:
 
 stdenv.mkDerivation rec {
-  name = "cscope-15.7a";
+  name = "cscope-15.8a";
 
   src = fetchurl {
-    url = "mirror://sourceforge/cscope/${name}.tar.bz2";
-    sha256 = "0dv0r66x31y2xxvad54x0wal8yb1krwbx3gjc82qpg4hlz5qnqq2";
+    url = "mirror://sourceforge/cscope/${name}.tar.gz";
+    sha256 = "07jdhxvp3dv7acvp0pwsdab1g2ncxjlcf838lj7vxgjs1p26lwzb";
   };
 
   preConfigure = ''
@@ -18,7 +18,7 @@ stdenv.mkDerivation rec {
   configureFlags = "--with-ncurses=${ncurses}";
 
   buildInputs = [ ncurses ];
-  buildNativeInputs = [ pkgconfig emacs ];
+  nativeBuildInputs = [ pkgconfig emacs ];
 
   postInstall = ''
     # Install Emacs mode.
@@ -34,11 +34,11 @@ stdenv.mkDerivation rec {
 
   crossAttrs = {
     postInstall = "";
-    propagatedBuildInputs = [ ncurses.hostDrv ];
+    propagatedBuildInputs = [ ncurses.crossDrv ];
   };
 
   meta = {
-    description = "Cscope, a developer's tool for browsing source code";
+    description = "A developer's tool for browsing source code";
 
     longDescription = ''
       Cscope is a developer's tool for browsing source code.  It has

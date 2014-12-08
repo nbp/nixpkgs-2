@@ -25,6 +25,8 @@ stdenv.mkDerivation rec {
     "--with-gcc=${stdenv.gcc}/bin/gcc"
   ];
 
+  NIX_CFLAGS_COMPILE = "-fomit-frame-pointer";
+
   # required, because otherwise all symbols from HSffi.o are stripped, and
   # that in turn causes GHCi to abort
   stripDebugFlags=["-S" "--keep-file-symbols"];
@@ -36,7 +38,7 @@ stdenv.mkDerivation rec {
       stdenv.lib.maintainers.marcweber
       stdenv.lib.maintainers.andres
     ];
-    platforms = ghc.meta.platforms;
+    inherit (ghc.meta) license platforms;
   };
 
   # TODO: requires a comment as to what it does and why it is needed.

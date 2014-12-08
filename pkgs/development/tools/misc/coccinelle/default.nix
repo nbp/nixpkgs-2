@@ -1,9 +1,9 @@
-{ fetchurl, stdenv, python, ncurses, ocamlPackages, makeWrapper }:
+{ fetchurl, stdenv, python, ncurses, ocamlPackages, pkgconfig, makeWrapper }:
 
 let
 
-  name = "coccinelle-1.0.0-rc12";
-  sha256 = "03b8930a53623ec79dc2486e9b6a569e373958cf46074c5f1d0028c70708498d";
+  name = "coccinelle-1.0.0-rc15";
+  sha256 = "07fab4e17512925b958890bb13c0809797074f2e44a1107b0074bdcc156b9596";
 
 in stdenv.mkDerivation {
   inherit name;
@@ -14,13 +14,16 @@ in stdenv.mkDerivation {
   };
 
   buildInputs = with ocamlPackages; [
-    ocaml findlib menhir
-    ocaml_pcre ocaml_sexplib pycaml
-    python ncurses makeWrapper
+    ocaml findlib menhir ocamlPackages.camlp4
+    ocaml_pcre pycaml
+    python ncurses pkgconfig
+    makeWrapper
   ];
 
-  configureFlagsArray = [ "--enable-release" ];
-
+  # TODO: is the generation of this wrapper truly/still needed?
+  # I don't have a non-NixOS system, so I cannot verify this, but shouldn't
+  # libpython know where to find its modules? (the path is for example in
+  # its Sys-module).
   postInstall =
     # On non-NixOS systems, Coccinelle would end up looking up Python modules
     # in the wrong directory.
@@ -31,8 +34,10 @@ in stdenv.mkDerivation {
        done
     '';
 
+  configureFlags = "--enable-release";
+
   meta = {
-    description = "Coccinelle, a program to apply C code semantic patches";
+    description = "Program to apply semantic patches to C code";
 
     longDescription =
       '' Coccinelle is a program matching and transformation engine which
@@ -49,9 +54,9 @@ in stdenv.mkDerivation {
       '';
 
     homepage = http://coccinelle.lip6.fr/;
-    license = "GPLv2";
+    license = stdenv.lib.licenses.gpl2;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
     platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
   };
 }

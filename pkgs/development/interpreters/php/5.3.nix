@@ -1,25 +1,37 @@
-args: with args;
+{ stdenv, fetchurl, composableDerivation, autoconf, automake, flex, bison
+, apacheHttpd, mysql, libxml2, readline, zlib, curl, gd, postgresql, gettext
+, openssl, pkgconfig, sqlite, config, libjpeg, libpng, freetype, libxslt
+, libmcrypt, bzip2, icu, libssh2, makeWrapper, libiconvOrEmpty, libiconv, uwimap
+, pam }:
 
 let
-
-  inherit (args.composableDerivation) composableDerivation edf wwf;
-
+  libmcryptOverride = libmcrypt.override { disablePosixThreads = true; };
 in
 
-composableDerivation {} ( fixed : let inherit (fixed.fixed) version; in {
+composableDerivation.composableDerivation {} ( fixed : let inherit (fixed.fixed) version; in {
 
-  version = "5.3.10";
+  version = "5.3.29";
 
   name = "php-${version}";
 
-  buildInputs = ["flex" "bison" "pkgconfig"];
+  enableParallelBuilding = true;
+
+  buildInputs
+    = [ flex bison pkgconfig ]
+    ++ stdenv.lib.optionals stdenv.isDarwin [ libssh2 makeWrapper ];
+
+  # need to include the C++ standard library when compiling on darwin
+  NIX_LDFLAGS = stdenv.lib.optionalString stdenv.isDarwin "-lstdc++";
+
+  # need to specify where the dylib for icu is stored
+  DYLD_LIBRARY_PATH = stdenv.lib.optionalString stdenv.isDarwin "${icu}/lib";
 
   flags = {
 
-# much left to do here...
+    # much left to do here...
 
     # SAPI modules:
-    
+
       apxs2 = {
         configureFlags = ["--with-apxs2=${apacheHttpd}/bin/apxs"];
         buildInputs = [apacheHttpd];
@@ -28,23 +40,27 @@ composableDerivation {} ( fixed : let inherit (fixed.fixed) version; in {
       # Extensions
 
       curl = {
-        configureFlags = ["--with-curl=${args.curl}" "--with-curlwrappers"];
+        configureFlags = ["--with-curl=${curl}" "--with-curlwrappers"];
         buildInputs = [curl openssl];
       };
-      
+
+      pcntl = {
+        configureFlags = [ "--enable-pcntl" ];
+      };
+
       zlib = {
-        configureFlags = ["--with-zlib=${args.zlib}"];
+        configureFlags = ["--with-zlib=${zlib}"];
         buildInputs = [zlib];
       };
 
       libxml2 = {
-        configureFlags = [
-          "--with-libxml-dir=${libxml2}"
-          "--with-iconv-dir=${libiconv}"
-          ];
-        buildInputs = [ libxml2 ];
+        configureFlags
+          = [ "--with-libxml-dir=${libxml2}" ]
+            ++ stdenv.lib.optional (libiconvOrEmpty != [])
+              [ "--with-iconv=${libiconv}" ];
+        buildInputs = [ libxml2 ] ++ libiconvOrEmpty;
       };
-    
+
       readline = {
         configureFlags = ["--with-readline=${readline}"];
         buildInputs = [ readline ];
@@ -54,12 +70,12 @@ composableDerivation {} ( fixed : let inherit (fixed.fixed) version; in {
         configureFlags = ["--with-pdo-sqlite=${sqlite}"];
         buildInputs = [ sqlite ];
       };
-    
+
       postgresql = {
         configureFlags = ["--with-pgsql=${postgresql}"];
         buildInputs = [ postgresql ];
       };
-    
+
       mysql = {
         configureFlags = ["--with-mysql=${mysql}"];
         buildInputs = [ mysql ];
@@ -80,14 +96,18 @@ composableDerivation {} ( fixed : let inherit (fixed.fixed) version; in {
         configureFlags = ["--with-pdo-mysql=${mysql}"];
         buildInputs = [ mysql ];
       };
-    
+
       bcmath = {
         configureFlags = ["--enable-bcmath"];
       };
 
       gd = {
-        configureFlags = ["--with-gd=${args.gd}"];
-        buildInputs = [gd libpng libjpeg ];
+        configureFlags = [
+          "--with-gd=${gd}"
+          "--with-png-dir=${libpng}"
+          "--with-jpeg-dir=${libjpeg}"
+        ];
+        buildInputs = [gd libpng libjpeg freetype];
       };
 
       soap = {
@@ -99,7 +119,7 @@ composableDerivation {} ( fixed : let inherit (fixed.fixed) version; in {
       };
 
       openssl = {
-        configureFlags = ["--with-openssl=${args.openssl}"];
+        configureFlags = ["--with-openssl=${openssl}"];
         buildInputs = ["openssl"];
       };
 
@@ -107,66 +127,119 @@ composableDerivation {} ( fixed : let inherit (fixed.fixed) version; in {
         configureFlags = ["--enable-mbstring"];
       };
 
-      /*
-         php is build within this derivation in order to add the xdebug lines to the php.ini.
-         So both Apache and command line php both use xdebug without having to configure anything.
-         Xdebug could be put in its own derivation.
-      * /
-        meta = {
-                description = "debugging support for PHP";
-                homepage = http://xdebug.org;
-                license = "based on the PHP license - as is";
-                };
-      */
+      gettext = {
+        configureFlags = ["--with-gettext=${gettext}"];
+        buildInputs = [gettext];
+      };
+
+      imap = {
+        configureFlags = [ "--with-imap=${uwimap}" "--with-imap-ssl" ]
+          # uwimap builds with kerberos on darwin
+          ++ stdenv.lib.optional (stdenv.isDarwin) "--with-kerberos";
+        buildInputs = [ uwimap openssl ]
+          ++ stdenv.lib.optional (!stdenv.isDarwin) pam;
+      };
+
+      intl = {
+        configureFlags = ["--enable-intl"];
+        buildInputs = [icu];
+      };
+
+      exif = {
+        configureFlags = ["--enable-exif"];
+      };
+
+      xsl = {
+        configureFlags = ["--with-xsl=${libxslt}"];
+        buildInputs = [libxslt];
+      };
+
+      mcrypt = {
+        configureFlags = ["--with-mcrypt=${libmcrypt}"];
+        buildInputs = [libmcryptOverride];
+      };
+
+      bz2 = {
+        configureFlags = ["--with-bz2=${bzip2}"];
+        buildInputs = [bzip2];
+      };
+
+      zip = {
+        configureFlags = ["--enable-zip"];
+      };
+
+      ftp = {
+        configureFlags = ["--enable-ftp"];
+      };
+
+      fpm = {
+        configureFlags = ["--enable-fpm"];
+      };
     };
 
   cfg = {
-    mysqlSupport = getConfig ["php" "mysql"] true;
-    mysqliSupport = getConfig ["php" "mysqli"] true;
-    pdo_mysqlSupport = getConfig ["php" "pdo_mysql"] true;
-    libxml2Support = getConfig ["php" "libxml2"] true;
-    apxs2Support = getConfig ["php" "apxs2"] true;
-    bcmathSupport = getConfig ["php" "bcmath"] true;
-    socketsSupport = getConfig ["php" "sockets"] true;
-    curlSupport = getConfig ["php" "curl"] true;
-    gettextSupport = getConfig ["php" "gettext"] true;
-    postgresqlSupport = getConfig ["php" "postgresql"] true;
-    readlineSupport = getConfig ["php" "readline"] true;
-    sqliteSupport = getConfig ["php" "sqlite"] true;
-    soapSupport = getConfig ["php" "soap"] true;
-    zlibSupport = getConfig ["php" "zlib"] true;
-    opensslSupport = getConfig ["php" "openssl"] true;
-    mbstringSupport = getConfig ["php" "mbstring"] true;
-    gdSupport = getConfig ["php" "gd"] true;
+    apxs2Support = config.php.apxs2 or true;
+    bcmathSupport = config.php.bcmath or true;
+    bz2Support = config.php.bz2 or false;
+    curlSupport = config.php.curl or true;
+    exifSupport = config.php.exif or true;
+    ftpSupport = config.php.ftp or true;
+    fpmSupport = config.php.fpm or false;
+    gdSupport = config.php.gd or true;
+    gettextSupport = config.php.gettext or true;
+    imapSupport = config.php.imap or false;
+    intlSupport = config.php.intl or true;
+    libxml2Support = config.php.libxml2 or true;
+    mbstringSupport = config.php.mbstring or true;
+    mcryptSupport = config.php.mcrypt or false;
+    mysqlSupport = config.php.mysql or true;
+    mysqliSupport = config.php.mysqli or true;
+    opensslSupport = config.php.openssl or true;
+    pcntlSupport = config.php.pcntl or true;
+    pdo_mysqlSupport = config.php.pdo_mysql or true;
+    postgresqlSupport = config.php.postgresql or true;
+    readlineSupport = config.php.readline or true;
+    soapSupport = config.php.soap or true;
+    socketsSupport = config.php.sockets or true;
+    sqliteSupport = config.php.sqlite or true;
+    xslSupport = config.php.xsl or false;
+    zipSupport = config.php.zip or true;
+    zlibSupport = config.php.zlib or true;
   };
 
   configurePhase = ''
     iniFile=$out/etc/php-recommended.ini
     [[ -z "$libxml2" ]] || export PATH=$PATH:$libxml2/bin
-    ./configure --with-config-file-scan-dir=/etc --with-config-file-path=$out/etc --prefix=$out  $configureFlags
+    ./configure --with-config-file-scan-dir=/etc --with-config-file-path=$out/etc --prefix=$out $configureFlags
     echo configurePhase end
+  '' + stdenv.lib.optionalString stdenv.isDarwin ''
+    # don't build php.dSYM as the php binary
+    sed -i 's/EXEEXT = \.dSYM/EXEEXT =/' Makefile
   '';
 
   installPhase = ''
     unset installPhase; installPhase;
-    cp php.ini-${ if builtins.lessThan (builtins.compareVersions version "5.3") 0
-        then "recommended" /* < PHP 5.3 */
-        else "production" /* >= PHP 5.3 */
-    } $iniFile
-  '';
+    cp php.ini-production $iniFile
+  '' + ( stdenv.lib.optionalString stdenv.isDarwin ''
+    for prog in $out/bin/*; do
+      wrapProgram "$prog" --prefix DYLD_LIBRARY_PATH : "$DYLD_LIBRARY_PATH"
+    done
+  '' );
 
-  src = args.fetchurl {
-    url = "http://nl.php.net/get/php-${version}.tar.bz2/from/this/mirror";
-    sha256 = "0jilzwscbcjzabzb7s2jnkcq2pjlya9a4z98gmck8r9q5fpmg49k";
+  src = fetchurl {
+    url = "http://www.php.net/distributions/php-${version}.tar.bz2";
+    sha256 = "1480pfp4391byqzmvdmbxkdkqwdzhdylj63sfzrcgadjf9lwzqf4";
     name = "php-${version}.tar.bz2";
   };
 
   meta = {
-    description = "The PHP language runtime engine";
-    homepage = http://www.php.net/;
-    license = "PHP-3";
+    description = "An HTML-embedded scripting language";
+    homepage    = http://www.php.net/;
+    license     = "PHP-3";
+    maintainers = with stdenv.lib.maintainers; [ lovek323 ];
+    platforms   = stdenv.lib.platforms.unix;
   };
 
-  patches = [./fix.patch];
+  patches = [ ./fix.patch ./5.3-freetype-dirs.patch ];
 
 })

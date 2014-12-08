@@ -1,18 +1,40 @@
-{stdenv, fetchurl, cmake, mesa, libX11, xproto, libXt }:
+{ stdenv, fetchurl, cmake, mesa, libX11, xproto, libXt
+, qtLib ? null }:
+
+with stdenv.lib;
+
+let
+  os = stdenv.lib.optionalString;
+  majorVersion = "5.10";
+  minorVersion = "1";
+  version = "${majorVersion}.${minorVersion}";
+in
 
 stdenv.mkDerivation rec {
-  name = "vtk-5.4.2";
+  name = "vtk-${os (qtLib != null) "qvtk-"}${version}";
   src = fetchurl {
-    url = "http://www.vtk.org/files/release/5.4/${name}.tar.gz";
-    sha256 = "0gd7xlxiqww6xxcs2kicz0g6k147y3200np4jnsf10vlxs10az03";
+    url = "${meta.homepage}files/release/${majorVersion}/vtk-${version}.tar.gz";
+    sha256 = "1fxxgsa7967gdphkl07lbfr6dcbq9a72z5kynlklxn7hyp0l18pi";
   };
-  buildInputs = [ cmake mesa libX11 xproto libXt ];
+
+  buildInputs = [ cmake mesa libX11 xproto libXt ]
+    ++ optional (qtLib != null) qtLib;
+
+  # Shared libraries don't work, because of rpath troubles with the current
+  # nixpkgs camke approach. It wants to call a binary at build time, just
+  # built and requiring one of the shared objects.
+  # At least, we use -fPIC for other packages to be able to use this in shared
+  # objects.
+  cmakeFlags = [ "-DCMAKE_C_FLAGS=-fPIC" "-DCMAKE_CXX_FLAGS=-fPIC" ]
+    ++ optional (qtLib != null) [ "-DVTK_USE_QT:BOOL=ON" ];
+
+  enableParallelBuilding = true;
 
   meta = {
     description = "Open source libraries for 3D computer graphics, image processing and visualization";
     homepage = http://www.vtk.org/;
     license = "BSD";
-    maintainers = with stdenv.lib.maintainers; [viric];
+    maintainers = with stdenv.lib.maintainers; [ viric bbenoist ];
     platforms = with stdenv.lib.platforms; linux;
   };
 }

@@ -2,19 +2,19 @@ x@{builderDefsPackage
   , jre, unzip
   , ...}:
 builderDefsPackage
-(a :  
-let 
-  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++ 
+(a :
+let
+  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++
     [];
 
   buildInputs = map (n: builtins.getAttr n x)
     (builtins.attrNames (builtins.removeAttrs x helperArgNames));
   sourceInfo = rec {
     baseName="vue";
-    version="3.1.2";
+    version="3.2.2";
     name="${baseName}-${version}";
-    url="http://releases.atech.tufts.edu/vue/v${version}/VUE_3_1_2.zip";
-    hash="0ga98gnp4qhcrb31cb8j0mwbrh6ym6hr4k5y4blxvyfff9c0vq47";
+    url="releases.atech.tufts.edu/jenkins/job/VUE/64/deployedArtifacts/download/artifact.2";
+    hash="0sb1kgan8fvph2cqfxk3906cwx5wy83zni2vlz4zzi6yg4zvfxld";
   };
 in
 rec {
@@ -30,14 +30,13 @@ rec {
   phaseNames = ["doDeploy"];
 
   doDeploy = a.fullDepEntry ''
-    unzip ${src}
     mkdir -p "$out"/{share/vue,bin}
-    cp VUE.jar "$out/share/vue/vue.jar"
-    echo '#!${a.stdenv.shell}' >> "$out/bin/vue" 
-    echo '${a.jre}/bin/java -jar "'"$out/share/vue/vue.jar"'" "$@"' >> "$out/bin/vue" 
+    cp ${src} "$out/share/vue/vue.jar"
+    echo '#!${a.stdenv.shell}' >> "$out/bin/vue"
+    echo '${a.jre}/bin/java -jar "'"$out/share/vue/vue.jar"'" "$@"' >> "$out/bin/vue"
     chmod a+x "$out/bin/vue"
   '' ["addInputs" "defEnsureDir"];
-      
+
   meta = {
     description = "Visual Understanding Environment - mind mapping software";
     maintainers = with a.lib.maintainers;
@@ -46,7 +45,6 @@ rec {
     ];
     platforms = with a.lib.platforms;
       linux;
-    license = "free-noncopyleft"; # Apache License fork, actually
+    license = a.lib.licenses.free; # Apache License fork, actually
   };
 }) x
-

@@ -1,4 +1,4 @@
-x@{builderDefsPackage
+x@{builderDefsPackage, ncurses
   , ...}:
 builderDefsPackage
 (a :  
@@ -10,10 +10,10 @@ let
     (builtins.attrNames (builtins.removeAttrs x helperArgNames));
   sourceInfo = rec {
     baseName="mtr";
-    version="0.80";
+    version="0.85";
     name="${baseName}-${version}";
     url="ftp://ftp.bitwizard.nl/${baseName}/${name}.tar.gz";
-    hash="1h0fzxy5cwml3p2nq749sq8mk2dsvm4qb1ah7a9hbf7kzabxvfvn";
+    hash="1jqrz8mil3lraaqgc87dyvx8d4bf3vq232pfx9mksxnkbphp4qvd";
   };
 in
 rec {
@@ -25,9 +25,11 @@ rec {
   inherit (sourceInfo) name version;
   inherit buildInputs;
 
+  patches = [ ./edd425.patch ];
+
   /* doConfigure should be removed if not needed */
-  phaseNames = ["doConfigure" "doMakeInstall"];
-      
+  phaseNames = ["doConfigure" "doPatch" "doMakeInstall"];
+
   meta = {
     description = "A network diagnostics tool";
     maintainers = with a.lib.maintainers;
@@ -35,7 +37,7 @@ rec {
       raskin
     ];
     platforms = with a.lib.platforms;
-      linux;
+      unix;
     license = a.lib.licenses.gpl2;
   };
   passthru = {

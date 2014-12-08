@@ -1,48 +1,45 @@
 { bdbSupport ? false # build support for Berkeley DB repositories
 , httpServer ? false # build Apache DAV module
 , httpSupport ? false # client must support http
-, sslSupport ? false # client must support https
-, compressionSupport ? false # client must support http compression
 , pythonBindings ? false
 , perlBindings ? false
 , javahlBindings ? false
 , saslSupport ? false
-, stdenv, fetchurl, apr, aprutil, neon, zlib, sqlite
-, httpd ? null, expat, swig ? null, jdk ? null, python ? null, perl ? null
-, sasl ? null
+, stdenv, fetchurl, apr, aprutil, zlib, sqlite
+, apacheHttpd ? null, expat, swig ? null, jdk ? null, python ? null, perl ? null
+, sasl ? null, serf ? null
 }:
 
 assert bdbSupport -> aprutil.bdbSupport;
-assert httpServer -> httpd != null;
+assert httpServer -> apacheHttpd != null;
 assert pythonBindings -> swig != null && python != null;
 assert javahlBindings -> jdk != null && perl != null;
-assert sslSupport -> neon.sslSupport;
-assert compressionSupport -> neon.compressionSupport;
 
 stdenv.mkDerivation rec {
 
-  version = "1.7.5";
+  version = "1.8.10";
 
   name = "subversion-${version}";
 
   src = fetchurl {
-    url = "mirror://apache/subversion//${name}.tar.bz2";
-    sha1 = "05c079762690d5ac1ccd2549742e7ef70fa45cf1";
+    url = "mirror://apache/subversion/${name}.tar.bz2";
+    sha256 = "1k3xskg2kjfp3zipl46lqx4fq4lhqnswd79qxp1kfhwplz401j8w";
   };
 
   buildInputs = [ zlib apr aprutil sqlite ]
-    ++ stdenv.lib.optional httpSupport neon
+    ++ stdenv.lib.optional httpSupport serf
     ++ stdenv.lib.optional pythonBindings python
     ++ stdenv.lib.optional perlBindings perl
     ++ stdenv.lib.optional saslSupport sasl;
 
   configureFlags = ''
     ${if bdbSupport then "--with-berkeley-db" else "--without-berkeley-db"}
-    ${if httpServer then "--with-apxs=${httpd}/bin/apxs" else "--without-apxs"}
+    ${if httpServer then "--with-apxs=${apacheHttpd}/bin/apxs" else "--without-apxs"}
     ${if pythonBindings || perlBindings then "--with-swig=${swig}" else "--without-swig"}
     ${if javahlBindings then "--enable-javahl --with-jdk=${jdk}" else ""}
     ${if stdenv.isDarwin then "--enable-keychain" else "--disable-keychain"}
-    ${if saslSupport then "--enable-sasl --with-sasl=${sasl}" else "--disable-sasl"}
+    ${if saslSupport then "--with-sasl=${sasl}" else "--without-sasl"}
+    ${if httpSupport then "--with-serf=${serf}" else "--without-serf"}
     --with-zlib=${zlib}
     --with-sqlite=${sqlite}
   '';
@@ -65,6 +62,9 @@ stdenv.mkDerivation rec {
         make install
         cd -
     fi
+
+    mkdir -p $out/share/bash-completion/completions
+    cp tools/client-side/bash_completion $out/share/bash-completion/completions/subversion
   '';
 
   inherit perlBindings pythonBindings;
@@ -74,7 +74,7 @@ stdenv.mkDerivation rec {
   meta = {
     description = "A version control system intended to be a compelling replacement for CVS in the open source community";
     homepage = http://subversion.apache.org/;
-    maintainers = [ stdenv.lib.maintainers.eelco ];
-    platforms = stdenv.lib.platforms.all;
+    maintainers = with stdenv.lib.maintainers; [ eelco lovek323 ];
+    hydraPlatforms = stdenv.lib.platforms.linux ++ stdenv.lib.platforms.darwin;
   };
 }

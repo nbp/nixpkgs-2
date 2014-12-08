@@ -7,23 +7,23 @@ stdenv.mkDerivation rec {
   name = "${baseName}-${kernel.version}";
 
   src = fetchurl {
-    url = "http://sourceforge.net/projects/frandom/files/${baseName}.tar.gz";
+    url = "mirror://sourceforge/frandom/${baseName}.tar.gz";
     sha256 = "15rgyk4hfawqg7z1spk2xlk1nn6rcdls8gdhc70f91shrc9pvlls";
   };
 
   preBuild = ''
-    kernelVersion=$(cd ${kernel}/lib/modules && ls)
+    kernelVersion=${kernel.modDirVersion}
     substituteInPlace Makefile \
       --replace "\$(shell uname -r)" "$kernelVersion" \
-      --replace "/lib/modules" "${kernel}/lib/modules"
+      --replace "/lib/modules" "${kernel.dev}/lib/modules"
   '';
  
   installPhase = ''
-    kernelVersion=$(cd ${kernel}/lib/modules && ls)
-    ensureDir $out/lib/modules/$kernelVersion/misc
+    kernelVersion=${kernel.modDirVersion}
+    mkdir -p $out/lib/modules/$kernelVersion/misc
     cp frandom.ko $out/lib/modules/$kernelVersion/misc
 
-    ensureDir $out/lib/udev/rules.d
+    mkdir -p $out/lib/udev/rules.d
     tee $out/lib/udev/rules.d/10-frandom.rules <<-EOF
     #
     # These are the rules for the frandom devices. In theory, we could let
@@ -40,8 +40,7 @@ stdenv.mkDerivation rec {
   meta = {
     description = "A very fast random number generator kernel module";
     homepage = http://frandom.sourceforge.net/;
-    license = "GPLv2";
+    license = stdenv.lib.licenses.gpl2;
     maintainers = [ stdenv.lib.maintainers.bluescreen303 ];
   };
 }
-

@@ -1,19 +1,19 @@
 x@{builderDefsPackage
   , ...}:
 builderDefsPackage
-(a :  
-let 
-  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++ 
+(a :
+let
+  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++
     [];
 
   buildInputs = map (n: builtins.getAttr n x)
     (builtins.attrNames (builtins.removeAttrs x helperArgNames));
   sourceInfo = rec {
     baseName="celt";
-    version="0.11.1";
+    version="0.11.3";
     name="${baseName}-${version}";
     url="http://downloads.xiph.org/releases/${baseName}/${name}.tar.gz";
-    hash="1gsc3pxydyzzra8w0r6hrrsalm76lrq4lw6bd283qa4bpagmghh1";
+    hash="0dh893wqbh0q4a0x1xyqryykmnhpv7mkblpch019s04a99fq2r3y";
   };
 in
 rec {
@@ -27,16 +27,16 @@ rec {
 
   /* doConfigure should be removed if not needed */
   phaseNames = ["doConfigure" "doMakeInstall"];
-      
+
   meta = {
-    description = "CELT - low-delay audio codec";
+    description = "Low-delay audio codec";
     maintainers = with a.lib.maintainers;
     [
       raskin
     ];
     platforms = with a.lib.platforms;
       linux;
-    license = "free";
+    license = a.lib.licenses.free;
   };
   passthru = {
     updateInfo = {
@@ -44,4 +44,3 @@ rec {
     };
   };
 }) x
-

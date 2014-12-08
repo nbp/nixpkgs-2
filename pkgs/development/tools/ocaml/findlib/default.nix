@@ -5,16 +5,16 @@ let
 in
 
 stdenv.mkDerivation {
-  name = "ocaml-findlib-1.2.7";
+  name = "ocaml-findlib-1.5.3";
 
   src = fetchurl {
-    url = http://download.camlcity.org/download/findlib-1.2.7.tar.gz;
-    sha256 = "16q2avr48hd7vwz3bwvjw39dva86mdwa05drcwz32fwbwhlv2869";
+    url = http://download.camlcity.org/download/findlib-1.5.3.tar.gz;
+    sha256 = "1kw2siv4pc8q060m9xpgxvjs07ic1kiphyxmkwcz6nyb91p8286r";
   };
 
   buildInputs = [m4 ncurses ocaml];
 
-  patches = [ ./ldconf.patch ];
+  patches = [ ./ldconf.patch ./install_topfind.patch ];
 
   dontAddPrefix=true;
 
@@ -24,7 +24,6 @@ stdenv.mkDerivation {
       -mandir $out/share/man
       -sitelib $out/lib/ocaml/${ocaml_version}/site-lib
       -config $out/etc/findlib.conf
-      -no-topfind
     )
   '';
 
@@ -43,17 +42,18 @@ stdenv.mkDerivation {
           mkdir -p $OCAMLFIND_DESTDIR
         fi
     }
-    
-    envHooks=(''${envHooks[@]} addOCamlPath)
+
+    envHooks+=(addOCamlPath)
   '';
 
   meta = {
     homepage = http://projects.camlcity.org/projects/findlib.html;
     description = "O'Caml library manager";
-    license = "MIT/X11";
+    license = stdenv.lib.licenses.mit;
     platforms = ocaml.meta.platforms;
     maintainers = [
       stdenv.lib.maintainers.z77z
+      stdenv.lib.maintainers.vbmithr
     ];
   };
 }

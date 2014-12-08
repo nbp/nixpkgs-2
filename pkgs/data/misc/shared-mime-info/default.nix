@@ -2,11 +2,11 @@
 , libxml2, glib}:
 
 stdenv.mkDerivation rec {
-  name = "shared-mime-info-1.0";
+  name = "shared-mime-info-1.3";
 
   src = fetchurl {
     url = "http://freedesktop.org/~hadess/${name}.tar.xz";
-    sha256 = "13xf09c4vc4hl5qhk7i4gc6z8knc32b5wjb4ds8ds4z2mbjk1s6j";
+    sha256 = "0fijrc8j2kw6bvdx7fmlfafbcwxvinhr8l44b46b3v59gj69rm2g";
   };
 
   buildInputs = [

@@ -8,7 +8,7 @@ stdenv.mkDerivation rec {
     sha256 = "076zkyqkn56q0a8n3h65n1a68fknk4hrrp6mbhajq5s1wp5248j8";
   };
 
-  buildNativeInputs = [ flex bison ];
+  nativeBuildInputs = [ flex bison ];
 
   configureFlags = [ "--disable-shared" ];
 
@@ -26,7 +26,7 @@ stdenv.mkDerivation rec {
 
     homepage = http://unfs3.sourceforge.net/;
 
-    license = "BSD";                              # 3-clause BSD
+    license = stdenv.lib.licenses.bsd3;
     platforms = stdenv.lib.platforms.unix;
     maintainers = [ stdenv.lib.maintainers.ludo ];
   };

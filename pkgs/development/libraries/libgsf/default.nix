@@ -1,35 +1,38 @@
-{ fetchurl, stdenv, perl, perlXMLParser, pkgconfig, libxml2
-, glib, gettext, intltool, bzip2, gdk_pixbuf
-, gnome_vfs, libbonobo, python }:
+{ fetchurl, stdenv, pkgconfig, intltool, gettext, glib, libxml2, zlib, bzip2
+, python, gdk_pixbuf, libiconvOrEmpty, libintlOrEmpty }:
 
+with { inherit (stdenv.lib) optionals; };
 
 stdenv.mkDerivation rec {
-  name = "libgsf-1.14.22";
+  name = "libgsf-1.14.30";
 
   src = fetchurl {
-    url = mirror://gnome/sources/libgsf/1.14/libgsf-1.14.22.tar.xz;
-    sha256 = "0gvq1gbbcl078s3kgdc508jp7p3a3ps34fj4pf8vsamprbikpwm5";
+    url    = "mirror://gnome/sources/libgsf/1.14/${name}.tar.xz";
+    sha256 = "0w2v1a9sxsymd1mcy4mwsz4r6za9iwq69rj86nb939p41d4c6j6b";
   };
 
-  buildNativeInputs = [ intltool pkgconfig ];
-  buildInputs =
-    [ perl perlXMLParser gettext bzip2 gnome_vfs python gdk_pixbuf ];
+  nativeBuildInputs = [ pkgconfig intltool ];
 
-  propagatedBuildInputs = [ glib libxml2 libbonobo ];
+  buildInputs = [ gettext bzip2 zlib python ];
+
+  propagatedBuildInputs = [ libxml2 glib gdk_pixbuf ]
+    ++ libiconvOrEmpty
+    ++ libintlOrEmpty;
 
   doCheck = true;
 
-  meta = {
-    homepage = http://www.gnome.org/projects/libgsf;
-    license = "LGPLv2";
+  NIX_LDFLAGS = stdenv.lib.optionalString stdenv.isDarwin "-lintl";
+
+  meta = with stdenv.lib; {
     description = "GNOME's Structured File Library";
+    homepage    = http://www.gnome.org/projects/libgsf;
+    license     = licenses.lgpl2Plus;
+    maintainers = with maintainers; [ lovek323 ];
+    platforms   = stdenv.lib.platforms.unix;
 
     longDescription = ''
       Libgsf aims to provide an efficient extensible I/O abstraction for
       dealing with different structured file formats.
     '';
-
-    maintainers = [ stdenv.lib.maintainers.ludo ];
-    platforms = stdenv.lib.platforms.linux;
   };
 }

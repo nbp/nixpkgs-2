@@ -1,50 +1,30 @@
-x@{builderDefsPackage
-  , perl, zlib, gmp, readline
-  , ...}:
-builderDefsPackage
-(a :  
-let 
-  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++ 
-    [];
+{ stdenv, fetchurl, gmp, readline }:
 
-  buildInputs = map (n: builtins.getAttr n x)
-    (builtins.attrNames (builtins.removeAttrs x helperArgNames));
-  sourceInfo = rec {
-    baseName="pari";
-    version="2.5.0";
-    name="${baseName}-${version}";
-    url="http://pari.math.u-bordeaux.fr/pub/pari/unix/${name}.tar.gz";
-    hash="18ipxj4hzj7s3fqz878fiypkzrkbjj8wvbygz9j8c3ya06q27jax";
-  };
-in
-rec {
-  src = a.fetchurl {
-    url = sourceInfo.url;
-    sha256 = sourceInfo.hash;
+stdenv.mkDerivation rec {
+  version = "2.7.2";
+  name = "pari-${version}";
+
+  src = fetchurl {
+    url = "http://pari.math.u-bordeaux.fr/pub/pari/unix/${name}.tar.gz";
+    sha256 = "1b0hzyhafpxhmiljyhnsh6c27ydsvb2599fshwq2fjfm96awjxmc";
   };
 
-  inherit (sourceInfo) name version;
-  inherit buildInputs;
+  buildInputs = [gmp readline];
 
-  /* doConfigure should be removed if not needed */
-  phaseNames = ["doConfigure" "doMakeInstall"];
-  configureCommand="./Configure";
-      
+  configureScript = "./Configure";
+  configureFlags =
+    "--with-gmp=${gmp} " +
+    "--with-readline=${readline}";
+
   meta = {
     description = "Computer algebra system for high-performance number theory computations";
-    maintainers = with a.lib.maintainers;
-    [
-      raskin
-    ];
-    platforms = with a.lib.platforms;
-      linux;
-    license = "GPLv2+";
-    homepage = "http://pari.math.u-bordeaux.fr/";
-  };
-  passthru = {
-    updateInfo = {
-      downloadPage = "http://pari.math.u-bordeaux.fr/download.html";
-    };
-  };
-}) x
+    homepage    = "http://pari.math.u-bordeaux.fr/";
+    license     = "GPLv2+";
+    maintainers = with stdenv.lib.maintainers; [ertes raskin];
+    platforms   = stdenv.lib.platforms.linux;
 
+    inherit version;
+    downloadPage = "http://pari.math.u-bordeaux.fr/download.html";
+    updateWalker = true;
+  };
+}

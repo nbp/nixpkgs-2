@@ -1,11 +1,11 @@
-{stdenv, fetchurl, gzip, popt}:
+{ stdenv, fetchurl, gzip, popt }:
 
 stdenv.mkDerivation rec {
-  name = "logrotate-3.7.8";
+  name = "logrotate-3.8.7";
 
   src = fetchurl {
-    url = https://fedorahosted.org/releases/l/o/logrotate/logrotate-3.7.8.tar.gz;
-    sha256 = "1p9nqmznqvzn03saw3jxa8xwsdqym8jr778rwig8kk786343vai1";
+    url = "https://fedorahosted.org/releases/l/o/logrotate/${name}.tar.gz";
+    sha256 = "0r1bs40gwi8awx6rjq3n4lw9fgws97ww2li7z87683p380gnkfpn";
   };
 
   # Logrotate wants to access the 'mail' program; to be done.
@@ -21,11 +21,11 @@ stdenv.mkDerivation rec {
   buildInputs = [ popt ];
 
   meta = {
-    homepage = "https://fedorahosted.org/releases/l/o/logrotate/";
+    homepage = https://fedorahosted.org/releases/l/o/logrotate/;
     description = "Rotates and compresses system logs";
-    license = "GPLv2+";
-    maintainers = with stdenv.lib.maintainers; [viric];
-    platforms = with stdenv.lib.platforms; all;
+    license = stdenv.lib.licenses.gpl2Plus;
+    maintainers = [ stdenv.lib.maintainers.viric ];
+    platforms = stdenv.lib.platforms.all;
   };
 
 }

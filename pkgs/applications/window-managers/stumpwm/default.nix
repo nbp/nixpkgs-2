@@ -1,61 +1,46 @@
-args : 
-let 
-  lib = args.lib;
-  fetchurl = args.fetchurl;
-  noDepEntry = args.noDepEntry;
-  fullDepEntry = args.fullDepEntry;
+{ stdenv, pkgs, fetchgit, autoconf, sbcl, lispPackages, xdpyinfo, texinfo4, makeWrapper, stumpwmContrib }:
 
-  buildInputs = lib.attrVals ["clisp" "texinfo"] args;
-  version = lib.attrByPath ["version"] "0.9.7" args; 
-
-  pkgName = "stumpwm";
+let
+  tag = "0.9.8";
 in
-rec {
-  src = fetchurl {
-    url = "http://download.savannah.gnu.org/releases/stumpwm/${pkgName}-${version}.tgz";
-    sha256 = "a0793d22ef90731d34f84e51deafb4bc2095a357c70b9505dc57516f481cdf78";
-  };
 
-  inherit buildInputs;
-  configureFlags = ["--with-lisp=clisp"];
-  envVars = noDepEntry (''
-    export HOME="$NIX_BUILD_TOP";
-  '');
+stdenv.mkDerivation rec {
+ name = "stumpwm-${tag}";
 
-  installation = fullDepEntry (''
-    mkdir -p $out/bin 
-    mkdir -p $out/share/stumpwm/doc
-    mkdir -p $out/share/info 
-    mkdir -p $out/share/stumpwm/lisp
+ src = fetchgit {
+   url = "https://github.com/stumpwm/stumpwm";
+   rev = "refs/tags/${tag}";
+   sha256 = "0a0lwwlly4hlmb30bk6dmi6bsdsy37g4crvv1z24gixippyv1qzm";
+ };
 
-    cp stumpwm $out/bin
-    cp contrib/stumpish $out/bin || true
-    cp sample-stumpwmrc.lisp  $out/share/stumpwm/doc
-    cp stumpwm.info $out/share/info
+ buildInputs = [ texinfo4 autoconf lispPackages.clx lispPackages.cl-ppcre sbcl makeWrapper stumpwmContrib ];
 
-    cp -r {.,cl-ppcre}/*.{lisp,fas,lib,asd} contrib $out/share/stumpwm/lisp
-    cd $out/share/stumpwm/lisp
-    cat << EOF >init-stumpwm.lisp
-      (require "asdf") 
-      (asdf:operate 'asdf:load-op :cl-ppcre) 
-      (asdf:operate 'asdf:load-op :stumpwm)
-    EOF
-    clisp -K full -i init-stumpwm.lisp
-    cat << EOF >init-stumpwm.lisp
-      (require "asdf") 
-      (asdf:operate 'asdf:load-source-op :cl-ppcre) 
-      (asdf:operate 'asdf:load-source-op :stumpwm)
-    EOF
-    '') ["minInit" "defEnsureDir" "addInputs" "doMake"];
+ phases = [ "unpackPhase" "preConfigurePhase" "configurePhase" "installPhase" ];
 
-  /* doConfigure should be specified separately */
-  phaseNames = ["envVars" "doConfigure" "doMake" "installation"];
-      
-  name = "${pkgName}-" + version;
-  meta = {
-    description = "Common Lisp-based ratpoison-like window manager.";
-    maintainers = [args.lib.maintainers.raskin];
-    platforms = with args.lib.platforms;
-      linux ++ freebsd;
+ preConfigurePhase = ''
+   $src/autogen.sh
+   mkdir -pv $out/bin
+ '';
+
+ configurePhase = ''
+   ./configure --prefix=$out --with-contrib-dir=${stumpwmContrib}/contrib
+ '';
+
+ installPhase = ''
+   make
+   make install
+   # For some reason, stumpwmContrib is not retained as a runtime
+   # dependency (probably because $out/bin/stumpwm is compressed or
+   # obfuscated in some way). Thus we add an explicit reference here.
+   mkdir $out/nix-support
+   echo ${stumpwmContrib} > $out/nix-support/stumpwm-contrib
+ '';
+
+  meta = with stdenv.lib; {
+    description = "A tiling window manager for X11";
+    homepage    = https://github.com/stumpwm/;
+    license     = licenses.gpl2Plus;
+    maintainers = with maintainers; [ _1126 ];
+    platforms   = platforms.linux;
   };
 }

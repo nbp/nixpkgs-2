@@ -1,68 +1,96 @@
-{ GConf, alsaLib, bzip2, cairo, cups, dbus, dbus_glib, expat
-, fetchurl, ffmpeg, fontconfig, freetype, libX11, libXfixes
-, glib, gtk, gdk_pixbuf, pango
-, libXScrnSaver, libXdamage, libXext, libXrender, libXt, libXtst, libXcomposite
-, libgcrypt, libjpeg, libpng, makeWrapper, nspr, nss, patchelf
-, stdenv, unzip, zlib, pam, pcre, udev }:
+{ newScope, stdenv, makeWrapper, makeDesktopItem
 
-assert stdenv.system == "i686-linux" || stdenv.system == "x86_64-linux" ;
+# package customization
+, channel ? "stable"
+, enableSELinux ? false
+, enableNaCl ? false
+, useOpenSSL ? false
+, gnomeSupport ? false
+, gnomeKeyringSupport ? false
+, proprietaryCodecs ? true
+, enablePepperFlash ? false
+, enableWideVine ? false
+, cupsSupport ? false
+, pulseSupport ? false
+, hiDPISupport ? false
+}:
 
-stdenv.mkDerivation rec {
-  name = "chromium-19.0.1061.0-pre${version}";
+let
+  callPackage = newScope chromium;
 
-  # To determine the latest revision, get
-  # ‘http://commondatastorage.googleapis.com/chromium-browser-continuous/Linux/LAST_CHANGE’.
-  # For the version number, see ‘about:version’.
-  version = "124950";
-  
-  src =
-    if stdenv.system == "x86_64-linux" then
-      fetchurl {
-        url = "http://commondatastorage.googleapis.com/chromium-browser-continuous/Linux_x64/${version}/chrome-linux.zip";
-        sha256 = "4472bf584a96e477e2c17f96d4452dd41f4f34ac3d6a9bb4c845cf15d8db0c73";
-      }
-    else if stdenv.system == "i686-linux" then
-      fetchurl {
-        url = "http://commondatastorage.googleapis.com/chromium-browser-continuous/Linux/${version}/chrome-linux.zip";
-        sha256 = "6e8a49d9917ee26b67d14cd10b85711c3b9382864197ba02b3cfe8e636d3d69c";
-      }
-    else throw "Chromium is not supported on this platform.";
+  chromium = {
+    source = callPackage ./source {
+      inherit channel;
+      # XXX: common config
+      inherit useOpenSSL;
+    };
 
-  phases = "unpackPhase installPhase";
+    mkChromiumDerivation = callPackage ./common.nix {
+      inherit enableSELinux enableNaCl useOpenSSL gnomeSupport
+              gnomeKeyringSupport proprietaryCodecs cupsSupport
+              pulseSupport hiDPISupport;
+    };
 
-  buildInputs = [ makeWrapper unzip ];
+    browser = callPackage ./browser.nix { };
+    sandbox = callPackage ./sandbox.nix { };
 
-  libPath =
-    stdenv.lib.makeLibraryPath
-       [ GConf alsaLib bzip2 cairo cups dbus dbus_glib expat
-         ffmpeg fontconfig freetype libX11 libXScrnSaver libXfixes libXcomposite
-         libXdamage libXext libXrender libXt libXtst libgcrypt libjpeg
-         libpng nspr stdenv.gcc.gcc zlib stdenv.gcc.libc
-         glib gtk gdk_pixbuf pango
-         pam udev
-       ];
+    plugins = callPackage ./plugins.nix {
+      inherit enablePepperFlash enableWideVine;
+    };
+  };
 
-  installPhase = ''
-    mkdir -p $out/bin
-    mkdir -p $out/libexec/chrome
+  desktopItem = makeDesktopItem {
+    name = "chromium";
+    exec = "chromium";
+    icon = "${chromium.browser}/share/icons/hicolor/48x48/apps/chromium.png";
+    comment = "An open source web browser from Google";
+    desktopName = "Chromium";
+    genericName = "Web browser";
+    mimeType = stdenv.lib.concatStringsSep ";" [
+      "text/html"
+      "text/xml"
+      "application/xhtml+xml"
+      "x-scheme-handler/http"
+      "x-scheme-handler/https"
+      "x-scheme-handler/ftp"
+      "x-scheme-handler/mailto"
+      "x-scheme-handler/webcal"
+      "x-scheme-handler/about"
+      "x-scheme-handler/unknown"
+    ];
+    categories = "Network;WebBrowser";
+  };
 
-    cp -R * $out/libexec/chrome
+  suffix = if channel != "stable" then "-" + channel else "";
 
-    strip $out/libexec/chrome/chrome
-    
-    ${patchelf}/bin/patchelf \
-      --interpreter "$(cat $NIX_GCC/nix-support/dynamic-linker)" \
-      --set-rpath ${libPath}:$out/lib:${stdenv.gcc.gcc}/lib64:${stdenv.gcc.gcc}/lib \
-      $out/libexec/chrome/chrome
+in stdenv.mkDerivation {
+  name = "chromium${suffix}-${chromium.browser.version}";
 
-    makeWrapper $out/libexec/chrome/chrome $out/bin/chrome \
-      --prefix LD_LIBRARY_PATH : "${pcre}/lib:${nss}/lib"
+  buildInputs = [ makeWrapper ];
+
+  buildCommand = let
+    browserBinary = "${chromium.browser}/libexec/chromium/chromium";
+    sandboxBinary = "${chromium.sandbox}/bin/chromium-sandbox";
+    mkEnvVar = key: val: "--set '${key}' '${val}'";
+    envVars = chromium.plugins.settings.envVars or {};
+    flags = chromium.plugins.settings.flags or [];
+  in with stdenv.lib; ''
+    mkdir -p "$out/bin" "$out/share/applications"
+
+    ln -s "${chromium.browser}/share" "$out/share"
+    makeWrapper "${browserBinary}" "$out/bin/chromium" \
+      --set CHROMIUM_SANDBOX_BINARY_PATH "${sandboxBinary}" \
+      ${concatStrings (mapAttrsToList mkEnvVar envVars)} \
+      --add-flags "${concatStringsSep " " flags}"
+
+    ln -s "$out/bin/chromium" "$out/bin/chromium-browser"
+    ln -s "${chromium.browser}/share/icons" "$out/share/icons"
+    cp -v "${desktopItem}/share/applications/"* "$out/share/applications"
   '';
 
-  meta =  with stdenv.lib; {
-    description = "Chromium, an open source web browser";
-    homepage = http://www.chromium.org/;
-    maintainers = with stdenv.lib.maintainers; [ goibhniu chaoflow ];
-    license = licenses.bsd3;
+  inherit (chromium.browser) meta packageName;
+
+  passthru = {
+    mkDerivation = chromium.mkChromiumDerivation;
   };
 }

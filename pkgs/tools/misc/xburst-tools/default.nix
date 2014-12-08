@@ -24,13 +24,13 @@ stdenv.mkDerivation {
   # Not to strip cross build binaries (this is for the gcc-cross-wrapper)
   dontCrossStrip = true;
 
-  buildNativeInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [ libusb libusb1 autoconf automake confuse ] ++
     stdenv.lib.optional (gccCross != null) gccCross;
 
   meta = {
     description = "Qi tools to access the Ben Nanonote USB_BOOT mode";
-    license = "GPLv3";
+    license = stdenv.lib.licenses.gpl3;
     homepage = http://www.linux-mtd.infradead.org/;
     maintainers = with stdenv.lib.maintainers; [viric];
     platforms = with stdenv.lib.platforms; linux;

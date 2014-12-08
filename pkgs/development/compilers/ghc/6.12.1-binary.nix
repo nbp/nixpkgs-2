@@ -1,11 +1,5 @@
 {stdenv, fetchurl, perl, ncurses, gmp}:
 
-let
-  supportedPlatforms = ["x86_64-linux" "i686-linux"];
-in
-
-assert stdenv.lib.elem stdenv.system supportedPlatforms;
-
 stdenv.mkDerivation rec {
   version = "6.12.1";
 
@@ -34,10 +28,10 @@ stdenv.mkDerivation rec {
      ''
       mkdir "$TMP/bin"
       for i in strip; do
-        echo '#!/bin/sh' >> "$TMP/bin/$i"
+        echo '#! ${stdenv.shell}' > "$TMP/bin/$i"
         chmod +x "$TMP/bin/$i"
-        PATH="$TMP/bin:$PATH"
       done
+      PATH="$TMP/bin:$PATH"
      '' +
     # We have to patch the GMP paths for the integer-gmp package.
      ''
@@ -105,5 +99,6 @@ stdenv.mkDerivation rec {
         [ $(./main) == "yes" ]
       '';
 
-  meta.platforms = supportedPlatforms;
+  meta.license = stdenv.lib.licenses.bsd3;
+  meta.platforms = ["x86_64-linux" "i686-linux"];
 }

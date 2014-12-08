@@ -1,26 +1,29 @@
-{stdenv, fetchurl, wget, bash, coreutils}:
-  stdenv.mkDerivation rec {
-    version = "2.19";
-    name = "wgetpaste-${version}";
-      src = fetchurl {
-        url = "http://wgetpaste.zlin.dk/${name}.tar.bz2";
-        sha256 = "bb832557fca3be838838a87d790cb535974ea70bd2393818201676212f0f3b5a";
-    };
-    # currently zsh-autocompletion support is not installed
+{ stdenv, fetchurl, wget, bash, coreutils }:
 
-    prePatch = ''
-      substituteInPlace wgetpaste --replace "/usr/bin/env bash" "${bash}/bin/bash"
-    '';
+stdenv.mkDerivation rec {
+  version = "2.25";
+  name = "wgetpaste-${version}";
+  src = fetchurl {
+    url = "http://wgetpaste.zlin.dk/${name}.tar.bz2";
+    sha256 = "1x209j85mryp3hxmv1gfsbvw03k306k5fa65ky0zxx07cs70fzka";
+  };
+  # currently zsh-autocompletion support is not installed
 
-    installPhase = ''
-      mkdir -p $out/bin;
-      cp wgetpaste $out/bin;
-    '';
+  prePatch = ''
+    substituteInPlace wgetpaste --replace "/usr/bin/env bash" "${bash}/bin/bash"
+    substituteInPlace wgetpaste --replace "LC_ALL=C wget" "LC_ALL=C ${wget}/bin/wget"
+  '';
 
-    meta = {
-      description = "wgetpaste";
-      homepage = http://wgetpaste.zlin.dk/;
-      license = "publicDomain";
-      maintainers = with stdenv.lib.maintainers; [qknight];
-    };
-  }
+  installPhase = ''
+    mkdir -p $out/bin;
+    cp wgetpaste $out/bin;
+  '';
+
+  meta = {
+    description = "Command-line interface to various pastebins";
+    homepage = http://wgetpaste.zlin.dk/;
+    license = stdenv.lib.licenses.publicDomain;
+    maintainers = with stdenv.lib.maintainers; [ qknight iElectric ];
+    platforms = stdenv.lib.platforms.all;
+  };
+}

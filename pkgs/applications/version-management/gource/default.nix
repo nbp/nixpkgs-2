@@ -1,23 +1,29 @@
-{ stdenv, fetchurl, SDL, ftgl, pkgconfig, libpng, libjpeg, pcre, SDL_image, glew, mesa }:
+{ stdenv, fetchurl, SDL, ftgl, pkgconfig, libpng, libjpeg, pcre
+, SDL_image, glew, mesa, boost, glm
+}:
 
-let
-  name = "gource-0.37";
-in
-stdenv.mkDerivation {
-  inherit name;
+stdenv.mkDerivation rec {
+  version = "0.43";
+  name = "gource-${version}";
 
   src = fetchurl {
-    url = "http://gource.googlecode.com/files/${name}.tar.gz";
-    sha256 = "03kd9nn65cl1p2jgn6pvpxmvnfscz3c8jqds90fsc0z37ij2iiyn";
+    url = "https://github.com/acaudwell/Gource/releases/download/${name}/${name}.tar.gz";
+    sha256 = "1r5x9ai86f609hf584n0xaf5hxkbilj5qihn89v7ghpmwk40m945";
   };
 
-  buildInputs = [glew SDL ftgl pkgconfig libpng libjpeg pcre SDL_image mesa];
+  buildInputs = [
+    glew SDL ftgl pkgconfig libpng libjpeg pcre SDL_image mesa
+    boost glm
+  ];
 
-  meta = {
-    homepage = "http://code.google.com/p/gource/";
-    description = "software version control visualization tool";
-    license = stdenv.lib.licenses.gpl3Plus;
+  configureFlags = [ "--with-boost-libdir=${boost.lib}/lib" ];
 
+  NIX_CFLAGS_COMPILE = "-fpermissive"; # fix build with newer gcc versions
+
+  meta = with stdenv.lib; {
+    homepage = http://code.google.com/p/gource/;
+    description = "A Software version control visualization tool";
+    license = licenses.gpl3Plus;
     longDescription = ''
       Software projects are displayed by Gource as an animated tree with
       the root directory of the project at its centre. Directories
@@ -28,8 +34,7 @@ stdenv.mkDerivation {
       Mercurial and Bazaar and SVN. Gource can also parse logs produced
       by several third party tools for CVS repositories.
     '';
-
-    platforms = stdenv.lib.platforms.gnu;
-    maintainers = [ stdenv.lib.maintainers.simons ];
+    platforms = platforms.linux;
+    maintainers = with maintainers; [ pSub ];
   };
 }

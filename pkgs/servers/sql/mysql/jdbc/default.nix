@@ -1,12 +1,12 @@
 {stdenv, fetchurl, ant, unzip}:
 
 stdenv.mkDerivation {
-  name = "mysql-connector-java-5.1.17";
+  name = "mysql-connector-java-5.1.32";
   builder = ./builder.sh;
 
   src = fetchurl {
-    url = ftp://mirror.leaseweb.com/mysql/Downloads/Connector-J/mysql-connector-java-5.1.17.zip;
-    sha256 = "1c4hsx0qwb3rp66a1dllnah2zi9gqqnr4aqm9p59yrqj5jr22ldp";
+    url = http://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.32.zip;
+    sha256 = "11vjwws1pa8fdwn86rrmqdwsq3ld3sh2r0pp4lpr2gxw0w18ykc7";
   };
 
   buildInputs = [ unzip ant ];

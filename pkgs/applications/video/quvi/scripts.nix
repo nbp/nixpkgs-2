@@ -2,21 +2,20 @@
 
 stdenv.mkDerivation rec {
   name = "quvi-scripts-${version}";
-  version="0.4.0";
+  version="0.9.20131130";
 
   src = fetchurl {
-    url = "mirror://sourceforge/quvi/libquvi-scripts-${version}.tar.gz";
-    sha256 = "14p1sn7id4n35isaw3i3h8vsgfqlym09fih9k5xfqwsg6n7xdvq5";
+    url = "mirror://sourceforge/quvi/libquvi-scripts-${version}.tar.xz";
+    sha256 = "1qvp6z5k1qgcys7vf7jd6fm0g07xixmciwj14ypn1kqhmjgizwhp";
   };
 
   buildInputs = [ pkgconfig ];
 
-  meta = { 
-    description = "Quvi is a web video downloader.";
+  meta = {
+    description = "Web video downloader";
     homepage = http://quvi.sf.net;
-    license = "LGPLv2.1+";
+    license = stdenv.lib.licenses.lgpl21Plus;
     platforms = stdenv.lib.platforms.linux;
-    maintainers = [ stdenv.lib.maintainers.mornfall ]; 
+    maintainers = [ stdenv.lib.maintainers.mornfall ];
   };
 }
-

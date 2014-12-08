@@ -1,21 +1,24 @@
 { stdenv, fetchurl, pkgconfig, freetype, lcms, libtiff, libxml2
-, libart_lgpl, qt, python, cups, fontconfig, libjpeg
+, libart_lgpl, qt4, python, cups, fontconfig, libjpeg
 , zlib, libpng, xorg, cairo, podofo, aspell, boost, cmake }:
-stdenv.mkDerivation {
-  name = "scribus-1.4.0rc6";
+
+stdenv.mkDerivation rec {
+  name = "scribus-1.4.4";
 
   src = fetchurl {
-    url = mirror://sourceforge/scribus/scribus/scribus-1.4.0.rc6.tar.bz2;
-    sha256 = "1rrnzxjzhqj4lgyfswly501xlyvm4hsnnq7zw008v0cnkx31icli";
+    url = "mirror://sourceforge/scribus/scribus/${name}.tar.xz";
+    sha256 = "1bhp09x8rgdhyq8b516226nn0p7pxd2arkfkf2vvvklca5arsfx4";
   };
 
   enableParallelBuilding = true;
 
-  buildInputs =
-    [ pkgconfig cmake freetype lcms libtiff libxml2 libart_lgpl qt
+  buildInputs = with xorg;
+    [ pkgconfig cmake freetype lcms libtiff libxml2 libart_lgpl qt4
       python cups fontconfig
-      xorg.libXaw xorg.libXext xorg.libX11 xorg.libXtst xorg.libXi xorg.libXinerama
       libjpeg zlib libpng podofo aspell cairo
+      boost # for internal 2geom library
+      libXaw libXext libX11 libXtst libXi libXinerama
+      libpthreadstubs libXau libXdmcp
     ];
 
   meta = {
@@ -23,6 +26,6 @@ stdenv.mkDerivation {
     platforms = stdenv.lib.platforms.linux;
     description = "Desktop Publishing (DTP) and Layout program for Linux";
     homepage = http://www.scribus.net;
-    license = "GPLv2";
+    license = stdenv.lib.licenses.gpl2;
   };
 }

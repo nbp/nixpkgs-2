@@ -1,51 +1,66 @@
 { stdenv, fetchurl, ncurses, x11, libXaw, libXpm, Xaw3d
 , pkgconfig, gtk, libXft, dbus, libpng, libjpeg, libungif
 , libtiff, librsvg, texinfo, gconf, libxml2, imagemagick, gnutls
-, alsaLib
+, alsaLib, cairo
+, withX ? !stdenv.isDarwin, withGTK ? true
 }:
 
-assert (gtk != null) -> (pkgconfig != null);
 assert (libXft != null) -> libpng != null;	# probably a bug
 assert stdenv.isDarwin -> libXaw != null;	# fails to link otherwise
 
 stdenv.mkDerivation rec {
-  name = "emacs-24.0.94";
+  name = "emacs-24.4";
 
   builder = ./builder.sh;
 
   src = fetchurl {
-    url = "http://alpha.gnu.org/gnu/emacs/pretest/${name}.tar.gz";
-    sha256 = "1dgy53dxpnwrn6h3i3z8fpcyasms0wlvhqfyih4cwkz712var393";
+    url    = "mirror://gnu/emacs/${name}.tar.xz";
+    sha256 = "1zflm6ac34s6v166p58ilxrxbxjm0q2wfc25f8y0mjml1lbr3qs7";
   };
 
-  buildInputs = 
-    [ ncurses x11 texinfo libXaw Xaw3d libXpm libpng libjpeg libungif
-      libtiff librsvg libXft gconf libxml2 imagemagick gnutls alsaLib
-    ] 
-    ++ stdenv.lib.optionals (gtk != null) [ gtk pkgconfig ]
-    ++ stdenv.lib.optional stdenv.isLinux dbus;
+  patches = [ ./darwin-new-sections.patch ];
+
+  buildInputs =
+    [ ncurses gconf libxml2 gnutls alsaLib pkgconfig texinfo ]
+    ++ stdenv.lib.optional stdenv.isLinux dbus
+    ++ stdenv.lib.optionals withX
+      [ x11 libXaw Xaw3d libXpm libpng libjpeg libungif libtiff librsvg libXft
+        imagemagick gtk gconf ]
+    ++ stdenv.lib.optional (stdenv.isDarwin && withX) cairo;
 
   configureFlags =
-    stdenv.lib.optionals (gtk != null) [ "--with-x-toolkit=gtk" "--with-xft"]
+    ( if withX && withGTK then
+        [ "--with-x-toolkit=gtk" "--with-xft"]
+      else (if withX then
+        [ "--with-x-toolkit=lucid" "--with-xft" ]
+      else
+        [ "--with-x=no" "--with-xpm=no" "--with-jpeg=no" "--with-png=no"
+          "--with-gif=no" "--with-tiff=no" ] ) );
 
-    # On NixOS, help Emacs find `crt*.o'.
-    ++ stdenv.lib.optional (stdenv ? glibc)
-         [ "--with-crt-dir=${stdenv.glibc}/lib" ];
+  NIX_CFLAGS_COMPILE = stdenv.lib.optionalString (stdenv.isDarwin && withX)
+    "-I${cairo}/include/cairo";
 
   postInstall = ''
     cat >$out/share/emacs/site-lisp/site-start.el <<EOF
-;; nixos specific load-path
-(when (getenv "NIX_PROFILES") (setq load-path
-                      (append (reverse (mapcar (lambda (x) (concat x "/share/emacs/site-lisp/"))
-                                               (split-string (getenv "NIX_PROFILES"))))
-                       load-path)))
-EOF
+    ;; nixos specific load-path
+    (when (getenv "NIX_PROFILES") (setq load-path
+                          (append (reverse (mapcar (lambda (x) (concat x "/share/emacs/site-lisp/"))
+                                                   (split-string (getenv "NIX_PROFILES"))))
+                           load-path)))
+        
+    ;; make tramp work for NixOS machines
+    (eval-after-load 'tramp '(add-to-list 'tramp-remote-path "/run/current-system/sw/bin"))
+    EOF
   '';
 
   doCheck = true;
 
-  meta = {
-    description = "PRETEST: GNU Emacs 24.x, the extensible, customizable text editor";
+  meta = with stdenv.lib; {
+    description = "GNU Emacs 24, the extensible, customizable text editor";
+    homepage    = http://www.gnu.org/software/emacs/;
+    license     = licenses.gpl3Plus;
+    maintainers = with maintainers; [ chaoflow lovek323 simons the-kenny ];
+    platforms   = platforms.all;
 
     longDescription = ''
       GNU Emacs is an extensible, customizable text editor—and more.  At its
@@ -63,11 +78,5 @@ EOF
       extensions are distributed with GNU Emacs; others are available
       separately.
     '';
-
-    homepage = http://www.gnu.org/software/emacs/;
-    license = "GPLv3+";
-
-    maintainers = with stdenv.lib.maintainers; [ ludo simons chaoflow ];
-    platforms = stdenv.lib.platforms.all;
   };
 }

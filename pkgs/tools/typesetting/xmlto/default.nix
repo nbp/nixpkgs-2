@@ -3,10 +3,10 @@
 , bash, getopt, makeWrapper }:
 
 stdenv.mkDerivation rec {
-  name = "xmlto-0.0.23";
+  name = "xmlto-0.0.25";
   src = fetchurl {
     url = "http://fedorahosted.org/releases/x/m/xmlto/${name}.tar.bz2";
-    sha256 = "1i5iihx304vj52nik42drs7z6z58m9szahng113r4mgd1mvb5zx9";
+    sha256 = "0dp5nxq491gymq806za0dk4hngfmq65ysrqbn0ypajqbbl6vf71n";
   };
 
   patchPhase = ''
@@ -32,7 +32,7 @@ stdenv.mkDerivation rec {
   '';
 
   meta = {
-    description = "xmlto, a front-end to an XSL toolchain";
+    description = "Front-end to an XSL toolchain";
 
     longDescription = ''
       xmlto is a front-end to an XSL toolchain.  It chooses an
@@ -41,10 +41,7 @@ stdenv.mkDerivation rec {
       necessary post-processing.
     '';
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
     homepage = https://fedorahosted.org/xmlto/;
-
-    maintainers = [ stdenv.lib.maintainers.ludo ];
-    platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
   };
 }

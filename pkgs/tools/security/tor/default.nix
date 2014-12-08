@@ -1,25 +1,23 @@
 { stdenv, fetchurl, libevent, openssl, zlib }:
 
 stdenv.mkDerivation rec {
-  name = "tor-0.2.2.35";
+  name = "tor-0.2.5.10";
 
   src = fetchurl {
-    url = "http://www.torproject.org/dist/${name}.tar.gz";
-    sha256 = "f141a41fffd31494a0f96ebbb6b999eab33ce62d5c31f81222a0acd034adbf3a";
+    url = "https://archive.torproject.org/tor-package-archive/${name}.tar.gz";
+    sha256 = "0fx8qnwh2f8ykfx0np4hyznjfi4xfy96z59pk96y3zyjvjjh5pdk";
   };
 
-#  patchPhase =
-    # DNS lookups fail in chroots.
-#    '' sed -i "src/or/test.c" -es/localhost/127.0.0.1/g
-#    '';
-
   buildInputs = [ libevent openssl zlib ];
+
+  CFLAGS = "-lgcc_s";
 
   doCheck = true;
 
   meta = {
     homepage = http://www.torproject.org/;
-    description = "Tor, an anonymous network router to improve privacy on the Internet";
+    repositories.git = https://git.torproject.org/git/tor;
+    description = "Anonymous network router to improve privacy on the Internet";
 
     longDescription=''
       Tor protects you by bouncing your communications around a distributed
@@ -33,10 +31,7 @@ stdenv.mkDerivation rec {
 
     license="mBSD";
 
-    maintainers =
-      [ # Russell O’Connor <roconnor@theorem.ca> ?
-	stdenv.lib.maintainers.ludo
-      ];
+    maintainers = with stdenv.lib.maintainers; [ phreedom ludo doublec ];
     platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
   };
 }

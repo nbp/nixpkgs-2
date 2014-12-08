@@ -12,7 +12,7 @@ stdenv.mkDerivation {
   configureFlags = "--enable-shared --enable-sharedlib";
 
   buildInputs = [ python perl gfortran ];
-  propagatedBuildInputs = stdenv.lib.optional (stdenv ? glibc) [ stdenv.glibc ];
+  propagatedBuildInputs = stdenv.lib.optional (stdenv ? glibc) stdenv.glibc;
 
   patchPhase =
     '' for i in $(find -type f -not -name Makefile.\*)
@@ -30,7 +30,7 @@ stdenv.mkDerivation {
     '';
 
   meta = {
-    description = "MPICH2, an implementation of the Message Passing Interface (MPI) standard";
+    description = "Implementation of the Message Passing Interface (MPI) standard";
 
     longDescription = ''
       MPICH2 is a free high-performance and portable implementation of
@@ -40,7 +40,7 @@ stdenv.mkDerivation {
     homepage = http://www.mcs.anl.gov/mpi/mpich2/;
     license = "free, see http://www.mcs.anl.gov/research/projects/mpich2/downloads/index.php?s=license";
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
     platforms = stdenv.lib.platforms.unix;
   };
 }

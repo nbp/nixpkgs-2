@@ -12,9 +12,18 @@ stdenv.mkDerivation rec {
   };
 
   buildInputs = [ libjpeg libpng libmng lcms1 libtiff openexr mesa libX11 ];
-  buildNativeInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
 
   configureFlags = [ "--enable-ILU" "--enable-ILUT" ];
+
+  preConfigure = ''
+    sed -i 's, -std=gnu99,,g' configure
+    sed -i 's,malloc.h,stdlib.h,g' src-ILU/ilur/ilur.c
+  '';
+
+  postConfigure = ''
+    sed -i '/RESTRICT_KEYWORD/d' include/IL/config.h
+  '';
 
   patches =
     [ ( fetchurl {
@@ -28,7 +37,7 @@ stdenv.mkDerivation rec {
     homepage = http://openil.sourceforge.net/;
     description = "An image library which can can load, save, convert, manipulate, filter and display a wide variety of image formats";
     license = licenses.lgpl2;
-    platforms = platforms.all;
+    platforms = platforms.mesaPlatforms;
     maintainers = [ maintainers.phreedom maintainers.urkud ];
   };
 }

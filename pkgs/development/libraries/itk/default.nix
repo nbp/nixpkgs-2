@@ -8,11 +8,16 @@ stdenv.mkDerivation rec {
     sha256 = "05z49sw612cbyiaghcsda0xylrkf06jh81ql79si5632w1hpgbd9";
   };
 
-  cmakeFlags = [ "-DBUILD_TESTING=OFF" "-DBUILD_EXAMPLES=OFF" ];
+  cmakeFlags = [
+    "-DBUILD_TESTING=OFF"
+    "-DBUILD_EXAMPLES=OFF"
+    "-DBUILD_SHARED_LIBS=ON"
+    "-DCMAKE_CXX_FLAGS=-fPIC"
+  ];
 
   enableParallelBuilding = true;
 
-  buildNativeInputs = [ cmake xz ];
+  nativeBuildInputs = [ cmake xz ];
   buildInputs = [ libX11 libuuid ];
 
   meta = {

@@ -5,14 +5,17 @@ stdenv.mkDerivation {
 
   src = [
     (fetchurl {
-      url = mirror://kernel/linux/utils/kernel/module-init-tools/module-init-tools-3.16.tar.bz2;
+      url = http://ftp.be.debian.org/pub/linux/utils/kernel/module-init-tools/module-init-tools-3.16.tar.bz2;
       sha256 = "0jxnz9ahfic79rp93l5wxcbgh4pkv85mwnjlbv1gz3jawv5cvwp1";
     })
 
     # Upstream forgot to include the generated manpages.  Thankfully
     # the Gentoo people fixed this for us :-)
     (fetchurl {
-      url = mirror://gentoo/distfiles/module-init-tools-3.16-man.tar.bz2;
+      urls = [
+        mirror://gentoo/distfiles/module-init-tools-3.16-man.tar.bz2
+        http://mirror.meleeweb.net/pub/linux/gentoo/distfiles/module-init-tools-3.16-man.tar.bz2
+      ];
       sha256 = "1j1nzi87kgsh4scl645fhwhjvljxj83cmdasa4n4p5krhasgw358";
     })
   ];

@@ -1,5 +1,5 @@
 { fetchurl, lib, unzip, buildPythonPackage, twisted, foolscap, nevow
-, simplejson, zfec, pycryptopp, pysqlite, darcsver, setuptoolsTrial
+, simplejson, zfec, pycryptopp, sqlite3, darcsver, setuptoolsTrial
 , setuptoolsDarcs, numpy, nettools, pycrypto, pyasn1, mock }:
 
 # FAILURES: The "running build_ext" phase fails to compile Twisted
@@ -8,36 +8,20 @@
 # some loss of functionality because of it.
 
 let
-  name = "tahoe-lafs-1.8.3";
+  name = "tahoe-lafs-1.10.0";
 in
 buildPythonPackage {
   inherit name;
   namePrefix = "";
 
   src = fetchurl {
-    url = "http://tahoe-lafs.org/source/tahoe-lafs/snapshots/allmydata-tahoe-1.8.3.tar.bz2";
-    sha256 = "00pm7fvwci5ncg2jhsqsl9r79kn495yni8nmr7p5i98f3siwvjd8";
+    url = "http://tahoe-lafs.org/source/tahoe-lafs/releases/allmydata-tahoe-1.10.0.tar.bz2";
+    sha256 = "1qng7j1vykk8zl5da9yklkljvgxfnjky58gcay6dypz91xq1cmcw";
   };
 
-  # The patch doesn't apply cleanly to the current version.
-  patches = [ /* ./test-timeout.patch */ ];
-
   configurePhase = ''
-    echo "forcing the use of \`setuptools' 0.6c9 rather than an unreleased version"
-    for i in *setup.py
-    do
-      sed -i "$i" -es'/0.6c12dev/0.6c9/g'
-    done
-
-    # `find_exe()' returns a list like ['.../bin/python'
-    # '.../bin/twistd'], which doesn't work when `twistd' is not a
-    # Python script (e.g., when it's a script produced by
-    # `wrapProgram').
-    sed -i "src/allmydata/scripts/startstop_node.py" \
-        -es"|cmd = find_exe.find_exe('twistd')|cmd = ['${twisted}/bin/twistd']|g"
-
     sed -i "src/allmydata/util/iputil.py" \
-        -es"|_linux_path = '/sbin/ifconfig'|_linux_path = '${nettools}/sbin/ifconfig'|g"
+        -es"|_linux_path = '/sbin/ifconfig'|_linux_path = '${nettools}/bin/ifconfig'|g"
 
     # Chroots don't have /etc/hosts and /etc/resolv.conf, so work around
     # that.
@@ -50,9 +34,9 @@ buildPythonPackage {
   buildInputs = [ unzip ]
     ++ [ numpy ]; # Some tests want this + http://tahoe-lafs.org/source/tahoe-lafs/deps/tahoe-dep-sdists/mock-0.6.0.tar.bz2
 
-  # The `backup' command requires `pysqlite'.
+  # The `backup' command requires `sqlite3'.
   propagatedBuildInputs =
-    [ twisted foolscap nevow simplejson zfec pycryptopp pysqlite
+    [ twisted foolscap nevow simplejson zfec pycryptopp sqlite3
       darcsver setuptoolsTrial setuptoolsDarcs pycrypto pyasn1 mock
     ];
 
@@ -61,20 +45,14 @@ buildPythonPackage {
 
   postInstall = ''
     # Install the documentation.
-
-    # FIXME: Inkscape segfaults when run from here.  Setting $HOME to
-    # something writable doesn't help; providing $FONTCONFIG_FILE doesn't
-    # help either.  So we just don't run `make' under `docs/'.
-
     mkdir -p "$out/share/doc/${name}"
     cp -rv "docs/"* "$out/share/doc/${name}"
     find "$out/share/doc/${name}" -name Makefile -exec rm -v {} \;
 
     # Run the tests once everything is installed.
-    # FIXME: Some of the tests want to run $out/bin/tahoe, which isn't usable
-    # yet because it gets wrapped later on, in `postFixup'.
     export PYTHON_EGG_CACHE="$TMPDIR"
-    : python setup.py trial
+    python setup.py build
+    python setup.py trial
   '';
 
   meta = {
@@ -88,10 +66,8 @@ buildPythonPackage {
     '';
 
     homepage = http://allmydata.org/;
-
-    license = [ "GPLv2+" /* or */ "TGPPLv1+" ];
-
-    maintainers = [ lib.maintainers.ludo lib.maintainers.simons  ];
+    license = [ lib.licenses.gpl2Plus /* or */ "TGPPLv1+" ];
+    maintainers = [ lib.maintainers.simons  ];
     platforms = lib.platforms.gnu;  # arbitrary choice
   };
 }

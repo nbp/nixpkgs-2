@@ -11,10 +11,10 @@ let
     (builtins.attrNames (builtins.removeAttrs x helperArgNames));
   sourceInfo = rec {
     baseName="srtp";
-    version="1.4.2";
+    version="1.4.4";
     name="${baseName}-${version}";
-    url="http://srtp.sourceforge.net/${name}.tgz";
-    hash="1497mcxharnhiccjhny30g4wlv28ckdxhj14jrwvdnnvhl80jf43";
+    url="mirror://sourceforge/${baseName}/${name}.tgz";
+    hash="057k191hx7sf84wdvc8wr1nk4whhrvbg1vv3r4nyswjir6qwphnr";
   };
 in
 rec {
@@ -27,8 +27,12 @@ rec {
   inherit buildInputs;
 
   /* doConfigure should be removed if not needed */
-  phaseNames = ["doConfigure" "doMakeInstall"];
-      
+  phaseNames = ["setVars" "doConfigure" "doMakeInstall"];
+
+  setVars = a.fullDepEntry ''
+    export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -fPIC"
+  '' ["minInit"];
+
   meta = {
     description = "Secure RTP";
     maintainers = with a.lib.maintainers;

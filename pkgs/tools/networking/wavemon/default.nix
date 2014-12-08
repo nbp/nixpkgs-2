@@ -11,16 +11,15 @@ let
     (builtins.attrNames (builtins.removeAttrs x helperArgNames));
   sourceInfo = rec {
     baseName="wavemon";
-    version="0.7.2";
+    version = "0.7.6";
     name="${baseName}-${version}";
     url="http://eden-feed.erg.abdn.ac.uk/wavemon/stable-releases/${name}.tar.bz2";
-    hash="1w1nq082mpjkcj7q6qs80104vki9kddwqv1wch6nmwwh0l72dgma";
   };
 in
 rec {
   src = a.fetchurl {
     url = sourceInfo.url;
-    sha256 = sourceInfo.hash;
+    sha256 = "18cwlzgmwzy7z9dfr6lwd8kmkv0pqiihizm4gi0kkm52bzz6836y";
   };
 
   inherit (sourceInfo) name version;
@@ -38,11 +37,9 @@ rec {
     platforms = with a.lib.platforms;
       linux;
     license = a.lib.licenses.gpl2Plus;
-  };
-  passthru = {
-    updateInfo = {
-      downloadPage = "http://eden-feed.erg.abdn.ac.uk/wavemon/";
-    };
+    downloadPage = "http://eden-feed.erg.abdn.ac.uk/wavemon/";
+    inherit version;
+    updateWalker = true;
   };
 }) x
 

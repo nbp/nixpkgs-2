@@ -1,13 +1,14 @@
-{ stdenv, fetchsvn, dbus, dbus_cplusplus, expat, glibmm, libconfig
+{ stdenv, fetchurl, dbus, dbus_cplusplus, expat, glibmm, libconfig
 , libavc1394, libiec61883, libraw1394, libxmlxx, makeWrapper, pkgconfig
 , pyqt4, python, pythonDBus, qt4, scons }:
 
 stdenv.mkDerivation rec {
-  name = "libffado-svn-1995";
+  name = "libffado-${version}";
+  version = "2.2.1";
 
-  src = fetchsvn {
-    url = "http://subversion.ffado.org/ffado/trunk/libffado";
-    rev = "1995";
+  src = fetchurl {
+    url = "http://www.ffado.org/files/${name}.tgz";
+    sha256 = "1ximic90l0av91njb123ra2zp6mg23yg5iz8xa5371cqrn79nacz";
   };
 
   buildInputs =
@@ -18,13 +19,29 @@ stdenv.mkDerivation rec {
 
   patches = [ ./enable-mixer-and-dbus.patch ];
 
-  preBuild = "export PYLIBSUFFIX=lib/${python.libPrefix}/site-packages";
+  # SConstruct checks cpuinfo and an objdump of /bin/mount to determine the appropriate arch
+  # Let's just skip this and tell it which to build
+  postPatch = if stdenv.isi686 then ''
+    sed '/def is_userspace_32bit(cpuinfo):/a\
+        return True' -i SConstruct
+  ''
+  else ''
+    sed '/def is_userspace_32bit(cpuinfo):/a\
+        return False' -i SConstruct
+  '';
 
   # TODO fix ffado-diag, it doesn't seem to use PYPKGDIR
-  buildPhase = "scons PYPKGDIR=$out/$PYLIBSUFFIX";
+  buildPhase = ''
+    export PYLIBSUFFIX=lib/${python.libPrefix}/site-packages
+    scons PYPKGDIR=$out/$PYLIBSUFFIX DEBUG=False
+    sed -e "s#/usr/local#$out#" -i support/mixer-qt4/ffado/config.py
+    '';
+
   installPhase = ''
     scons PREFIX=$out LIBDIR=$out/lib SHAREDIR=$out/share/libffado \
-      PYPKGDIR=$out/$PYLIBSUFFIX install
+      PYPKGDIR=$out/$PYLIBSUFFIX UDEVDIR=$out/lib/udev/rules.d install
+
+    sed -e "s#/usr/local#$out#g" -i $out/bin/ffado-diag
 
     PYDIR=$out/$PYLIBSUFFIX
     wrapProgram $out/bin/ffado-mixer --prefix PYTHONPATH : \
@@ -38,5 +55,6 @@ stdenv.mkDerivation rec {
     description = "FireWire audio drivers";
     license = licenses.gpl3;
     maintainers = [ maintainers.goibhniu ];
+    platforms = platforms.linux;
   };
 }

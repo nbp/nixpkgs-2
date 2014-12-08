@@ -1,44 +1,66 @@
-{ stdenv, fetchurl, scons, which, boost, gnutar, v8 ? null, useV8 ? false}:
+{ stdenv, fetchurl, scons, boost, gperftools, pcre, snappy
+, libyamlcpp, sasl, openssl, libpcap }:
 
-assert useV8 -> v8 != null;
+with stdenv.lib;
 
-stdenv.mkDerivation rec {
-  name = "mongodb-2.0.5";
+let version = "2.6.5";
+    system-libraries = [
+      "pcre"
+      "boost"
+      "snappy"
+      # "stemmer" -- not nice to package yet (no versioning, no makefile, no shared libs)
+      "yaml"
+      # "v8"
+    ] ++ optionals (!stdenv.isDarwin) [ "tcmalloc" ];
+    buildInputs = [
+      sasl boost gperftools pcre snappy
+      libyamlcpp sasl openssl libpcap
+    ];
+
+    other-args = concatStringsSep " " ([
+      "--ssl"
+      "--use-sasl-client"
+      "--extrapath=${concatStringsSep "," buildInputs}"
+    ] ++ map (lib: "--use-system-${lib}") system-libraries);
+
+in stdenv.mkDerivation rec {
+  name = "mongodb-${version}";
 
   src = fetchurl {
-    url = "http://downloads.mongodb.org/src/mongodb-src-r2.0.5.tar.gz";
-    sha256 = "0vnwphjn0iqgjrvfk18vridx5324zmmbrapp2d9rbqc9xg6jrpav";
+    url = "http://downloads.mongodb.org/src/mongodb-src-r${version}.tar.gz";
+    sha256 = "0v58kyp4cj4yag0djnswfiifrcll5y7x772y99b3afg89xicpmjm";
   };
 
-  buildInputs = [scons which boost] ++ stdenv.lib.optional useV8 v8;
+  nativeBuildInputs = [ scons ];
+  inherit buildInputs;
 
-  enableParallelBuilding = true;
+  postPatch = ''
+    # fix yaml-cpp detection
+    sed -i -e "s/\[\"yaml\"\]/\[\"yaml-cpp\"\]/" SConstruct
 
-  patchPhase = ''
-    substituteInPlace SConstruct --replace "Environment( MSVS_ARCH=msarch , tools = [\"default\", \"gch\"], toolpath = '.' )" "Environment( MSVS_ARCH=msarch , tools = [\"default\", \"gch\"], toolpath = '.', ENV = os.environ )"
-    substituteInPlace SConstruct --replace "../v8" "${v8}"
-    substituteInPlace SConstruct --replace "LIBPATH=[\"${v8}/\"]" "LIBPATH=[\"${v8}/lib\"]"
+    # bug #482576
+    sed -i -e "/-Werror/d" src/third_party/v8/SConscript
+
+    # fix environment variable reading
+    substituteInPlace SConstruct \
+        --replace "Environment( BUILD_DIR" "Environment( ENV = os.environ, BUILD_DIR"
   '';
 
   buildPhase = ''
-    export TERM=""
-    scons all --cc=`which gcc` --cxx=`which g++` --libpath=${boost}/lib --cpppath=${boost}/include ${if useV8 then "--usev8" else ""}
+    scons all --release ${other-args}
   '';
 
   installPhase = ''
-    scons install --cc=`which gcc` --cxx=`which g++` --libpath=${boost}/lib --cpppath=${boost}/include --full --prefix=$out
-    if [ -d $out/lib64 ]; then
-      mv $out/lib64 $out/lib
-    fi
+    mkdir -p $out/lib
+    scons install --release --prefix=$out ${other-args}
   '';
 
   meta = {
     description = "a scalable, high-performance, open source NoSQL database";
     homepage = http://www.mongodb.org;
-    license = "AGPLv3";
+    license = licenses.agpl3;
 
-    maintainers = [ stdenv.lib.maintainers.bluescreen303 ];
-    platforms = stdenv.lib.platforms.all;
+    maintainers = with maintainers; [ bluescreen303 offline wkennington ];
+    platforms = platforms.unix;
   };
 }
-

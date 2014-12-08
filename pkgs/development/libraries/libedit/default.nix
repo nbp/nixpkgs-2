@@ -1,26 +1,27 @@
 { stdenv, fetchurl, ncurses, groff }:
 
 stdenv.mkDerivation rec {
-  name = "libedit-20100424-3.0";
+  name = "libedit-20140620-3.1";
 
   src = fetchurl {
     url = "http://www.thrysoee.dk/editline/${name}.tar.gz";
-    sha256 = "11hxaq58gym7kqccjhxywjxdibffzg545z1aj997y1dn0rckhav0";
+    sha256 = "1wnapwcpl4yq8p95j898jl0hsr39if28qzm5a7zwkbplihm9nax2";
   };
 
   # Have `configure' avoid `/usr/bin/nroff' in non-chroot builds.
   NROFF = "${groff}/bin/nroff";
 
   postInstall = ''
-    sed -i s/-lncurses/-lncursesw/g $out/lib/pkgconfig/libedit.pc
+    sed -i ${stdenv.lib.optionalString (stdenv.isDarwin && stdenv.gcc.nativeTools) "''"} s/-lncurses/-lncursesw/g $out/lib/pkgconfig/libedit.pc
   '';
 
-  configureFlags = "--enable-widec";
+  configureFlags = [ "--enable-widec" ];
 
   propagatedBuildInputs = [ ncurses ];
 
-  meta = {
+  meta = with stdenv.lib; {
     homepage = "http://www.thrysoee.dk/editline/";
     description = "A port of the NetBSD Editline library (libedit)";
+    license = licenses.bsd3; 
   };
 }

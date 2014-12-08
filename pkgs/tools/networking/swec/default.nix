@@ -66,8 +66,8 @@ stdenv.mkDerivation rec {
          (well, not exactly true, SWEC will ignore robots.txt).
       '';
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
   };
 }

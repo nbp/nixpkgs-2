@@ -1,5 +1,5 @@
 { fetchurl, stdenv, gettext, gdbm, libtool, pam, readline
-, ncurses, gnutls, mysql, guile, texinfo, gnum4, dejagnu }:
+, ncurses, gnutls, mysql, guile, texinfo, gnum4, dejagnu, sendmailPath ? "/var/setuid-wrappers/sendmail" }:
 
 /* TODO: Add GNU SASL, GNU GSSAPI, and FreeBidi.  */
 
@@ -11,17 +11,20 @@ stdenv.mkDerivation rec {
     sha256 = "0szbqa12zqzldqyw97lxqax3ja2adis83i7brdfsxmrfw68iaf65";
   };
 
-  patches = [ ./path-to-cat.patch ];
+  patches = [ ./path-to-cat.patch ./no-gets.patch ];
+
+  configureFlags = "--with-path-sendmail=${sendmailPath}";
 
   buildInputs =
    [ gettext gdbm libtool pam readline ncurses
      gnutls mysql guile texinfo gnum4 ]
    ++ stdenv.lib.optional doCheck dejagnu;
 
-  doCheck = true;
+  # Tests fail since gcc 4.8
+  doCheck = false;
 
   meta = {
-    description = "GNU Mailutils is a rich and powerful protocol-independent mail framework";
+    description = "Rich and powerful protocol-independent mail framework";
 
     longDescription = ''
       GNU Mailutils is a rich and powerful protocol-independent mail
@@ -43,7 +46,7 @@ stdenv.mkDerivation rec {
       message handling system.
     '';
 
-    licenses = [ "LGPLv3+" /* libraries */  "GPLv3+" /* tools */ ];
+    license = [ "LGPLv3+" /* libraries */  "GPLv3+" /* tools */ ];
 
     maintainers = [ stdenv.lib.maintainers.ludo ];
 
