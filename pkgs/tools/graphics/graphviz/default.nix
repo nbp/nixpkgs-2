@@ -1,19 +1,23 @@
 { stdenv, fetchurl, pkgconfig, libpng, libjpeg, expat, libXaw
-, yacc, libtool, fontconfig, pango, gd, xlibs, gts
+, yacc, libtool, fontconfig, pango, gd, xlibs, gts, gettext, cairo
 }:
 
 stdenv.mkDerivation rec {
-  name = "graphviz-2.28.0";
+  version = "2.38.0";
+  name = "graphviz-${version}";
 
   src = fetchurl {
     url = "http://www.graphviz.org/pub/graphviz/ARCHIVE/${name}.tar.gz";
-    sha256 = "0xpwg99cd8sp0c6r8klsmc66h1pday64kmnr4v6f9jkqqmrpkank";
+    sha256 = "17l5czpvv5ilmg17frg0w4qwf89jzh2aglm9fgx0l0aakn6j7al1";
   };
 
   buildInputs =
     [ pkgconfig libpng libjpeg expat libXaw yacc libtool fontconfig
       pango gd gts
-    ] ++ stdenv.lib.optionals (xlibs != null) [ xlibs.xlibs xlibs.libXrender ];
+    ] ++ stdenv.lib.optionals (xlibs != null) [ xlibs.xlibs xlibs.libXrender ]
+    ++ stdenv.lib.optional (stdenv.system == "x86_64-darwin") gettext;
+
+  CPPFLAGS = stdenv.lib.optionalString (stdenv.system == "x86_64-darwin") "-I${cairo}/include/cairo";
 
   configureFlags =
     [ "--with-pngincludedir=${libpng}/include"
@@ -29,8 +33,10 @@ stdenv.mkDerivation rec {
     sed -e 's@am__append_5 *=.*@am_append_5 =@' -i lib/gvc/Makefile
   '';
 
+  # "command -v" is POSIX, "which" is not
   postInstall = ''
     sed -i 's|`which lefty`|"'$out'/bin/lefty"|' $out/bin/dotty
+    sed -i 's|which|command -v|' $out/bin/vimdot
   '';
 
   meta = {
@@ -46,7 +52,10 @@ stdenv.mkDerivation rec {
       interfaces for other technical domains.
     '';
 
-    platforms = stdenv.lib.platforms.linux;
-    maintainers = [ stdenv.lib.maintainers.simons ];
+    hydraPlatforms = stdenv.lib.platforms.linux ++ stdenv.lib.platforms.darwin;
+    maintainers = with stdenv.lib.maintainers; [ simons bjornfor raskin ];
+    downloadPage = "http://www.graphviz.org/pub/graphviz/ARCHIVE/";
+    inherit version;
+    updateWalker = true;
   };
 }

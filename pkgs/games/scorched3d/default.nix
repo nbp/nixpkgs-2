@@ -13,7 +13,7 @@ stdenv.mkDerivation {
     [ mesa openal freealut wxGTK freetype fftwSinglePrec SDL_net zlib libpng libjpeg
     libogg libvorbis ];
 
-  buildNativeInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
 
   patches = [ ./file-existence.patch ];
 
@@ -33,6 +33,6 @@ stdenv.mkDerivation {
   meta = {
     homepage = http://scorched3d.co.uk/;
     description = "3D Clone of the classic Scorched Earth";
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
   };
 }

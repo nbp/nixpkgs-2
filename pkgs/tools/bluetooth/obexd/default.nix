@@ -1,16 +1,16 @@
 { stdenv, fetchurl, pkgconfig, glib, dbus, openobex, bluez, libical }:
    
 stdenv.mkDerivation rec {
-  name = "obexd-0.40";
+  name = "obexd-0.48";
    
   src = fetchurl {
-    url = "mirror://kernel/linux/bluetooth/${name}.tar.gz";
-    sha256 = "0jz0ldg2wvdzzl639xzf76hqwj23svlg3zv1r8nc3hik3pgs6h2l";
+    url = "mirror://kernel/linux/bluetooth/${name}.tar.bz2";
+    sha256 = "1i20dnibvnq9lnkkhajr5xx3kxlwf9q5c4jm19kyb0q1klzgzlb8";
   };
 
   buildInputs = [ glib dbus.libs openobex bluez libical ];
 
-  buildNativeInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
 
   meta = {
     homepage = http://www.bluez.org/;

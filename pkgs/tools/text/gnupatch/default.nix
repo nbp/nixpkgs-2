@@ -1,18 +1,20 @@
 { stdenv, fetchurl, ed }:
 
-stdenv.mkDerivation (rec {
-  name = "patch-2.6.1";
+stdenv.mkDerivation rec {
+  name = "patch-2.7.1";
 
   src = fetchurl {
     url = "mirror://gnu/patch/${name}.tar.gz";
-    sha256 = "1fc1jyq80nswkf492fiqdbl2bhvlw2wb44ghqlfd3zngx4qkfmni";
+    sha256 = "1m9r83b5c154xnxbvgjg4lfff58xjapanj6dmmivqx1liik2hpy0";
   };
 
-  buildInputs = (stdenv.lib.optional doCheck ed);
+  buildInputs = stdenv.lib.optional doCheck ed;
 
   crossAttrs = {
     configureFlags = [ "ac_cv_func_strnlen_working=yes" ];
   };
+
+  patches = [ ./bashishms.patch ];
 
   doCheck = true;
 
@@ -27,15 +29,9 @@ stdenv.mkDerivation (rec {
 
     homepage = http://savannah.gnu.org/projects/patch;
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
     platforms = stdenv.lib.platforms.all;
   };
 }
-
-//
-
-(stdenv.lib.optionalAttrs stdenv.isDarwin {
-  patches = [ ./darwin-fix.patch ];
-}))

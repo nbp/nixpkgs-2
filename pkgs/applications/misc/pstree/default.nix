@@ -1,11 +1,11 @@
 { stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "pstree-2.33";
+  name = "pstree-2.36";
 
   src = fetchurl {
     url = "http://www.sfr-fresh.com/unix/misc/${name}.tar.gz";
-    sha256 = "1469lrhpy6wghlvbjx6lmvh27rakq00x11cpz4n965fg11i121hg";
+    sha256 = "1vx4fndmkkx3bmcv71rpzjjbn24hlfs10pl99dsfhbx16a2d41cx";
   };
 
   unpackPhase = "unpackFile \$src; sourceRoot=.";
@@ -16,5 +16,6 @@ stdenv.mkDerivation rec {
   meta = {
     description = "Show the set of running processes as a tree";
     license = "GPL";
+    maintainers = [ stdenv.lib.maintainers.mornfall ];
   };
 }

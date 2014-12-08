@@ -1,4 +1,4 @@
-{stdenv, fetchurl, id3lib, groff}:
+{stdenv, fetchurl, id3lib, groff, zlib}:
 
 stdenv.mkDerivation rec {
   name = "id3v2-0.1.11";
@@ -9,8 +9,8 @@ stdenv.mkDerivation rec {
 
   patches = [ ./id3v2-0.1.11-track-bad-free.patch ];
 
-  buildNativeInputs = [ groff ];
-  buildInputs = [ id3lib ];
+  nativeBuildInputs = [ groff ];
+  buildInputs = [ id3lib zlib ];
 
   configurePhase = ''
     export makeFlags=PREFIX=$out
@@ -23,6 +23,6 @@ stdenv.mkDerivation rec {
   meta = {
     description = "A command line editor for id3v2 tags";
     homepage = http://id3v2.sourceforge.net/;
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
   };
 }

@@ -1,12 +1,14 @@
-{stdenv, fetchurl, jre, libX11, libXext, libXcursor, libXrandr, libXxf86vm
-, mesa, openal}:
+{ stdenv, fetchurl, jre, libX11, libXext, libXcursor, libXrandr, libXxf86vm
+, mesa, openal, alsaOss, pulseaudioSupport ? false, pulseaudio }:
+
+assert jre ? architecture;
 
 stdenv.mkDerivation {
-  name = "minecraft-1.2.5";
+  name = "minecraft-2013.07.01";
 
   src = fetchurl {
-    url = "https://s3.amazonaws.com/MinecraftDownload/launcher/minecraft.jar";
-    sha256 = "0yp3wgy93wm746dkv6kbljhmzdqbcg4qhwkvnaaq4ml84mvvjp38";
+    url = "https://s3.amazonaws.com/Minecraft.Download/launcher/Minecraft.jar";
+    sha256 = "04pj4l5q0a64jncm2kk45r7nxnxa2z9n110dcxbbahdi6wk0png8";
   };
 
   phases = "installPhase";
@@ -21,7 +23,8 @@ stdenv.mkDerivation {
 
     # wrapper for minecraft
     export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${jre}/lib/${jre.architecture}/:${libX11}/lib/:${libXext}/lib/:${libXcursor}/lib/:${libXrandr}/lib/:${libXxf86vm}/lib/:${mesa}/lib/:${openal}/lib/
-    ${jre}/bin/java -jar $out/minecraft.jar
+    ${if pulseaudioSupport then "${pulseaudio}/bin/padsp" else "${alsaOss}/bin/aoss" } \
+      ${jre}/bin/java -jar $out/minecraft.jar
     EOF
 
     chmod +x $out/bin/minecraft
@@ -30,7 +33,7 @@ stdenv.mkDerivation {
   meta = {
       description = "A sandbox-building game";
       homepage = http://www.minecraft.net;
-      maintainers = [ "Carles Pagès <page@cubata.homelinux.net>" stdenv.lib.maintainers.shlevy ];
-      license = "unfree-redistributable";
+      maintainers = [ stdenv.lib.maintainers.page ];
+      license = stdenv.lib.licenses.unfreeRedistributable;
   };
 }

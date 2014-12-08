@@ -1,10 +1,10 @@
 { stdenv, fetchurl, gfortran }:
 
 stdenv.mkDerivation {
-  name = "blas-20070405";
+  name = "blas-20110419";
   src = fetchurl {
     url = "http://www.netlib.org/blas/blas.tgz";
-    sha256 = "07alzd2yxkah96vjczqwi3ld5w00bvqv7qxb2fayvhs1h64jabxw";
+    sha256 = "1d931d91byv2svydpj2ipjh1f2sm1h9ns8ik2w5fwaa8qinxz1za";
   };
 
   buildInputs = [gfortran];
@@ -32,17 +32,21 @@ stdenv.mkDerivation {
     echo >>make.inc "RANLIB = ranlib"
     make
   '';
- 
-  installPhase = ''
-    install -D -m755 libblas.a "$out/lib/libblas.a"
-    install -D -m755 libblas.so.3.0.3 "$out/lib/libblas.so.3.0.3"
+
+  installPhase =
+    # FreeBSD's stdenv doesn't use Coreutils.
+    let dashD = if stdenv.isFreeBSD then "" else "-D"; in
+    (stdenv.lib.optionalString stdenv.isFreeBSD "mkdir -p $out/lib ;")
+    + ''
+    install ${dashD} -m755 libblas.a "$out/lib/libblas.a"
+    install ${dashD} -m755 libblas.so.3.0.3 "$out/lib/libblas.so.3.0.3"
     ln -s libblas.so.3.0.3 "$out/lib/libblas.so.3"
     ln -s libblas.so.3.0.3 "$out/lib/libblas.so"
   '';
 
   meta = {
     description = "Basic Linear Algebra Subprograms";
-    license = "public domain";
+    license = stdenv.lib.licenses.publicDomain;
     homepage = "http://www.netlib.org/blas/";
   };
 }

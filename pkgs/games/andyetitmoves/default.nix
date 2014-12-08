@@ -38,11 +38,11 @@ stdenv.mkDerivation rec {
   phases = "unpackPhase installPhase";
 
   installPhase = ''
-    ensureDir $out/{opt/andyetitmoves,bin}
+    mkdir -p $out/{opt/andyetitmoves,bin}
     cp -r * $out/opt/andyetitmoves/
 
     fullPath=${stdenv.gcc.gcc}/lib64
-    for i in $buildNativeInputs; do
+    for i in $nativeBuildInputs; do
       fullPath=$fullPath''${fullPath:+:}$i/lib
     done
 
@@ -68,7 +68,7 @@ stdenv.mkDerivation rec {
 
     homepage = http://www.andyetitmoves.net/;
 
-    license = "unfree";
+    license = stdenv.lib.licenses.unfree;
 
     maintainers = with stdenv.lib.maintainers; [bluescreen303];
   };

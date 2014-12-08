@@ -15,9 +15,11 @@ rec {
   configureFlags = [];
 
   /* doConfigure should be removed if not needed */
-  phaseNames = [ "doPatch" "doConfigure" "doMakeInstall"];
-
-  patches = [ ./r3402.patch ];
+  phaseNames = [ "patchIncludes" "doConfigure" "doMakeInstall"];
+  patchIncludes = a.fullDepEntry ''
+    sed -e '1i#include <sys/types.h>' -i src/helpers//System.cpp
+    sed -e '1i#include <unistd.h>' -i src/helpers//System.cpp
+  '' ["doUnpack" "minInit"];
 
   meta = {
     description = "X-Moto - obstacled race game";

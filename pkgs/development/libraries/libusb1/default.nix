@@ -1,17 +1,22 @@
-{ stdenv, fetchurl }:
+{ stdenv, fetchurl, pkgconfig, udev ? null }:
 
 stdenv.mkDerivation rec {
-  name = "libusb-1.0.8";
+  name = "libusb-1.0.19";
 
   src = fetchurl {
     url = "mirror://sourceforge/libusb/${name}.tar.bz2";
-    sha256 = "1afvpaqnl5plqg95nkvsl4sj9d6ckrmjq44mql8l4zqgf6jx7l11";
+    sha256 = "0h38p9rxfpg9vkrbyb120i1diq57qcln82h5fr7hvy82c20jql3c";
   };
 
+  buildInputs = [ pkgconfig ];
+  propagatedBuildInputs = stdenv.lib.optional stdenv.isLinux udev;
+
+  NIX_LDFLAGS = stdenv.lib.optionalString stdenv.isLinux "-lgcc_s";
+
   meta = {
-    homepage = http://www.libusb.org;
+    homepage = http://www.libusb.info;
     description = "User-space USB library";
-    platforms = stdenv.lib.platforms.linux;
+    platforms = stdenv.lib.platforms.unix;
     maintainers = [ stdenv.lib.maintainers.urkud ];
   };
 }

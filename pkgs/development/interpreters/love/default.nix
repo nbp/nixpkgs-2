@@ -1,58 +1,51 @@
-x@{builderDefsPackage
-  , lua5, mpg123, physfs, freetype, libdevil, openal, SDL, libvorbis
-  , libogg, flac, mesa, libtiff, libpng, libjpeg, libmodplug
-  , ...}:
-builderDefsPackage
-(a :  
-let 
-  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++ 
-    [];
+{ stdenv, fetchurl, pkgconfig
+, SDL, mesa, openal, lua
+, libdevil, freetype, physfs
+, libmodplug, mpg123, libvorbis, libogg
+}:
 
-  buildInputs = map (n: builtins.getAttr n x)
-    (builtins.attrNames (builtins.removeAttrs x helperArgNames));
-  sourceInfo = rec {
-    baseName="love";
-    version="0.7.2";
-    name="${baseName}-${version}";
-    url="https://bitbucket.org/rude/love/downloads/${name}-linux-src.tar.gz";
-    hash="0s7jywkvydlshlgy11ilzngrnybmq5xlgzp2v2dhlffwrfqdqym5";
-  };
-in
-rec {
-  src = a.fetchurl {
-    url = sourceInfo.url;
-    sha256 = sourceInfo.hash;
+stdenv.mkDerivation rec {
+  name = "love-0.8.0";
+  src = fetchurl {
+    url = "https://bitbucket.org/rude/love/downloads/${name}-linux-src.tar.gz";
+    sha256 = "1k4fcsa8zzi04ja179bmj24hvqcbm3icfvrvrzyz2gw9qwfclrwi";
   };
 
-  inherit (sourceInfo) name version;
-  inherit buildInputs;
+  buildInputs = [
+    pkgconfig SDL mesa openal lua
+    libdevil freetype physfs libmodplug mpg123 libvorbis libogg
+  ];
 
-  /* doConfigure should be removed if not needed */
-  phaseNames = ["setVars" "fixSrc" "doConfigure" "doMakeInstall"];
-      
-  fixSrc  =a.fullDepEntry ''
-    sed -e '/typedef void (\*__GLXextFuncPtr)/d' -i src/modules/graphics/opengl/GLee.h
-  '' ["minInit" "doUnpack"];
+  preConfigure = ''
+    luaoptions="${"''"} lua luajit "
+    for i in lua luajit-; do
+      for j in 5 5.0 5.1 5.2 5.3 5.4; do
+        luaoptions="$luaoptions $i$j "
+      done
+    done
+    luaso="$(echo "${lua}/lib/"lib*.so.*)"
+    luaso="''${luaso##*/lib}"
+    luaso="''${luaso%%.so*}"
+    luaoptions="$luaoptions $luaso"
+    sed -e "s/${"''"} lua lua.*;/$luaoptions;/" -i configure
 
-  setVars = a.noDepEntry ''
-    export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -I${SDL}/include/SDL"
-    export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -I${freetype}/include/freetype2"
+    luaincdir="$(echo "${lua}/include"/*/ )"
+    test -d "$luaincdir" && {
+      export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -I$luaincdir"
+    } || true
+  '';
+
+  NIX_CFLAGS_COMPILE = ''
+    -I${SDL}/include/SDL
+    -I${freetype}include/freetype2
   '';
 
   meta = {
+    homepage = "http://love2d.org";
     description = "A Lua-based 2D game engine/scripting language";
-    maintainers = with a.lib.maintainers;
-    [
-      raskin
-    ];
-    platforms = with a.lib.platforms;
-      linux;
-    license = a.lib.licenses.zlib;
-  };
-  passthru = {
-    updateInfo = {
-      downloadPage = "http://love2d.org/";
-    };
-  };
-}) x
+    license = stdenv.lib.licenses.zlib;
 
+    platforms = stdenv.lib.platforms.linux;
+    maintainers = [ stdenv.lib.maintainers.raskin ];
+  };
+}

@@ -1,24 +1,31 @@
 { stdenv, fetchurl, pkgconfig, glib, babl, libpng, cairo, libjpeg
-, librsvg, pango, gtk, bzip2 }:
-        
+, librsvg, pango, gtk, bzip2, intltool }:
+
 stdenv.mkDerivation rec {
-  name = "gegl-0.1.6";
+  name = "gegl-0.2.0";
 
   src = fetchurl {
-    url = "http://ftp.snt.utwente.nl/pub/software/gimp/gegl/0.1/${name}.tar.bz2";
-    sha256 = "1l966ygss2zkksyw62nm139v2abfzbqqrj0psizvbgzf4mb24rm1";
+    url = "ftp://ftp.gtk.org/pub/gegl/0.2/${name}.tar.bz2";
+    sha256 = "df2e6a0d9499afcbc4f9029c18d9d1e0dd5e8710a75e17c9b1d9a6480dd8d426";
   };
+
+  patches = [( fetchurl {
+    url = "https://projects.archlinux.org/svntogit/packages.git/plain/trunk/"
+      + "gegl-0.2.0-CVE-2012-4433.patch?h=packages/gegl&id=57a60fbda5d7bbbd1cc4767cb0724baa80c5e3e9";
+    sha256 = "0p8mxj3w09nn1cc6cbxrd9hx742c5y27903i608wx6ja3kdjis59";
+    name = "CVE-2012-4433.patch";
+  })];
 
   # needs fonts otherwise  don't know how to pass them
   configureFlags = "--disable-docs";
 
-  buildInputs = [ babl libpng cairo libjpeg librsvg pango gtk bzip2 ];
+  buildInputs = [ babl libpng cairo libjpeg librsvg pango gtk bzip2 intltool ];
 
-  buildNativeInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
 
   meta = { 
     description = "Graph-based image processing framework";
     homepage = http://www.gegl.org;
-    license = "GPL3";
+    license = stdenv.lib.licenses.gpl3;
   };
 }

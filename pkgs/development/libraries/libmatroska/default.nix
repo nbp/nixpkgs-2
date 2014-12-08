@@ -1,11 +1,11 @@
 { stdenv, fetchurl, libebml }:
 
 stdenv.mkDerivation rec {
-  name = "libmatroska-1.0.0";
+  name = "libmatroska-1.4.1";
 
   src = fetchurl {
     url = "http://dl.matroska.org/downloads/libmatroska/${name}.tar.bz2";
-    sha256 = "123v2dhvv6yijqxc30spabzznjf5lbcv4iv4mmz4b3jhvwiha06w";
+    sha256 = "1dzglkl0hpimld1kahkrrp857hw5pg1r7xxbpnx7jmlj7s3j2vq8";
   };
 
   configurePhase = "cd make/linux";

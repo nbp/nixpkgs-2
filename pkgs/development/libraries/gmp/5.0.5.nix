@@ -10,19 +10,28 @@ stdenv.mkDerivation rec {
 
   patches = [ ./ignore-bad-cpuid.patch ];
 
-  buildNativeInputs = [ m4 ];
+  nativeBuildInputs = [ m4 ];
 
   configureFlags =
-    # Build a "fat binary", with routines for several sub-architectures (x86).
-    [ "--enable-fat" ]
+    # Build a "fat binary", with routines for several sub-architectures
+    # (x86), except on Solaris where some tests crash with "Memory fault".
+    # See <http://hydra.nixos.org/build/2760931>, for instance.
+    (stdenv.lib.optional (!stdenv.isSunOS) "--enable-fat")
     ++ (if cxx then [ "--enable-cxx" ] else [ "--disable-cxx" ]);
 
   doCheck = true;
 
   enableParallelBuilding = true;
 
+  crossAttrs = {
+    # Disable stripping to avoid "libgmp.a: Archive has no index"
+    # (see <http://hydra.nixos.org/build/4268666>.)
+    dontStrip = true;
+    dontCrossStrip = true;
+  };
+
   meta = {
-    description = "GMP, the GNU multiple precision arithmetic library";
+    description = "GNU multiple precision arithmetic library";
 
     longDescription =
       '' GMP is a free library for arbitrary precision arithmetic, operating
@@ -47,7 +56,7 @@ stdenv.mkDerivation rec {
       '';
 
     homepage = http://gmplib.org/;
-    license = "LGPLv3+";
+    license = stdenv.lib.licenses.lgpl3Plus;
 
     maintainers = [ stdenv.lib.maintainers.ludo stdenv.lib.maintainers.simons ];
     platforms = stdenv.lib.platforms.all;

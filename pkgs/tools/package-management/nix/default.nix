@@ -5,14 +5,14 @@
 }:
 
 stdenv.mkDerivation rec {
-  name = "nix-1.0";
+  name = "nix-1.7";
 
   src = fetchurl {
-    url = "http://hydra.nixos.org/build/2609700/download/4/${name}.tar.bz2";
-    sha256 = "27f1d4d2a5fb1951bfc9e706c0894a961aed1afe0d095e16eb8fbef94ee7ec17";
+    url = "http://nixos.org/releases/nix/${name}/${name}.tar.xz";
+    sha256 = "349163654f2ae3e1a17fb3da7ed164a4cac153728bbe9a26764e17556d3dcc92";
   };
 
-  buildNativeInputs = [ perl pkgconfig ];
+  nativeBuildInputs = [ perl pkgconfig ];
 
   buildInputs = [ curl openssl boehmgc sqlite ];
 
@@ -26,41 +26,60 @@ stdenv.mkDerivation rec {
 
   configureFlags =
     ''
-      --with-store-dir=${storeDir} --localstatedir=${stateDir}
-      --with-dbi=${perlPackages.DBI}/lib/perl5/site_perl
-      --with-dbd-sqlite=${perlPackages.DBDSQLite}/lib/perl5/site_perl
+      --with-store-dir=${storeDir} --localstatedir=${stateDir} --sysconfdir=/etc
+      --with-dbi=${perlPackages.DBI}/${perl.libPrefix}
+      --with-dbd-sqlite=${perlPackages.DBDSQLite}/${perl.libPrefix}
+      --with-www-curl=${perlPackages.WWWCurl}/${perl.libPrefix}
       --disable-init-state
       --enable-gc
       CFLAGS=-O3 CXXFLAGS=-O3
     '';
 
+  makeFlags = "profiledir=$(out)/etc/profile.d";
+
+  installFlags = "sysconfdir=$(out)/etc";
+
   doInstallCheck = true;
 
   crossAttrs = {
     postUnpack =
-      '' export CPATH="${bzip2.hostDrv}/include"
-         export NIX_CROSS_LDFLAGS="-L${bzip2.hostDrv}/lib -rpath-link ${bzip2.hostDrv}/lib $NIX_CROSS_LDFLAGS"
+      '' export CPATH="${bzip2.crossDrv}/include"
+         export NIX_CROSS_LDFLAGS="-L${bzip2.crossDrv}/lib -rpath-link ${bzip2.crossDrv}/lib $NIX_CROSS_LDFLAGS"
       '';
 
     configureFlags =
       ''
         --with-store-dir=${storeDir} --localstatedir=${stateDir}
-        --with-dbi=${perlPackages.DBI}/lib/perl5/site_perl
-        --with-dbd-sqlite=${perlPackages.DBDSQLite}/lib/perl5/site_perl
+        --with-dbi=${perlPackages.DBI}/${perl.libPrefix}
+        --with-dbd-sqlite=${perlPackages.DBDSQLite}/${perl.libPrefix}
+        --with-www-curl=${perlPackages.WWWCurl}/${perl.libPrefix}
         --disable-init-state
         --enable-gc
         CFLAGS=-O3 CXXFLAGS=-O3
       '' + stdenv.lib.optionalString (
           stdenv.cross ? nix && stdenv.cross.nix ? system
       ) ''--with-system=${stdenv.cross.nix.system}'';
+
     doInstallCheck = false;
   };
 
   enableParallelBuilding = true;
 
   meta = {
-    description = "The Nix Deployment System";
+    # due to builder args bug; see
+    # https://github.com/NixOS/nix/commit/b224ac15201c57b40ea855f5a98b1bd166c1c7f6
+    broken = stdenv.isDarwin;
+    description = "Powerful package manager that makes package management reliable and reproducible";
+    longDescription = ''
+      Nix is a powerful package manager for Linux and other Unix systems that
+      makes package management reliable and reproducible. It provides atomic
+      upgrades and rollbacks, side-by-side installation of multiple versions of
+      a package, multi-user package management and easy setup of build
+      environments.
+    '';
     homepage = http://nixos.org/;
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
+    maintainers = [ stdenv.lib.maintainers.eelco ];
+    platforms = stdenv.lib.platforms.all;
   };
 }

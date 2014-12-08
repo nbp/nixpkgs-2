@@ -2,11 +2,11 @@
 
 let
 
-  version = "1.8.10";
-  
+  version = "1.8.21";
+
   src = fetchurl {
     url = "mirror://sourceforge/zabbix/zabbix-${version}.tar.gz";
-    sha256 = "0jx5i1ps1zr908g8gh1zisajiblg40x8cchmgbpdviz85hzx4rfr";
+    sha256 = "1ssqi31blkl1lyv9vjrsrrn494grdng187s8xwfv79adk2w94paw";
   };
 
   preConfigure =
@@ -49,7 +49,7 @@ in
       platforms = stdenv.lib.platforms.linux;
     };
   };
-  
+
   agent = stdenv.mkDerivation {
     name = "zabbix-agent-${version}";
 
@@ -62,8 +62,8 @@ in
       homepage = http://www.zabbix.com/;
       license = "GPL";
       maintainers = [ stdenv.lib.maintainers.eelco ];
-      platforms = stdenv.lib.platforms.all;
+      platforms = stdenv.lib.platforms.linux ++ stdenv.lib.platforms.darwin;
     };
   };
-  
+
 }

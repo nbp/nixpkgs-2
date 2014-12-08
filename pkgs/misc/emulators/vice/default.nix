@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, lib, perl, gettext, libpng, giflib, libjpeg, alsaLib, readline, mesa
+{ stdenv, fetchurl, perl, gettext, libpng, giflib, libjpeg, alsaLib, readline, mesa, libX11
 , pkgconfig, gtk, SDL, autoconf, automake, makeDesktopItem
 }:
 
@@ -28,6 +28,8 @@ stdenv.mkDerivation rec {
     autoreconf -f -i
   '';
   
+  NIX_LDFLAGS = "-lX11 -L${libX11}/lib";
+  
   postInstall = ''
     mkdir -p $out/share/applications
     cp ${desktopItem}/share/applications/* $out/share/applications
@@ -36,7 +38,7 @@ stdenv.mkDerivation rec {
   meta = {
     description = "Commodore 64, 128 and other emulators";
     homepage = http://www.viceteam.org;
-    license = "GPLv2+";
-    maintainers = [ lib.maintainers.sander ];
+    license = stdenv.lib.licenses.gpl2Plus;
+    maintainers = [ stdenv.lib.maintainers.sander ];
   };
 }

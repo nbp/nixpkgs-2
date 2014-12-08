@@ -1,13 +1,13 @@
 { stdenv, fetchurl, makeWrapper, qt4, utillinux, coreutils, which, p7zip, mtools, syslinux }:
 
-let version = "563"; in
+let version = "608"; in
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   name = "unetbootin-${version}";
 
   src = fetchurl {
     url = "mirror://sourceforge/unetbootin/UNetbootin/${version}/unetbootin-source-${version}.tar.gz";
-    sha256 = "1j4ka6rjf5akhcdb4pbfdrka9zflhch97b5i42zk1cf8hd6wx939";
+    sha256 = "1010ccdrblsjr5zid6wl3c3b75ld37lrr1a1xc6dlrhz1gvcb6ff";
   };
 
   sourceRoot = ".";
@@ -57,7 +57,7 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = http://unetbootin.sourceforge.net/;
     description = "A tool to create bootable live USB drives from ISO images";
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
     platforms = stdenv.lib.platforms.linux;
   };
 }

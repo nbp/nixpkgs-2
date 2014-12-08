@@ -1,18 +1,24 @@
-{ stdenv, fetchurl, substituteAll
-, libXrender, libXinerama, libXcursor, libXmu , libXv, libXext
-, libXfixes, libXrandr, libSM, freetype, fontconfig
-, zlib, libjpeg, libpng, libmng, which, mesa, openssl, dbus, cups, pkgconfig
-, libtiff, glib, icu
-, mysql, postgresql, sqlite
-, perl, coreutils, libXi
-, buildMultimedia ? true, alsaLib, gstreamer, gst_plugins_base
-, buildWebkit ? true
-, flashplayerFix ? true, gdk_pixbuf
+{ stdenv, fetchurl, fetchpatch, substituteAll
+, libXrender, libXinerama, libXcursor, libXmu, libXv, libXext
+, libXfixes, libXrandr, libSM, freetype, fontconfig, zlib, libjpeg, libpng
+, libmng, which, mesaSupported, mesa, mesa_glu, openssl, dbus, cups, pkgconfig
+, libtiff, glib, icu, mysql, postgresql, sqlite, perl, coreutils, libXi
+, buildMultimedia ? stdenv.isLinux, alsaLib, gstreamer, gst_plugins_base
+, buildWebkit ? stdenv.isLinux
+, flashplayerFix ? false, gdk_pixbuf
 , gtkStyle ? false, libgnomeui, gtk, GConf, gnome_vfs
+, developerBuild ? false
+, docs ? false
+, examples ? false
+, demos ? false
 }:
 
+with stdenv.lib;
+
 let
-  v = "4.8.1";
+  v_maj = "4.8";
+  v_min = "6";
+  vers = "${v_maj}.${v_min}";
 in
 
 # TODO:
@@ -20,46 +26,70 @@ in
 #    false build-time dependencies
 
 stdenv.mkDerivation rec {
-  name = "qt-${v}";
+  name = "qt-${vers}";
 
   src = fetchurl {
-    url = "ftp://ftp.qt.nokia.com/qt/source/qt-everywhere-opensource-src-${v}.tar.gz";
-    sha256 = "1s3sv2p8q4bjy0h6r81gdnd64apdx8kwm5jc7rxavd21m8v1m1gg";
+    url = "http://download.qt-project.org/official_releases/qt/"
+      + "${v_maj}/${vers}/qt-everywhere-opensource-src-${vers}.tar.gz";
+    sha256 = "0b036iqgmbbv37dgwwfihw3mihjbnw3kb5kaisdy0qi8nn8xs54b";
   };
 
-  patches = [ ( substituteAll {
+  # The version property must be kept because it will be included into the QtSDK package name
+  version = vers;
+
+  prePatch = ''
+    substituteInPlace configure --replace /bin/pwd pwd
+    substituteInPlace src/corelib/global/global.pri --replace /bin/ls ${coreutils}/bin/ls
+    sed -e 's@/\(usr\|opt\)/@/var/empty/@g' -i config.tests/*/*.test -i mkspecs/*/*.conf
+  '' + stdenv.lib.optionalString stdenv.isDarwin ''
+    # remove impure reference to /usr/lib/libstdc++.6.dylib
+    # there might be more references, but this is the only one I could find
+    substituteInPlace tools/macdeployqt/tests/tst_deployment_mac.cpp \
+      --replace /usr/lib/libstdc++.6.dylib "${stdenv.gcc}/lib/libstdc++.6.dylib"
+  '';
+
+  patches =
+    [ ./glib-2.32.patch
+      (substituteAll {
         src = ./dlopen-absolute-paths.diff;
         inherit cups icu libXfixes;
         glibc = stdenv.gcc.libc;
+        openglDriver = if mesaSupported then mesa.driverLink else "/no-such-path";
       })
-    ] ++ stdenv.lib.optional gtkStyle (
-      substituteAll {
+    ] ++ stdenv.lib.optional gtkStyle (substituteAll {
         src = ./dlopen-gtkstyle.diff;
         # substituteAll ignores env vars starting with capital letter
-        gconf = GConf; 
+        gconf = GConf;
         inherit gnome_vfs libgnomeui gtk;
-      }
-    ) ++ stdenv.lib.optional flashplayerFix (
-      substituteAll {
+      })
+    ++ stdenv.lib.optional flashplayerFix (substituteAll {
         src = ./dlopen-webkit-nsplugin.diff;
         inherit gtk gdk_pixbuf;
-      }
-    );
+      })
+    ++ [(fetchpatch {
+        name = "fix-medium-font.patch";
+        url = "http://anonscm.debian.org/cgit/pkg-kde/qt/qt4-x11.git/plain/debian/patches/"
+          + "kubuntu_39_fix_medium_font.diff?id=21b342d71c19e6d68b649947f913410fe6129ea4";
+        sha256 = "0bli44chn03c2y70w1n8l7ss4ya0b40jqqav8yxrykayi01yf95j";
+      })];
 
-  preConfigure =
-    ''
-      export LD_LIBRARY_PATH="`pwd`/lib:$LD_LIBRARY_PATH"
-      configureFlags+="
-        -docdir $out/share/doc/${name}
-        -plugindir $out/lib/qt4/plugins
-        -importdir $out/lib/qt4/imports
-        -examplesdir $out/share/doc/${name}/examples
-        -demosdir $out/share/doc/${name}/demos
-        -datadir $out/share/${name}
-        -translationdir $out/share/${name}/translations
-      "
-    '';
+  preConfigure = ''
+    export LD_LIBRARY_PATH="`pwd`/lib:$LD_LIBRARY_PATH"
+    configureFlags+="
+      -docdir $out/share/doc/${name}
+      -plugindir $out/lib/qt4/plugins
+      -importdir $out/lib/qt4/imports
+      -examplesdir $out/share/doc/${name}/examples
+      -demosdir $out/share/doc/${name}/demos
+      -datadir $out/share/${name}
+      -translationdir $out/share/${name}/translations
+    "
+  '' + optionalString stdenv.isDarwin ''
+    sed -i 's/QMAKE_CC = gcc/QMAKE_CC = clang/' mkspecs/common/g++-base.conf
+    sed -i 's/QMAKE_CXX = g++/QMAKE_CXX = clang++/' mkspecs/common/g++-base.conf
+  '';
 
+  prefixKey = "-prefix ";
   configureFlags =
     ''
       -v -no-separate-debug-info -release -no-fast -confirm-license -opensource
@@ -72,39 +102,48 @@ stdenv.mkDerivation rec {
       -exceptions -xmlpatterns
 
       -make libs -make tools -make translations
-      -nomake demos -nomake examples -nomake docs
+      -${if demos then "" else "no"}make demos
+      -${if examples then "" else "no"}make examples
+      -${if docs then "" else "no"}make docs
 
       -no-phonon ${if buildWebkit then "" else "-no"}-webkit ${if buildMultimedia then "" else "-no"}-multimedia -audio-backend
+      ${if developerBuild then "-developer-build" else ""}
     '';
 
   propagatedBuildInputs =
-    [ libXrender libXrandr libXinerama libXcursor libXext libXfixes
-      libXv libXi libSM mesa
-    ] ++ (stdenv.lib.optional (buildWebkit || buildMultimedia) alsaLib)
-    ++ [ zlib libpng openssl dbus.libs freetype fontconfig glib ]
-    ++ (stdenv.lib.optionals (buildWebkit || buildMultimedia)
-        [ gstreamer gst_plugins_base ]);
+    [ libXrender libXrandr libXinerama libXcursor libXext libXfixes libXv libXi
+      libSM zlib libpng openssl dbus.libs freetype fontconfig glib ]
+        # Qt doesn't directly need GLU (just GL), but many apps use, it's small and doesn't remain a runtime-dep if not used
+    ++ optional mesaSupported mesa_glu
+    ++ optional ((buildWebkit || buildMultimedia) && stdenv.isLinux ) alsaLib
+    ++ optionals (buildWebkit || buildMultimedia) [ gstreamer gst_plugins_base ];
 
   # The following libraries are only used in plugins
-  buildInputs = [ cups # Qt dlopen's libcups instead of linking to it
-    mysql postgresql sqlite libjpeg libmng libtiff icu ]
-    ++ stdenv.lib.optionals gtkStyle [ gtk gdk_pixbuf ];
+  buildInputs =
+    [ cups # Qt dlopen's libcups instead of linking to it
+      mysql postgresql sqlite libjpeg libmng libtiff icu ]
+    ++ optionals gtkStyle [ gtk gdk_pixbuf ];
 
-  buildNativeInputs = [ perl pkgconfig which ];
+  nativeBuildInputs = [ perl pkgconfig which ];
 
-  prefixKey = "-prefix ";
+  # occasional build problems if one has too many cores (like on Hydra)
+  # @vcunat has been unable to find a *reliable* fix
+  enableParallelBuilding = false;
 
-  prePatch = ''
-    substituteInPlace configure --replace /bin/pwd pwd
-    substituteInPlace src/corelib/global/global.pri --replace /bin/ls ${coreutils}/bin/ls
-    sed -e 's@/\(usr\|opt\)/@/var/empty/@g' -i config.tests/*/*.test -i mkspecs/*/*.conf
+  NIX_CFLAGS_COMPILE = optionalString stdenv.isDarwin
+    "-I${glib}/include/glib-2.0 -I${glib}/lib/glib-2.0/include";
+
+  NIX_LDFLAGS = optionalString stdenv.isDarwin
+    "-lglib-2.0";
+
+  preBuild = optionalString stdenv.isDarwin ''
+    # resolve "extra qualification on member" error
+    sed -i 's/struct ::TabletProximityRec;/struct TabletProximityRec;/' \
+      src/gui/kernel/qt_cocoa_helpers_mac_p.h
   '';
 
-  enableParallelBuilding = true;
-
   crossAttrs = let
-    isMingw = stdenv.cross.config == "i686-pc-mingw32" ||
-      stdenv.cross.config == "x86_64-w64-mingw32";
+    isMingw = stdenv.cross.libc == "msvcrt";
   in {
     # I've not tried any case other than i686-pc-mingw32.
     # -nomake tools:   it fails linking some asian language symbols
@@ -115,7 +154,7 @@ stdenv.mkDerivation rec {
       -no-svg
       -make qmake -make libs -nomake tools
       -nomake demos -nomake examples -nomake docs
-    '' + stdenv.lib.optionalString isMingw " -xplatform win32-g++-4.6";
+    '' + optionalString isMingw " -xplatform win32-g++-4.6";
     patches = [];
     preConfigure = ''
       sed -i -e 's/ g++/ ${stdenv.cross.config}-g++/' \
@@ -132,16 +171,15 @@ stdenv.mkDerivation rec {
     '';
     dontSetConfigureCross = true;
     dontStrip = true;
-  } // (if isMingw then
-  {
+  } // optionalAttrs isMingw {
     propagatedBuildInputs = [ ];
-  } else {});
+  };
 
-  meta = with stdenv.lib; {
-    homepage = http://qt.nokia.com/products;
+  meta = {
+    homepage    = http://qt-project.org/;
     description = "A cross-platform application framework for C++";
-    license = "GPL/LGPL";
-    maintainers = with maintainers; [ urkud sander ];
-    platforms = platforms.linux;
+    license     = licenses.lgpl21Plus; # or gpl3
+    maintainers = with maintainers; [ lovek323 phreedom sander urkud ];
+    platforms   = platforms.linux;
   };
 }

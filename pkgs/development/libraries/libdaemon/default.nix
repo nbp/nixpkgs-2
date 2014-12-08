@@ -11,13 +11,13 @@ stdenv.mkDerivation rec {
   configureFlags = [ "--disable-lynx" ];
 
   meta = {
-    description = "libdaemon, a lightweight C library that eases the writing of UNIX daemons";
+    description = "Lightweight C library that eases the writing of UNIX daemons";
 
     homepage = http://0pointer.de/lennart/projects/libdaemon/;
 
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
 
-    platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    hydraPlatforms = stdenv.lib.platforms.linux;
+    maintainers = [ ];
   };
 }

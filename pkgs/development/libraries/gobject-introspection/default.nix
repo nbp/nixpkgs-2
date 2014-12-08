@@ -1,30 +1,48 @@
-{ stdenv, fetchurl, glib, flex, bison, pkgconfig, libffi, python }:
+{ stdenv, fetchurl, glib, flex, bison, pkgconfig, libffi, python
+, libintlOrEmpty, autoconf, automake, otool }:
+# now that gobjectIntrospection creates large .gir files (eg gtk3 case)
+# it may be worth thinking about using multiple derivation outputs
+# In that case its about 6MB which could be separated
 
 let
-  baseName = "gobject-introspection";
-  v = "0.10.8";
+  ver_maj = "1.40";
+  ver_min = "0";
 in
-
 stdenv.mkDerivation rec {
-  name = "${baseName}-${v}";
+  name = "gobject-introspection-${ver_maj}.${ver_min}";
 
-  buildInputs = [ flex bison glib pkgconfig python ];
+  src = fetchurl {
+    url = "mirror://gnome/sources/gobject-introspection/${ver_maj}/${name}.tar.xz";
+    sha256 = "162flbzwzz0b8axab2gimc4dglpaw88fh1d177zfg0whczlpbsln";
+  };
+
+  buildInputs = [ flex bison glib pkgconfig python ]
+    ++ libintlOrEmpty
+    ++ stdenv.lib.optional stdenv.isDarwin otool;
   propagatedBuildInputs = [ libffi ];
 
   # Tests depend on cairo, which is undesirable (it pulls in lots of
   # other dependencies).
-  configureFlags = "--disable-tests";
-
-  src = fetchurl {
-    url = "mirror://gnome/sources/${baseName}/0.10/${name}.tar.bz2";
-    sha256 = "5b1387ff37f03db880a2b1cbd6c6b6dfb923a29468d4d8367c458abf7704c61e";
-  };
+  configureFlags = [ "--disable-tests" ];
 
   postInstall = "rm -rf $out/share/gtk-doc";
 
+  setupHook = ./setup-hook.sh;
+
+  patches = [ ./absolute_shlib_path.patch ];
+
   meta = with stdenv.lib; {
-    maintainers = [ maintainers.urkud ];
-    platforms = platforms.linux;
-    homepage = http://live.gnome.org/GObjectIntrospection;
+    description = "A middleware layer between C libraries and language bindings";
+    homepage    = http://live.gnome.org/GObjectIntrospection;
+    maintainers = with maintainers; [ lovek323 urkud ];
+    platforms   = platforms.unix;
+
+    longDescription = ''
+      GObject introspection is a middleware layer between C libraries (using
+      GObject) and language bindings. The C library can be scanned at compile
+      time and generate a metadata file, in addition to the actual native C
+      library. Then at runtime, language bindings can read this metadata and
+      automatically provide bindings to call into the C library.
+    '';
   };
 }

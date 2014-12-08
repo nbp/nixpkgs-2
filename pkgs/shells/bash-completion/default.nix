@@ -1,27 +1,21 @@
 { stdenv, fetchurl }:
 
-let
-  version = "1.3";
-in
-stdenv.mkDerivation {
-  name = "bash-completion-${version}";
+stdenv.mkDerivation rec {
+  name = "bash-completion-2.1";
 
   src = fetchurl {
-    url = "http://bash-completion.alioth.debian.org/files/bash-completion-${version}.tar.bz2";
-    sha256 = "8ebe30579f0f3e1a521013bcdd183193605dab353d7a244ff2582fb3a36f7bec";
+    url = "http://bash-completion.alioth.debian.org/files/${name}.tar.bz2";
+    sha256 = "0kxf8s5bw7y50x0ksb77d3kv0dwadixhybl818w27y6mlw26hq1b";
   };
 
-  postInstall = ''
-    rm $out/etc/profile.d/bash_completion.sh
-    rmdir $out/etc/profile.d
-    sed -i -e "s|/etc/bash_completion|$out/etc/bash_completion|g" $out/etc/bash_completion
-  '';
+  doCheck = true;
 
   meta = {
     homepage = "http://bash-completion.alioth.debian.org/";
     description = "Programmable completion for the bash shell";
     license = "GPL";
 
+    platforms = stdenv.lib.platforms.unix;
     maintainers = [ stdenv.lib.maintainers.simons ];
   };
 }

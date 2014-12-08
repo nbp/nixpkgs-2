@@ -35,11 +35,10 @@ fi
 # download the file and add it to the store.
 if test -z "$finalPath"; then
 
-    tmpPath=/tmp/hg-checkout-tmp-$$
-    tmpArchive=$tmpPath/hg-archive
-    mkdir $tmpPath
+    tmpPath="$(mktemp -d "${TMPDIR:-/tmp}/hg-checkout-tmp-XXXXXXXX")"
+    trap "rm -rf \"$tmpPath\"" EXIT
 
-    trap "rm -rf $tmpPath" EXIT
+    tmpArchive="$tmpPath/hg-archive"
 
     # Perform the checkout.
     if [[ $url != /* ]]; then
@@ -51,6 +50,7 @@ if test -z "$finalPath"; then
     hg archive -q -y -r "$rev" --cwd $tmpClone $tmpArchive
     rm -f $tmpArchive/.hg_archival.txt
 
+    echo "hg revision is $(cd $tmpClone; hg id -r "$rev" -i)"
 
     # Compute the hash.
     hash=$(nix-hash --type $hashType $hashFormat $tmpArchive)

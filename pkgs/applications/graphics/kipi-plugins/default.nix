@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
       libksane libxslt gettext opencv libgpod gdk_pixbuf qjson
     ];
 
-  buildNativeInputs = [ pkgconfig cmake automoc4 ];
+  nativeBuildInputs = [ pkgconfig cmake automoc4 ];
 
   meta = {
     description = "Photo Management Program";
@@ -25,5 +25,6 @@ stdenv.mkDerivation rec {
     homepage = http://www.kipi-plugins.org;
     inherit (kdelibs.meta) platforms;
     maintainers = with stdenv.lib.maintainers; [ viric urkud ];
+    broken = true; # it should be build from digikam sources, perhaps together
   };
 }

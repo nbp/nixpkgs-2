@@ -8,7 +8,7 @@ stdenv.mkDerivation rec {
     sha256 = "13xqcinhydqmh7231qlir6pymacjwcf98drybkhd9597kzxp1bs2";
   };
 
-  buildNativeInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [ tokyocabinet ];
 
   doCheck = false;                                # FIXME
@@ -33,9 +33,9 @@ stdenv.mkDerivation rec {
 
     homepage = http://fallabs.com/tokyotyrant/;
 
-    license = "LGPLv2.1+";
+    license = stdenv.lib.licenses.lgpl21Plus;
 
     platforms = stdenv.lib.platforms.gnu;         # arbitrary choice
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
   };
 }

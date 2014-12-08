@@ -11,8 +11,14 @@ stdenv.mkDerivation rec {
 
   buildInputs = [ pkgconfig gettext gtk gconf curl libexif sqlite libxml2 ];
 
+  # bogus includes fail with newer library version
+  postPatch = ''
+    sed -i -e 's,#include <glib/.*>,#include <glib.h>,g' src/*.c
+    sed -i -e 's,#include <curl/.*>,#include <curl/curl.h>,g' src/*.c src/*.h
+  '';
+
   meta = {
-    description = "tangoGPS, a user friendly map and GPS user interface";
+    description = "User friendly map and GPS user interface";
 
     longDescription = ''
       tangoGPS is an easy to use, fast and lightweight mapping
@@ -30,8 +36,8 @@ stdenv.mkDerivation rec {
       conveniently pre-cache areas with tangoGPS.
     '';
 
-    homepage = http://www.tangogps.org/;
+    #homepage = http://www.tangogps.org/; # no longer valid, I couldn't find any other
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
   };
 }

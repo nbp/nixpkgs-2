@@ -1,22 +1,19 @@
-{ stdenv, fetchurl }:
+{ stdenv, fetchurl, libintlOrEmpty }:
 
 stdenv.mkDerivation rec {
-  name = "cracklib-2.8.16";
-
-  #builder = ./builder.sh;
+  name = "cracklib-2.9.1";
 
   src = fetchurl {
     url = "mirror://sourceforge/cracklib/${name}.tar.gz";
-    sha256 = "1g3mchdvra9nihxlkl3rdz96as3xnfw5m59hmr5k17l7qa9a8fpw";
+    sha256 = "0mni2sz7350d4acs7gdl8nilfmnb8qhcvmxnpf6dr5wsag10b2a0";
   };
 
-  #dicts = fetchurl {
-  #  url = http://nixos.org/tarballs/cracklib-words.gz;
-  #  md5 = "d18e670e5df560a8745e1b4dede8f84f";
-  #};
+  buildInputs = libintlOrEmpty;
 
-  meta = {
-    homepage = http://sourceforge.net/projects/cracklib;
+  meta = with stdenv.lib; {
+    homepage    = http://sourceforge.net/projects/cracklib;
     description = "A library for checking the strength of passwords";
+    maintainers = with maintainers; [ lovek323 ];
+    platforms   = platforms.unix;
   };
 }

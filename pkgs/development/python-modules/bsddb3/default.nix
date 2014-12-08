@@ -1,12 +1,12 @@
-{stdenv, fetchurl, python, db4}:
+{stdenv, fetchurl, python, db}:
 
-stdenv.mkDerivation {
-  name = "bsddb3-4.5.0";
+stdenv.mkDerivation rec {
+  name = "bsddb3-6.1.0";
   src = fetchurl {
-    url = mirror://sourceforge/pybsddb/bsddb3-4.5.0.tar.gz;
-    sha256 = "1h09kij32iikr9racp5p7qrb4li2gf2hs0lyq6d312qarja4d45v";
+    url = "https://pypi.python.org/packages/source/b/bsddb3/${name}.tar.gz";
+    sha256 = "05gx3rfgq1qrgdmpd6hri6y5l97bh1wczvb6x853jchwi7in6cdi";
   };
   buildInputs = [python];
   buildPhase = "true";
-  installPhase = "python ./setup.py install --prefix=$out --berkeley-db=${db4}";
+  installPhase = "python ./setup.py install --prefix=$out --berkeley-db=${db}";
 }

@@ -28,6 +28,15 @@ let
 
 in {
 
+  cs = buildDict {
+    shortName = "cs-20040614-1";
+    fullName = "Czech";
+    src = fetchurl {
+      url = mirror://gnu/aspell/dict/cs/aspell6-cs-20040614-1.tar.bz2;
+      sha256 = "0rihj4hsw96pd9casvmpvw3r8040pfa28p1h73x4vyn20zwr3h01";
+    };
+  };
+
   de = buildDict {
     shortName = "de-20030222-1";
     fullName = "German";
@@ -36,31 +45,31 @@ in {
       sha256 = "01p92qj66cqb346gk7hjfynaap5sbcn85xz07kjfdq623ghr8v5s";
     };
   };
-    
+
   en = buildDict {
-    shortName = "en-6.0-0";
+    shortName = "en-7.1-0";
     fullName = "English";
     src = fetchurl {
-      url = mirror://gnu/aspell/dict/en/aspell6-en-6.0-0.tar.bz2;
-      sha256 = "1628rrx1yq9jmnd86sr24vih101smb818vf10vx97f6j263niw14";
+      url = mirror://gnu/aspell/dict/en/aspell6-en-7.1-0.tar.bz2;
+      sha256 = "02ldfiny4iakgfgy4sdrzjqdzi7l1rmb6y30lv31kfy5x31g77gz";
     };
   };
-    
+
   es = buildDict {
-    shortName = "es-0.50-2";
+    shortName = "es-1.11-2";
     fullName = "Spanish";
     src = fetchurl {
-      url = mirror://gnu/aspell/dict/es/aspell-es-0.50-2.tar.bz2;
-      sha256 = "0i96xswcng35n5zhgpiswmi5sdpx63kl8bg7fl1zp5j1shr2l3jw";
+      url = mirror://gnu/aspell/dict/es/aspell6-es-1.11-2.tar.bz2;
+      sha256 = "1k5g328ac1hdpp6fsg57d8md6i0aqcwlszp3gbmp5706wyhpydmd";
     };
   };
-    
+
   eo = buildDict {
-    shortName = "eo-0.50-2";
+    shortName = "eo-2.1.20000225a-2";
     fullName = "Esperanto";
     src = fetchurl {
-      url = mirror://gnu/aspell/dict/eo/aspell-eo-0.50-2.tar.bz2;
-      sha256 = "19vhdm599ng98nq8jxspgvanv5hwryp0qri1vx6zsjl0jx1acqbc";
+      url = mirror://gnu/aspell/dict/eo/aspell6-eo-2.1.20000225a-2.tar.bz2;
+      sha256 = "09vf0mbiicbmyb4bwb7v7lgpabnylg0wy7m3hlhl5rjdda6x3lj1";
     };
   };
 
@@ -72,16 +81,16 @@ in {
       sha256 = "14ffy9mn5jqqpp437kannc3559bfdrpk7r36ljkzjalxa53i0hpr";
     };
   };
-    
+
   it = buildDict {
-    shortName = "it-0.53-0";
+    shortName = "it-2.2_20050523-0";
     fullName = "Italian";
     src = fetchurl {
-      url = mirror://gnu/aspell/dict/it/aspell-it-0.53-0.tar.bz2;
-      sha256 = "0vzs2mk0h2znx0jjs5lqiwdrc4nf6v3f8xbrsni8pfnxhh5ik1rv";
+      url = mirror://gnu/aspell/dict/it/aspell6-it-2.2_20050523-0.tar.bz2;
+      sha256 = "1gdf7bc1a0kmxsmphdqq8pl01h667mjsj6hihy6kqy14k5qdq69v";
     };
   };
-    
+
   la = buildDict {
     shortName = "la-20020503-0";
     fullName = "Latin";
@@ -90,7 +99,16 @@ in {
       sha256 = "1199inwi16dznzl087v4skn66fl7h555hi2palx6s1f3s54b11nl";
     };
   };
-    
+
+  nb = buildDict {
+    shortName = "nb-0.50.1-0";
+    fullName = "Norwegian Bokmal";
+    src = fetchurl {
+      url = "mirror://gnu/aspell/dict/nb/aspell-nb-0.50.1-0.tar.bz2";
+      sha256 = "12i2bmgdnlkzfinb20j2a0j4a20q91a9j8qpq5vgabbvc65nwx77";
+    };
+  };
+
   nl = buildDict {
     shortName = "nl-0.50-2";
     fullName = "Dutch";
@@ -103,16 +121,43 @@ in {
       echo "add nl.rws" > $out/lib/aspell/nederlands.multi
     '';
   };
-    
+
+  nn = buildDict {
+    shortName = "nn-0.50.1-0";
+    fullName = "Norwegian Nynorsk";
+    src = fetchurl {
+      url = "mirror://gnu/aspell/dict/nn/aspell-nn-0.50.1-1.tar.bz2";
+      sha256 = "0w2k5l5rbqpliripgqwiqixz5ghnjf7i9ggbrc4ly4vy1ia10rmc";
+    };
+  };
+
   pl = buildDict {
-    shortName = "pl-6.0_20061121";
+    shortName = "pl-6.0_20061121-0";
     fullName = "Polish";
     src = fetchurl {
       url = mirror://gnu/aspell/dict/pl/aspell6-pl-6.0_20061121-0.tar.bz2;
       sha256 = "0kap4kh6bqbb22ypja1m5z3krc06vv4n0hakiiqmv20anzy42xq1";
     };
   };
-     
+
+  pt_BR = buildDict {
+    shortName = "pt_BR-20090702";
+    fullName = "Brazilian Portuguese";
+    src = fetchurl {
+      url = mirror://gnu/aspell/dict/pt_BR/aspell6-pt_BR-20090702-0.tar.bz2;
+      sha256 = "1y09lx9zf2rnp55r16b2vgj953l3538z1vaqgflg9mdvm555bz3p";
+    };
+  };
+
+  pt_PT = buildDict {
+    shortName = "pt_PT-20070510";
+    fullName = "Portuguese";
+    src = fetchurl {
+      url = mirror://gnu/aspell/dict/pt_PT/aspell6-pt_PT-20070510-0.tar.bz2;
+      sha256 = "1mnr994cwlag6shy8865ky99lymysiln07mbldcncahg90dagdxq";
+    };
+  };
+
   ru = buildDict {
     shortName = "ru-0.99f7-1";
     fullName = "Russian";
@@ -121,5 +166,24 @@ in {
       sha256 = "0ip6nq43hcr7vvzbv4lwwmlwgfa60hrhsldh9xy3zg2prv6bcaaw";
     };
   };
-    
+
+  sv = buildDict {
+    shortName = "sv-0.51-0";
+    fullName = "Swedish";
+    src = fetchurl {
+      url = mirror://gnu/aspell/dict/sv/aspell-sv-0.51-0.tar.bz2;
+      sha256 = "02jwkjhr32kvyibnyzgx3smbnm576jwdzg3avdf6zxwckhy5fw4v";
+    };
+  };
+
+  sk = buildDict {
+    shortName = "sk-2.01-2";
+    fullName = "Slovak";
+    src = fetchurl {
+      url = mirror://gnu/aspell/dict/sk/aspell6-sk-2.01-2.tar.bz2;
+      sha256 = "19k0m1v5pcf7xr4lxgjkzqkdlks8nyb13bvi1n7521f3i4lhma66";
+    };
+  };
+
+
 }

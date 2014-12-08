@@ -1,6 +1,6 @@
 args : with args; 
 
-if (! python ? db4Support) || (! python.db4Support) then 
+if (! python ? dbSupport) || (! python.dbSupport) then 
   throw ''Python DB4 support is required for codeville.'' 
 else
 
@@ -18,6 +18,6 @@ rec {
       
   name = "codeville-0.8.0";
   meta = {
-    description = "Codeville - RCS with powerful merge.";
+    description = "RCS with powerful merge";
   };
 }

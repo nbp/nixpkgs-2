@@ -2,12 +2,12 @@
 
 stdenv.mkDerivation rec {
   pname = "urweb";
-  version = "20120110";
+  version = "20140830";
   name = "${pname}-${version}";
 
   src = fetchurl {
     url = "http://www.impredicative.com/ur/${name}.tgz";
-    sha256 = "1f67nj2akji9dh3n2hwmcrrwd61zlrnb0xh841fpb3n20ycjzg6j";
+    sha256 = "0l4zhvdy2fdvhihyl4gl09v8q4w05b1k0c6h4k8281px96d5ljgr";
   };
 
   buildInputs = [ stdenv.gcc file openssl mlton mysql postgresql sqlite ];
@@ -32,7 +32,7 @@ stdenv.mkDerivation rec {
   dontDisableStatic = true;
 
   meta = {
-    description = "Ur/Web supports construction of dynamic web applications backed by SQL databases.";
+    description = "Construct dynamic web applications backed by SQL databases";
     longDescription = ''
       Ur is a programming language in the tradition of ML and Haskell, but
       featuring a significantly richer type system. Ur is functional, pure,
@@ -71,7 +71,7 @@ stdenv.mkDerivation rec {
     '';
 
     homepage = http://www.impredicative.com/ur/;
-    license = "bsd";
+    license = stdenv.lib.licenses.bsd3;
     platforms = [ "i686-linux" "x86_64-linux" ];
   };
 }

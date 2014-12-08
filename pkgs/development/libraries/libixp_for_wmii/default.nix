@@ -1,6 +1,6 @@
 args: with args;
 stdenv.mkDerivation {
-  name = "libixp_for_wmii";
+  name = "libixp_for_wmii-0.4";
   phases = "unpackPhase installPhase";
   installPhase = "
      export LDFLAGS\=$(echo \$NIX_LDFLAGS | sed -e 's/-rpath/-L/g')
@@ -21,6 +21,6 @@ stdenv.mkDerivation {
   meta = {
     homepage = http://libs.suckless.org/libixp;
     description = "stand-alone client/server 9P library";
-    license = "MIT / LPL";
+    license = with stdenv.lib.licenses; [ mit lpl-102 ];
   };
 }

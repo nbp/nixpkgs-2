@@ -2,27 +2,17 @@
 
 let
   ocaml_version = (builtins.parseDrvName ocaml.name).version;
-  pname = "camlp5";
-  version = "6.02.3";
-  webpage = http://pauillac.inria.fr/~ddr/camlp5/;
   metafile = ./META;
 in
 
 stdenv.mkDerivation {
 
-  name = "${pname}${if transitional then "_transitional" else ""}-${version}";
+  name = "camlp5${if transitional then "_transitional" else ""}-6.12";
 
   src = fetchurl {
-    url = "${webpage}/distrib/src/${pname}-${version}.tgz";
-    sha256 = "1z9bwh267117br0vlhirv9yy2niqp2n25zfnl14wg6kgg9bqx7rj";
+    url = http://camlp5.gforge.inria.fr/distrib/src/camlp5-6.12.tgz;
+    sha256 = "00jwgp6w4g64lfqjx77xziy532091fy00c42fsy0b4i892rch5mp";
   };
-
-  patches = fetchurl {
-    url = "${webpage}/distrib/src/patch-${version}-1";
-    sha256 = "159qpvr07mnn72yqwx24c6mw7hs6bl77capsii7apg9dcxar8w7v";
-  };
-
-  patchFlags = "-p 0";
 
   buildInputs = [ ocaml ];
 
@@ -35,17 +25,17 @@ stdenv.mkDerivation {
 
   postInstall = "cp ${metafile} $out/lib/ocaml/${ocaml_version}/site-lib/camlp5/META";
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Preprocessor-pretty-printer for OCaml";
     longDescription = ''
       Camlp5 is a preprocessor and pretty-printer for OCaml programs.
       It also provides parsing and printing tools.
     '';
-    homepage = "${webpage}";
-    license = "BSD";
+    homepage = http://pauillac.inria.fr/~ddr/camlp5/;
+    license = licenses.bsd3;
     platforms = ocaml.meta.platforms;
-    maintainers = [
-      stdenv.lib.maintainers.z77z
+    maintainers = with maintainers; [
+      z77z vbgl
     ];
   };
 }

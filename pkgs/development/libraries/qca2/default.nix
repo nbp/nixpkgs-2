@@ -10,7 +10,7 @@ stdenv.mkDerivation rec {
   
   buildInputs = [ qt4 ];
   
-  buildNativeInputs = [ which ];
+  nativeBuildInputs = [ which ];
 
   preBuild =
     ''
@@ -20,6 +20,8 @@ stdenv.mkDerivation rec {
               EMSA3_SHA384,     ///< SHA384, with EMSA3 (ie PKCS#1 Version 1.5) encoding\
               EMSA3_SHA512      ///< SHA512, with EMSA3 (ie PKCS#1 Version 1.5) encoding'
     '';
+
+  patches = [ ./gcc47.patch ];
 
   configureFlags = "--no-separate-debug-info";
 

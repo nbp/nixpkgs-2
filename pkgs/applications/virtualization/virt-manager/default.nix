@@ -1,70 +1,75 @@
-x@{builderDefsPackage
-  , gnome, gtk, glib, libxml2, libvirt, gtkvnc, cyrus_sasl, libtasn1, makeWrapper 
-  , intltool, python, pygtk, libxml2Python
-  # virtinst is required, but it breaks when building
-  , ...}:
-builderDefsPackage
-(a :  
-let 
-  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++ 
-    ["gnome"];
+{ stdenv, fetchurl, pythonPackages, intltool, libxml2Python, curl, python
+, makeWrapper, virtinst, pyGtkGlade, pythonDBus, gnome_python, gtkvnc, vte
+, gtk3, gobjectIntrospection, libvirt-glib, gsettings_desktop_schemas, glib
+, avahi, dconf, spiceSupport ? true, spice_gtk
+}:
 
-  buildInputs = (map (n: builtins.getAttr n x)
-    (builtins.attrNames (builtins.removeAttrs x helperArgNames)))
-    ++ [gnome.libglade intltool python libvirt];
-  sourceInfo = rec {
-    baseName="virt-manager";
+with stdenv.lib;
+with pythonPackages;
 
-    version = "0.9.1"; 
-    name = "virt-manager-${version}";
-    url = "http://virt-manager.et.redhat.com/download/sources/virt-manager/virt-manager-${version}.tar.gz";
-    hash = "15e064167ba5ff84ce6fc8790081d61890430f2967f89886a84095a23e40094a";
-  };
-in
-rec {
-  src = a.fetchurl {
-    url = sourceInfo.url;
-    sha256 = sourceInfo.hash;
+buildPythonPackage rec {
+  name = "virt-manager-${version}";
+  version = "1.0.1";
+  namePrefix = "";
+
+  src = fetchurl {
+    url = "http://virt-manager.org/download/sources/virt-manager/${name}.tar.gz";
+    sha256 = "1n248kack1fni8y17ysgq5xhvffcgy4l62hnd0zvr4kjw0579qq8";
   };
 
-  patchPhase = a.fullDepEntry '' 
-    substituteInPlace "src/virt-manager.in" --replace "exec /usr/bin/python" "exec ${python}/bin/python"
-    sed -e '/import libxml2/i import sys\
-    sys.path.append("${libxml2Python}/lib/${python.libPrefix}/site-packages")' \
-    -i src/virtManager/util.py
-    sed -e '/import libxml2/i import sys\
-    sys.path.append("${libxml2Python}/lib/${python.libPrefix}/site-packages")' \
-    -i src/virtManager/libvirtobject.py
-  '' ["minInit"];
+  propagatedBuildInputs =
+    [ eventlet greenlet gflags netaddr sqlalchemy carrot routes
+      paste_deploy m2crypto ipy twisted sqlalchemy_migrate
+      distutils_extra simplejson readline glance cheetah lockfile httplib2
+      urlgrabber virtinst pyGtkGlade pythonDBus gnome_python pygobject3
+      libvirt libxml2Python ipaddr vte
+    ] ++ optional spiceSupport spice_gtk;
 
-  inherit (sourceInfo) name version;
-  inherit buildInputs;
-
-  /* doConfigure should be removed if not needed */
-  phaseNames = [ "doUnpack" "patchPhase" "doConfigure" "doMakeInstall" "installPhase" ];
-
-  installPhase = a.fullDepEntry ''
-    wrapProgram $out/bin/virt-manager --set PYTHONPATH $PYTHONPATH
-  '' ["minInit"];
-
-  #NIX_CFLAGS_COMPILE = "-fno-stack-protector";
-
-  meta = {
-    homepage = http://virt-manager.org;
-    description = "The 'Virtual Machine Manager' application (virt-manager for short package name) is a desktop user interface for managing virtual machines.";
-  
-    maintainers = with a.lib.maintainers;
-    [
-      qknight
+  buildInputs =
+    [ mox
+      intltool
+      gtkvnc
+      gtk3
+      libvirt-glib
+      avahi
+      glib
+      gobjectIntrospection
+      gsettings_desktop_schemas
     ];
-    platforms = with a.lib.platforms;
-      linux;
-    license = a.lib.licenses.gpl2;
-  };
-  passthru = {
-    updateInfo = {
-      downloadPage = "http://virt-manager.org/download.html";
-    };
-  };
-}) x
 
+  configurePhase = ''
+    sed -i 's/from distutils.core/from setuptools/g' setup.py
+    sed -i 's/from distutils.command.install/from setuptools.command.install/g' setup.py
+    python setup.py configure --prefix=$out
+  '';
+
+  buildPhase = "true";
+
+  postInstall = ''
+    # GI_TYPELIB_PATH is needed at runtime for GObject stuff to work
+    for file in "$out"/bin/*; do
+        wrapProgram "$file" \
+            --prefix GI_TYPELIB_PATH : $GI_TYPELIB_PATH \
+            --prefix GIO_EXTRA_MODULES : "${dconf}/lib/gio/modules" \
+            --prefix GSETTINGS_SCHEMA_DIR : $out/share/glib-2.0/schemas \
+            --prefix XDG_DATA_DIRS : "$out/share:${gtk3}/share:$GSETTINGS_SCHEMAS_PATH:\$XDG_DATA_DIRS"
+    done
+
+    ${glib}/bin/glib-compile-schemas "$out"/share/glib-2.0/schemas
+  '';
+
+  # Failed tests
+  doCheck = false;
+
+  meta = with stdenv.lib; {
+    homepage = http://virt-manager.org;
+    description = "Desktop user interface for managing virtual machines";
+    longDescription = ''
+      The virt-manager application is a desktop user interface for managing
+      virtual machines through libvirt. It primarily targets KVM VMs, but also
+      manages Xen and LXC (linux containers).
+    '';
+    license = licenses.gpl2;
+    maintainers = with maintainers; [qknight offline];
+  };
+}

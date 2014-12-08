@@ -1,15 +1,20 @@
-{stdenv, fetchurl}:
+{stdenv, fetchurl, unzip}:
 
-stdenv.mkDerivation {
-	name = "muparser-1.34";
-	src = fetchurl {
-		url = mirror://sourceforge/muparser/muparser_v134.tar.gz;
-		sha256 = "0xi27xjj7bwwf5nw3n2lynpr76al3vp204zwh71wkfnhwbzksg8f";
-	};
+stdenv.mkDerivation rec {
+  name = "muparser-${version}";
+  version = "2.2.3";
+  url-version = stdenv.lib.replaceChars ["."] ["_"] version;
+
+  src = fetchurl {
+    url = "mirror://sourceforge/muparser/muparser_v${url-version}.zip";
+    sha256 = "00l92k231yb49wijzkspa2l58mapn6vh2dlxnlg0pawjjfv33s6z";
+  };
+
+  buildInputs = [ unzip ];
 
   meta = {
     homepage = http://muparser.sourceforge.net;
     description = "An extensible high performance math expression parser library written in C++";
-    license = "MIT";
+    license = stdenv.lib.licenses.mit;
   };
 }

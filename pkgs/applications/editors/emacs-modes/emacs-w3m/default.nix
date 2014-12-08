@@ -1,6 +1,6 @@
 { fetchcvs, stdenv, emacs, w3m, imagemagick, texinfo, autoconf }:
 
-let date = "2012-01-15"; in
+let date = "2013-03-21"; in
 stdenv.mkDerivation rec {
   name = "emacs-w3m-cvs${date}";
 
@@ -10,7 +10,7 @@ stdenv.mkDerivation rec {
     inherit date;
     cvsRoot = ":pserver:anonymous@cvs.namazu.org:/storage/cvsroot";
     module = "emacs-w3m";
-    sha256 = "7a6d90b9d25f137d5a204cfa29f6c6afa8edb1ee302f969110ffda11f11909cc";
+    sha256 = "1lmcj8rf83w13q8q68hh7sa1abc2m6j2zmfska92xdp7hslhdgc5";
   };
 
   buildInputs = [ emacs w3m texinfo autoconf ];
@@ -52,10 +52,10 @@ stdenv.mkDerivation rec {
       developed a simple Emacs interface to w3m.
     '';
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
     homepage = http://emacs-w3m.namazu.org/;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ stdenv.lib.maintainers.mornfall ];
   };
 }

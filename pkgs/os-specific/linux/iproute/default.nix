@@ -1,34 +1,43 @@
-{fetchurl, stdenv, flex, bison, db4, iptables}:
+{ fetchgit, stdenv, flex, bison, db, iptables, pkgconfig }:
 
 stdenv.mkDerivation rec {
-  name = "iproute2-2.6.35";
+  name = "iproute2-3.17.0";
 
-  src = fetchurl {
-    url = "http://pkgs.fedoraproject.org/repo/pkgs/iproute/iproute2-2.6.35.tar.bz2/b0f281b3124bf04669e18f5fe16d4934/iproute2-2.6.35.tar.bz2";
-    sha256 = "18why1wy0v859axgrlfxn80zmskss0410hh9rf5gn9cr29zg9cla";
+  src = fetchgit {
+    url = "git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git";
+    rev = "refs/tags/v3.17.0";
+    sha256 = "113ayyy7cjxn0bf67fh4is4z0jysgif016kv7ig0jp6r68xp2spa";
   };
 
-  patches = [ ./vpnc.patch ];
+  patch = [ ./vpnc.patch ];
 
-  preConfigure =
-    ''
-      patchShebangs ./configure
-      sed -e '/ARPDDIR/d' -i Makefile
-    '';
-  postConfigure = "cat Config";
+  preConfigure = ''
+    patchShebangs ./configure
+    sed -e '/ARPDDIR/d' -i Makefile
+  '';
 
-  makeFlags = "DESTDIR= LIBDIR=$(out)/lib SBINDIR=$(out)/sbin"
-   + " CONFDIR=$(out)/etc DOCDIR=$(out)/share/doc/${name}"
-  + " MANDIR=$(out)/share/man";
+  makeFlags = [
+    "DESTDIR="
+    "LIBDIR=$(out)/lib"
+    "SBINDIR=$(out)/sbin"
+    "CONFDIR=$(out)/etc"
+    "DOCDIR=$(out)/share/doc/${name}"
+    "MANDIR=$(out)/share/man"
+  ];
 
-  buildInputs = [db4 iptables];
-  buildNativeInputs = [bison flex db4];
+  buildInputs = [ db iptables ];
+  nativeBuildInputs = [ bison flex pkgconfig ];
 
-  meta = {
-    homepage =
-      http://www.linuxfoundation.org/collaborate/workgroups/networking/iproute2;
-    description = "A collection of utilities for controlling TCP / IP"
-      + " networking and traffic control in Linux";
-    platforms = stdenv.lib.platforms.linux;
+  enableParallelBuilding = true;
+
+  # Get rid of useless TeX/SGML docs.
+  postInstall = "rm -rf $out/share/doc";
+
+  meta = with stdenv.lib; {
+    homepage = http://www.linuxfoundation.org/collaborate/workgroups/networking/iproute2;
+    description = "A collection of utilities for controlling TCP/IP networking and traffic control in Linux";
+    platforms = platforms.linux;
+    license = licenses.gpl2;
+    maintainers = with maintainers; [ eelco wkennington ];
   };
 }

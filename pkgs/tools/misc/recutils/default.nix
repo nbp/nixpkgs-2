@@ -8,12 +8,14 @@ stdenv.mkDerivation rec {
     sha256 = "1v2xzwwwhc5j5kmvg4sv6baxjpsfqh8ln7ilv4mgb1408rs7xmky";
   };
 
+  patches = [ ./glibc.patch ];
+
   doCheck = true;
 
   buildInputs = [ curl emacs ] ++ (stdenv.lib.optionals doCheck [ check bc ]);
 
   meta = {
-    description = "GNU Recutils, tools and libraries to access human-editable, text-based databases";
+    description = "Tools and libraries to access human-editable, text-based databases";
 
     longDescription =
       '' GNU Recutils is a set of tools and libraries to access
@@ -24,9 +26,9 @@ stdenv.mkDerivation rec {
 
     homepage = http://www.gnu.org/software/recutils/;
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
     platforms = stdenv.lib.platforms.all;
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
   };
 }

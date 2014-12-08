@@ -21,7 +21,7 @@ stdenv.mkDerivation ({
     inherit rev;
   };
 
-  buildNativeInputs = [ autoconf automake libtool ];
+  nativeBuildInputs = [ autoconf automake libtool ];
   buildInputs = [ machHeaders hurdHeaders ]
    ++ stdenv.lib.optional (!headersOnly) hurd
    ++ stdenv.lib.optional (gccCross != null) gccCross;
@@ -31,7 +31,7 @@ stdenv.mkDerivation ({
   meta = {
     description = "GNU Hurd's libpthread";
 
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
 
     maintainers = [ stdenv.lib.maintainers.ludo ];
   };

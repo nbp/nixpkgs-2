@@ -23,7 +23,7 @@ stdenv.mkDerivation ({
     # <http://lists.gnu.org/archive/html/bug-hurd/2010-05/msg00137.html>.
     ++ [ "--enable-dependency-tracking" ];
 
-  buildNativeInputs = [ autoconf automake texinfo ]
+  nativeBuildInputs = [ autoconf automake texinfo ]
     ++ stdenv.lib.optional (mig != null) mig;
 
   preConfigure = "autoreconf -vfi";
@@ -41,7 +41,7 @@ stdenv.mkDerivation ({
          were added using glue code, i.e., a Linux emulation layer in Mach.
       '';
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
     homepage = http://www.gnu.org/software/hurd/microkernel/mach/gnumach.html;
 

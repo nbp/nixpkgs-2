@@ -1,26 +1,21 @@
-{ stdenv, fetchurl, python, gmp }:
+{ stdenv, fetchurl, python, buildPythonPackage, gmp }:
 
-stdenv.mkDerivation rec {
-  name = "pycrypto-2.6";
+buildPythonPackage rec {
+  name = "pycrypto-2.6.1";
+  namePrefix = "";
 
   src = fetchurl {
     url = "http://pypi.python.org/packages/source/p/pycrypto/${name}.tar.gz";
-    md5 = "88dad0a270d1fe83a39e0467a66a22bb";
+    sha256 = "0g0ayql5b9mkjam8hym6zyg6bv77lbh66rv1fyvgqb17kfc1xkpj";
   };
 
-  buildInputs = [ python gmp ];
+  buildInputs = stdenv.lib.optional (!python.isPypy or false) gmp; # optional for pypy
 
-  buildPhase = "true";
-
-  installPhase =
-    ''
-      python ./setup.py build_ext --library-dirs=${gmp}/lib
-      python ./setup.py install --prefix=$out
-    '';
+  doCheck = !(python.isPypy or stdenv.isDarwin); # error: AF_UNIX path too long
 
   meta = {
     homepage = "http://www.pycrypto.org/";
     description = "Python Cryptography Toolkit";
-    platforms = stdenv.lib.platforms.gnu;
+    platforms = stdenv.lib.platforms.unix;
   };
 }

@@ -2,9 +2,9 @@
 
 # Typical command to generate the list of tarballs:
 
-# export i="mirror://xorg/X11R7.6/src/everything/"; cat $(PRINT_PATH=1 nix-prefetch-url $i | tail -n 1) | perl -e 'while (<>) { if (/(href|HREF)="([^"]*.bz2)"/) { print "$ENV{'i'}$2\n"; }; }' | sort > tarballs-7.6.list
+# export i="mirror://xorg/X11R7.7/src/everything/"; cat $(PRINT_PATH=1 nix-prefetch-url $i | tail -n 1) | perl -e 'while (<>) { if (/(href|HREF)="([^"]*.bz2)"/) { print "$ENV{'i'}$2\n"; }; }' | sort > tarballs-7.7.list
 # manually update extra.list
-# then run: cat tarballs-7.6.list extra.list old.list | perl ./generate-expr-from-tarballs.pl
+# then run: cat tarballs-7.7.list extra.list old.list | perl ./generate-expr-from-tarballs.pl
 # tarballs-x.y.list is generated + changes for individual packages
 # extra.list are packages not contained in the tarballs
 # old.list are packages that used to be part of the tarballs
@@ -65,8 +65,8 @@ while (<>) {
     print "  $pkg $pkgName\n";
 
     if (defined $pkgNames{$pkg}) {
-	print "  SKIPPING\n";
-	next;
+        print "  SKIPPING\n";
+        next;
     }
 
     $pkgURLs{$pkg} = $tarball;
@@ -90,7 +90,7 @@ while (<>) {
     my $provides = `find $pkgDir -name "*.pc.in"`;
     my @provides2 = split '\n', $provides;
     my @requires = ();
-    
+
     foreach my $pcFile (@provides2) {
         my $pc = $pcFile;
         $pc =~ s/.*\///;
@@ -111,7 +111,7 @@ while (<>) {
             }
         }
         close FOO;
-        
+
     }
 
     my $file;
@@ -129,7 +129,7 @@ while (<>) {
     if ($file =~ /zlib is required/ || $file =~ /AC_CHECK_LIB\(z\,/) {
         push @requires, "zlib";
     }
-    
+
     if ($file =~ /Perl is required/) {
         push @requires, "perl";
     }
@@ -151,9 +151,9 @@ while (<>) {
     }
 
     if ($file =~ /AC_PATH_PROG\(FCCACHE/) {
-	# Don't run fc-cache.
-	die if defined $extraAttrs{$pkg};
-	$extraAttrs{$pkg} = " preInstall = \"installFlags=(FCCACHE=true)\"; ";
+        # Don't run fc-cache.
+        die if defined $extraAttrs{$pkg};
+        $extraAttrs{$pkg} = " preInstall = \"installFlags=(FCCACHE=true)\"; ";
     }
 
     my $isFont;
@@ -169,7 +169,7 @@ while (<>) {
     }
 
     if ($file =~ /XORG_FONT_UCS2ANY/) {
-        push @requires, "fontutil";
+        push @requires, "fontutil", "mkfontscale";
         $isFont = 1;
     }
 
@@ -179,10 +179,10 @@ while (<>) {
 
     sub process {
         my $requires = shift;
-	my $s = shift;
-	$s =~ s/\[/\ /g;
-	$s =~ s/\]/\ /g;
-	$s =~ s/\,/\ /g;
+        my $s = shift;
+        $s =~ s/\[/\ /g;
+        $s =~ s/\]/\ /g;
+        $s =~ s/\,/\ /g;
         foreach my $req (split / /, $s) {
             next if $req eq ">=";
             #next if $req =~ /^\$/;
@@ -211,7 +211,7 @@ while (<>) {
 
     push @requires, "libxslt" if $pkg =~ /libxcb/;
     push @requires, "gperf", "m4", "xproto" if $pkg =~ /xcbutil/;
-    
+
     print "REQUIRES $pkg => @requires\n";
     $pkgRequires{$pkg} = \@requires;
 
@@ -230,9 +230,16 @@ args: with args;
 
 let
 
+  mkDerivation = name: attrs:
+    let newAttrs = (overrides."\${name}" or (x: x)) attrs;
+        stdenv = newAttrs.stdenv or args.stdenv;
+    in stdenv.mkDerivation (removeAttrs newAttrs [ "stdenv" ]);
+
   overrides = import ./overrides.nix {inherit args xorg;};
 
   xorg = rec {
+
+  inherit pixman;
 
 EOF
 
@@ -257,9 +264,9 @@ foreach my $pkg (sort (keys %pkgURLs)) {
 
     my $extraAttrs = $extraAttrs{"$pkg"};
     $extraAttrs = "" unless defined $extraAttrs;
-    
+
     print OUT <<EOF
-  $pkg = (stdenv.mkDerivation ((if overrides ? $pkg then overrides.$pkg else x: x) {
+  $pkg = (mkDerivation "$pkg" {
     name = "$pkgNames{$pkg}";
     builder = ./builder.sh;
     src = fetchurl {
@@ -267,8 +274,8 @@ foreach my $pkg (sort (keys %pkgURLs)) {
       sha256 = "$pkgHashes{$pkg}";
     };
     buildInputs = [pkgconfig $inputs];$extraAttrs
-  })) // {inherit $inputs;};
-    
+  }) // {inherit $inputs;};
+
 EOF
 }
 

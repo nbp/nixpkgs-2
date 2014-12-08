@@ -1,7 +1,7 @@
 { stdenv, fetchurl, libmatchbox, pkgconfig}:
 
 stdenv.mkDerivation rec {
-  name = "matchbox-1.2.2";
+  name = "matchbox-1.2";
 
   buildInputs = [ libmatchbox pkgconfig ];
 
@@ -13,6 +13,6 @@ stdenv.mkDerivation rec {
   meta = {
     description = "X window manager for non-desktop embedded systems";
     homepage = http://matchbox-project.org/;
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
   };
 }

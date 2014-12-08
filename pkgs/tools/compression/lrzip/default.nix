@@ -1,11 +1,12 @@
 {stdenv, fetchurl, zlib, lzo, bzip2, nasm, perl}:
 
 stdenv.mkDerivation rec {
-  name = "lrzip-0.612";
+  version = "0.616";
+  name = "lrzip-${version}";
 
   src = fetchurl {
     url = "http://ck.kolivas.org/apps/lrzip/${name}.tar.bz2";
-    sha256 = "15rfqpc4xj7wbv117mr2g9npxnrlmqqj97mhxqfpy8360ys9yc1c";
+    sha256 = "1bimlbsfzjvippbma08ifm1grcy9i7avryrkdvnvrfyqnj6mlbcq";
   };
 
   buildInputs = [ zlib lzo bzip2 nasm perl ];
@@ -13,6 +14,7 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = http://ck.kolivas.org/apps/lrzip/;
     description = "The CK LRZIP compression program (LZMA + RZIP)";
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
+    inherit version;
   };
 }

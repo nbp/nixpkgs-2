@@ -59,7 +59,7 @@ stdenv.mkDerivation {
   name = "kino-1.3.4";
 
   src = fetchurl {
-    url = http://downloads.sourceforge.net/kino/kino-1.3.4.tar.gz;
+    url = mirror://sourceforge/kino/kino-1.3.4.tar.gz;
     sha256 = "020s05k0ma83rq2kfs8x474pqicaqp9spar81qc816ddfrnh8k8i";
   };
 
@@ -85,8 +85,8 @@ stdenv.mkDerivation {
 
 
   meta = { 
-      description = "Kino is a non-linear DV editor for GNU/Linux";
+      description = "Non-linear DV editor for GNU/Linux";
       homepage = http://www.kinodv.org/;
-      license = "GPL2";
+      license = stdenv.lib.licenses.gpl2;
   };
 }

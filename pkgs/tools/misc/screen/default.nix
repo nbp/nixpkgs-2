@@ -1,25 +1,26 @@
-{stdenv, fetchurl, ncurses}:
+{ stdenv, fetchurl, ncurses, pam ? null }:
 
 stdenv.mkDerivation rec {
-  name = "screen-4.0.3";
+  name = "screen-4.2.1";
 
   src = fetchurl {
     url = "mirror://gnu/screen/${name}.tar.gz";
-    sha256 = "0xvckv1ia5pjxk7fs4za6gz2njwmfd54sc464n8ab13096qxbw3q";
+    sha256 = "105hp6qdd8rl71p81klmxiz4mlb60kh9r7czayrx40g38x858s2l";
   };
 
   preConfigure = ''
-    configureFlags="--enable-telnet --infodir=$out/share/info --mandir=$out/share/man"
+    configureFlags="--enable-telnet --enable-pam --infodir=$out/share/info --mandir=$out/share/man --with-sys-screenrc=/etc/screenrc --enable-colors256"
     sed -i -e "s|/usr/local|/non-existent|g" -e "s|/usr|/non-existent|g" configure Makefile.in */Makefile.in
   '';
 
-  buildInputs = [ ncurses ];
+  buildInputs = [ ncurses ] ++ stdenv.lib.optional stdenv.isLinux pam;
 
   doCheck = true;
 
   meta = {
     homepage = http://www.gnu.org/software/screen/;
-    description = "GNU Screen, a window manager that multiplexes a physical terminal";
+    description = "a window manager that multiplexes a physical terminal";
+    license = stdenv.lib.licenses.gpl2Plus;
 
     longDescription =
       '' GNU Screen is a full-screen window manager that multiplexes a physical
@@ -43,9 +44,7 @@ stdenv.mkDerivation rec {
          terminal.
       '';
 
-    license = stdenv.lib.licenses.gpl2Plus;
-
     platforms = stdenv.lib.platforms.unix;
-    maintainers = [ stdenv.lib.maintainers.ludo stdenv.lib.maintainers.simons ];
+    maintainers = [ stdenv.lib.maintainers.simons ];
   };
 }

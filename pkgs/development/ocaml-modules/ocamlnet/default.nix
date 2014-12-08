@@ -1,19 +1,20 @@
-{stdenv, fetchurl, ncurses, ocaml, findlib, ocaml_pcre, camlzip, openssl, ocaml_ssl}:
+{stdenv, fetchurl, ncurses, ocaml, findlib, ocaml_pcre, camlzip, openssl, ocaml_ssl, cryptokit }:
 
 let
   ocaml_version = (builtins.parseDrvName ocaml.name).version;
-  version = "3.1";
 in
 
 stdenv.mkDerivation {
-  name = "ocamlnet-${version}";
+  name = "ocamlnet-3.7.7";
 
   src = fetchurl {
-    url = "http://download.camlcity.org/download/ocamlnet-${version}.tar.gz";
-    sha256 = "0kdc2540ad84j6haj9jxlwryz9cb8q8kjdr48f2wgvcaii38v9f5";
+    url = http://download.camlcity.org/download/ocamlnet-3.7.7.tar.gz;
+    sha256 = "02bnks9jshpq9nqva5lky5hl009yp19cgvf1izjca620hx54d3jv";
   };
 
-  buildInputs = [ncurses ocaml findlib ocaml_pcre camlzip openssl ocaml_ssl];
+  buildInputs = [ncurses ocaml findlib ocaml_pcre camlzip openssl ocaml_ssl cryptokit];
+
+  propagatedbuildInputs = [ncurses ocaml_pcre camlzip openssl ocaml_ssl cryptokit];
 
   createFindlibDestdir = true;
 
@@ -24,6 +25,10 @@ stdenv.mkDerivation {
       -bindir $out/bin
       -enable-ssl
       -enable-zip
+      -enable-pcre
+      -enable-crypto
+      -disable-gtk2
+      -with-nethttpd
       -datadir $out/lib/ocaml/${ocaml_version}/ocamlnet
     )
   '';

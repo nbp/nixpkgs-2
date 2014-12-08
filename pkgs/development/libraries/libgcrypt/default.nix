@@ -1,16 +1,18 @@
 { fetchurl, stdenv, libgpgerror }:
 
-stdenv.mkDerivation rec {
-  name = "libgcrypt-1.5.0";
+stdenv.mkDerivation (rec {
+  name = "libgcrypt-1.5.4";
 
   src = fetchurl {
     url = "mirror://gnupg/libgcrypt/${name}.tar.bz2";
-    sha256 = "1ykkh7dm0gyndz7bbpvn3agijj8xb2h02m02f42hm504c18zqqjb";
+    sha256 = "d5f88d9f41a46953dc250cdb8575129b37ee2208401b7fa338c897f667c7fb33";
   };
 
   propagatedBuildInputs = [ libgpgerror ];
 
-  doCheck = true;
+  configureFlags = stdenv.lib.optional stdenv.isDarwin "--disable-asm";
+
+  doCheck = stdenv.system != "i686-linux"; # "basic" test fails after stdenv+glibc-2.18
 
   # For some reason the tests don't find `libgpg-error.so'.
   checkPhase = ''
@@ -18,8 +20,10 @@ stdenv.mkDerivation rec {
     make check
   '';
 
+  patches = [ ./no-build-timestamp.patch ];
+
   meta = {
-    description = "GNU Libgcrypt, a general-pupose cryptographic library";
+    description = "General-pupose cryptographic library";
 
     longDescription = ''
       GNU Libgcrypt is a general purpose cryptographic library based on
@@ -29,9 +33,12 @@ stdenv.mkDerivation rec {
       functions, random numbers and a lot of supporting functions.
     '';
 
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
 
     homepage = http://gnupg.org/;
     platforms = stdenv.lib.platforms.all;
   };
-}
+} # old "as" problem, see #616 and http://gnupg.10057.n7.nabble.com/Fail-to-build-on-freebsd-7-3-td30245.html
+  // stdenv.lib.optionalAttrs (stdenv.isFreeBSD && stdenv.isi686)
+    { configureFlags = [ "--disable-aesni-support" ]; }
+)

@@ -1,4 +1,4 @@
-{ composableDerivation, stdenv, fetchurl, alsaLib, jackaudio, ncurses }:
+{ composableDerivation, stdenv, fetchurl, alsaLib, jack2, ncurses }:
 
 let inherit (composableDerivation) edf; in
 
@@ -7,7 +7,7 @@ composableDerivation.composableDerivation {} {
   name = "timidity-2.13.0";
 
   src = fetchurl {
-    url = http://ovh.dl.sourceforge.net/sourceforge/timidity/TiMidity++-2.13.0.tar.bz2;
+    url = mirror://sourceforge/timidity/TiMidity++-2.13.0.tar.bz2;
     sha256 = "1jbmk0m375fh5nj2awqzns7pdjbi7dxpjdwcix04zipfcilppbmf";
   };
 
@@ -30,8 +30,8 @@ composableDerivation.composableDerivation {} {
     };
     jack = {
       audioModes = "jack";
-      buildInputs = [jackaudio];
-      NIX_LDFLAGS = ["-ljack -L${jackaudio}/lib64"];
+      buildInputs = [jack2];
+      NIX_LDFLAGS = ["-ljack -L${jack2}/lib64"];
     };
   } // edf { name = "ncurses"; enable = { buildInputs = [ncurses]; };};
 

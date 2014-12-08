@@ -9,7 +9,7 @@ stdenv.mkDerivation rec {
 
 	buildInputs = [djvulibre qt4];
 
-  buildNativeInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
 
   patches = [ ./djview4-qt-4.8.patch ];
 
@@ -20,7 +20,7 @@ stdenv.mkDerivation rec {
 	meta = {
 		homepage = http://djvu.sourceforge.net/djview4.html;
 		description = "A new portable DjVu viewer and browser plugin";
-		license = "GPL2";
+		license = stdenv.lib.licenses.gpl2;
     inherit (qt4.meta) platforms;
     maintainers = [ stdenv.lib.maintainers.urkud ];
 	};

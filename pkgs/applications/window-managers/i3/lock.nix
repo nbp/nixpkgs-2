@@ -1,16 +1,16 @@
 { fetchurl, stdenv, which, pkgconfig, libxcb, xcbutilkeysyms, xcbutilimage,
-  pam, libX11, libev, cairo }:
+  pam, libX11, libev, cairo, libxkbcommon, libxkbfile }:
 
 stdenv.mkDerivation rec {
-  name = "i3lock-2.4";
+  name = "i3lock-2.6";
 
   src = fetchurl {
     url = "http://i3wm.org/i3lock/${name}.tar.bz2";
-    sha256 = "ce6a47aaa25357ef6214628ddb992b5ba1562a116f63621a6095d422e5001229";
+    sha256 = "0aj0an8fwv66jhda499r3xa00546cc9ja1dk8xpc6sy6xygqjbf0";
   };
 
   buildInputs = [ which pkgconfig libxcb xcbutilkeysyms xcbutilimage pam libX11
-    libev cairo ];
+    libev cairo libxkbcommon libxkbfile ];
 
   makeFlags = "all";
   installFlags = "PREFIX=\${out} SYSCONFDIR=\${out}/etc";
@@ -20,6 +20,7 @@ stdenv.mkDerivation rec {
     homepage = http://i3wm.org;
     maintainers = [ stdenv.lib.maintainers.garbas ];
     license = stdenv.lib.licenses.bsd3;
+    platforms = stdenv.lib.platforms.all;
   };
 
 }

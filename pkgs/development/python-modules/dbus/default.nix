@@ -1,16 +1,22 @@
-{ stdenv, fetchurl, python, pkgconfig, dbus, dbus_glib }:
+{ stdenv, fetchurl, python, pkgconfig, dbus, dbus_glib, dbus_tools, isPyPy }:
 
-stdenv.mkDerivation rec {
-  name = "dbus-python-0.84.0";
+if isPyPy then throw "dbus-python not supported for interpreter ${python.executable}" else stdenv.mkDerivation rec {
+  name = "dbus-python-1.2.0";
 
   src = fetchurl {
     url = "http://dbus.freedesktop.org/releases/dbus-python/${name}.tar.gz";
-    sha256 = "01jrmj7ps79dkd6f8bzm17vxzpad1ixwmcb1liy64xm9y6mcfnxq";
+    sha256 = "1py62qir966lvdkngg0v8k1khsqxwk5m4s8nflpk1agk5f5nqb71";
   };
 
-  buildInputs = [ python pkgconfig dbus dbus_glib ];
+  postPatch = "patchShebangs .";
+
+  buildInputs = [ python pkgconfig dbus dbus_glib ]
+    ++ stdenv.lib.optional doCheck dbus_tools;
+
+  doCheck = false; # https://bugs.freedesktop.org/show_bug.cgi?id=57140
 
   meta = {
     description = "Python DBus bindings";
+    license = stdenv.lib.licenses.mit;
   };
 }

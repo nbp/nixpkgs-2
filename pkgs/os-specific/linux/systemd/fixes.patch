@@ -1,0 +1,305 @@
+diff --git a/rules/99-systemd.rules.in b/rules/99-systemd.rules.in
+index e30d9a8..a3d399b 100644
+--- a/rules/99-systemd.rules.in
++++ b/rules/99-systemd.rules.in
+@@ -14,10 +14,6 @@ KERNEL=="vport*", TAG+="systemd"
+ SUBSYSTEM=="block", KERNEL!="ram*", TAG+="systemd"
+ SUBSYSTEM=="block", KERNEL!="ram*", ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}=="1", ENV{SYSTEMD_READY}="0"
+ 
+-# Ignore encrypted devices with no identified superblock on it, since
+-# we are probably still calling mke2fs or mkswap on it.
+-SUBSYSTEM=="block", KERNEL!="ram*", ENV{DM_UUID}=="CRYPT-*", ENV{ID_PART_TABLE_TYPE}=="", ENV{ID_FS_USAGE}=="", ENV{SYSTEMD_READY}="0"
+-
+ # Ignore raid devices that are not yet assembled and started
+ SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", KERNEL=="md*", TEST!="md/array_state", ENV{SYSTEMD_READY}="0"
+ SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", KERNEL=="md*", ATTR{md/array_state}=="|clear|inactive", ENV{SYSTEMD_READY}="0"
+diff --git a/src/core/umount.c b/src/core/umount.c
+index cffa453..4d1a9ff 100644
+--- a/src/core/umount.c
++++ b/src/core/umount.c
+@@ -385,6 +385,8 @@ static int mount_points_list_umount(MountPoint **head, bool *changed, bool log_e
+                  * anyway, since we are running from it. They have
+                  * already been remounted ro. */
+                 if (path_equal(m->path, "/")
++                    || path_equal(m->path, "/nix")
++                    || path_equal(m->path, "/nix/store")
+ #ifndef HAVE_SPLIT_USR
+                     || path_equal(m->path, "/usr")
+ #endif
+diff --git a/src/fsck/fsck.c b/src/fsck/fsck.c
+index 70a5918..1926e52 100644
+--- a/src/fsck/fsck.c
++++ b/src/fsck/fsck.c
+@@ -315,8 +315,7 @@ int main(int argc, char *argv[]) {
+                         return EXIT_FAILURE;
+                 }
+ 
+-        cmdline[i++] = "/sbin/fsck";
+-        cmdline[i++] =  arg_repair;
++        cmdline[i++] = "/run/current-system/sw/sbin/fsck";
+         cmdline[i++] = "-T";
+ 
+         /*
+diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
+index b6d9bc6..04fbe57 100644
+--- a/src/nspawn/nspawn.c
++++ b/src/nspawn/nspawn.c
+@@ -758,7 +758,7 @@ static int mount_binds(const char *dest,
+                  * and char devices. */
+                 if (S_ISDIR(source_st.st_mode)) {
+                         r = mkdir_label(where, 0755);
+-                        if (r < 0) {
++                        if (r < 0 && r != -EEXIST) {
+                                 log_error("Failed to create mount point %s: %s", where, strerror(-r));
+
+                                 return r;
+@@ -3073,6 +3073,7 @@ int main(int argc, char *argv[]) {
+                                 goto finish;
+                         }
+                 } else {
++#if 0
+                         const char *p;
+ 
+                         p = strappenda(arg_directory,
+@@ -3082,6 +3083,7 @@ int main(int argc, char *argv[]) {
+                                 goto finish;
+ 
+                         }
++#endif
+                 }
+         } else {
+                 char template[] = "/tmp/nspawn-root-XXXXXX";
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index 28eaa6a..6292c09 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -2651,7 +2651,7 @@ static int start_unit_one(
+ 
+                 log_debug("Adding %s to the set", p);
+                 r = set_consume(s, p);
+-                if (r < 0)
++                if (r < 0 && r != -EEXIST)
+                         return log_oom();
+         }
+ 
+diff --git a/units/console-getty.service.m4.in b/units/console-getty.service.m4.in
+index 8ac51a4..cae9fb5 100644
+--- a/units/console-getty.service.m4.in
++++ b/units/console-getty.service.m4.in
+@@ -15,7 +15,6 @@ After=rc-local.service
+ Before=getty.target
+ 
+ [Service]
+-ExecStart=-/sbin/agetty --noclear --keep-baud console 115200,38400,9600 $TERM
+ Type=idle
+ Restart=always
+ RestartSec=0
+diff --git a/units/container-getty@.service.m4.in b/units/container-getty@.service.m4.in
+index 4f7794b..bad2a9a 100644
+--- a/units/container-getty@.service.m4.in
++++ b/units/container-getty@.service.m4.in
+@@ -16,7 +16,6 @@ Before=getty.target
+ IgnoreOnIsolate=yes
+ 
+ [Service]
+-ExecStart=-/sbin/agetty --noclear --keep-baud pts/%I 115200,38400,9600 $TERM
+ Type=idle
+ Restart=always
+ RestartSec=0
+diff --git a/units/emergency.service.in b/units/emergency.service.in
+index 18973e7..3a99660 100644
+--- a/units/emergency.service.in
++++ b/units/emergency.service.in
+@@ -16,7 +16,6 @@ Before=shutdown.target
+ [Service]
+ Environment=HOME=/root
+ WorkingDirectory=/root
+-ExecStartPre=-/bin/plymouth quit
+ ExecStartPre=-/bin/echo -e 'Welcome to emergency mode! After logging in, type "journalctl -xb" to view\\nsystem logs, "systemctl reboot" to reboot, "systemctl default" or ^D to\\ntry again to boot into default mode.'
+ ExecStart=-/bin/sh -c "/sbin/sulogin; @SYSTEMCTL@ --fail --no-block default"
+ Type=idle
+diff --git a/units/getty@.service.m4 b/units/getty@.service.m4
+index 46164ab..f194a31 100644
+--- a/units/getty@.service.m4
++++ b/units/getty@.service.m4
+@@ -23,11 +23,12 @@ IgnoreOnIsolate=yes
+ # On systems without virtual consoles, don't start any getty. Note
+ # that serial gettys are covered by serial-getty@.service, not this
+ # unit.
+-ConditionPathExists=/dev/tty0
++ConditionPathExists=|/dev/tty0
++ConditionVirtualization=|lxc
++ConditionVirtualization=|lxc-libvirt
+ 
+ [Service]
+ # the VT is cleared by TTYVTDisallocate
+-ExecStart=-/sbin/agetty --noclear %I $TERM
+ Type=idle
+ Restart=always
+ RestartSec=0
+diff --git a/units/kmod-static-nodes.service.in b/units/kmod-static-nodes.service.in
+index 0934a87..7e30c9e 100644
+--- a/units/kmod-static-nodes.service.in
++++ b/units/kmod-static-nodes.service.in
+@@ -10,7 +10,6 @@ Description=Create list of required static device nodes for the current kernel
+ DefaultDependencies=no
+ Before=sysinit.target systemd-tmpfiles-setup-dev.service
+ ConditionCapability=CAP_SYS_MODULE
+-ConditionPathExists=/lib/modules/%v/modules.devname
+ 
+ [Service]
+ Type=oneshot
+diff --git a/units/local-fs.target b/units/local-fs.target
+index d2e5429..d26984b 100644
+--- a/units/local-fs.target
++++ b/units/local-fs.target
+@@ -13,3 +13,5 @@ Conflicts=shutdown.target
+ After=local-fs-pre.target
+ OnFailure=emergency.target
+ OnFailureJobMode=replace-irreversibly
++
++X-StopOnReconfiguration=yes
+diff --git a/units/remote-fs.target b/units/remote-fs.target
+index 43ffa5c..156a681 100644
+--- a/units/remote-fs.target
++++ b/units/remote-fs.target
+@@ -12,5 +12,7 @@ After=remote-fs-pre.target
+ DefaultDependencies=no
+ Conflicts=shutdown.target
+ 
++X-StopOnReconfiguration=yes
++
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/units/rescue.service.in b/units/rescue.service.in
+index fc93f1e..3c87cf8 100644
+--- a/units/rescue.service.in
++++ b/units/rescue.service.in
+@@ -16,7 +16,6 @@ Before=shutdown.target
+ [Service]
+ Environment=HOME=/root
+ WorkingDirectory=/root
+-ExecStartPre=-/bin/plymouth quit
+ ExecStartPre=-/bin/echo -e 'Welcome to emergency mode! After logging in, type "journalctl -xb" to view\\nsystem logs, "systemctl reboot" to reboot, "systemctl default" or ^D to\\nboot into default mode.'
+ ExecStart=-/bin/sh -c "/sbin/sulogin; @SYSTEMCTL@ --fail --no-block default"
+ Type=idle
+diff --git a/units/serial-getty@.service.m4 b/units/serial-getty@.service.m4
+index 4522d0d..96daa5c 100644
+--- a/units/serial-getty@.service.m4
++++ b/units/serial-getty@.service.m4
+@@ -22,7 +22,6 @@ Before=getty.target
+ IgnoreOnIsolate=yes
+ 
+ [Service]
+-ExecStart=-/sbin/agetty --keep-baud 115200,38400,9600 %I $TERM
+ Type=idle
+ Restart=always
+ UtmpIdentifier=%I
+diff --git a/units/sysinit.target b/units/sysinit.target
+index ec33503..4ac47b9 100644
+--- a/units/sysinit.target
++++ b/units/sysinit.target
+@@ -9,5 +9,4 @@
+ Description=System Initialization
+ Documentation=man:systemd.special(7)
+ Conflicts=emergency.service emergency.target
+-Wants=local-fs.target swap.target
+-After=local-fs.target swap.target emergency.service emergency.target
++After=emergency.service emergency.target
+diff --git a/units/systemd-backlight@.service.in b/units/systemd-backlight@.service.in
+index ecf3de4..7e83446 100644
+--- a/units/systemd-backlight@.service.in
++++ b/units/systemd-backlight@.service.in
+@@ -19,3 +19,4 @@ Type=oneshot
+ RemainAfterExit=yes
+ ExecStart=@rootlibexecdir@/systemd-backlight load %i
+ ExecStop=@rootlibexecdir@/systemd-backlight save %i
++X-RestartIfChanged=false
+diff --git a/units/systemd-journal-flush.service.in b/units/systemd-journal-flush.service.in
+index 699670b..2612220 100644
+--- a/units/systemd-journal-flush.service.in
++++ b/units/systemd-journal-flush.service.in
+@@ -10,8 +10,9 @@ Description=Trigger Flushing of Journal to Persistent Storage
+ Documentation=man:systemd-journald.service(8) man:journald.conf(5)
+ DefaultDependencies=no
+ Requires=systemd-journald.service
+-After=systemd-journald.service local-fs.target remote-fs.target
++After=systemd-journald.service
+ Before=systemd-user-sessions.service systemd-tmpfiles-setup.service
++RequiresMountsFor=/var/log/journal
+ 
+ [Service]
+ ExecStart=@rootbindir@/journalctl --flush
+diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
+index 4de38fa..4b6daea 100644
+--- a/units/systemd-journald.service.in
++++ b/units/systemd-journald.service.in
+@@ -26,3 +26,8 @@ WatchdogSec=1min
+ # Increase the default a bit in order to allow many simultaneous
+ # services being run since we keep one fd open per service.
+ LimitNOFILE=16384
++
++# Don't restart journald, since that causes services connected to
++# journald to stop logging (see
++# https://bugs.freedesktop.org/show_bug.cgi?id=56043).
++X-RestartIfChanged=no
+diff --git a/units/systemd-random-seed.service.in b/units/systemd-random-seed.service.in
+index b55844b..3ef9fc6 100644
+--- a/units/systemd-random-seed.service.in
++++ b/units/systemd-random-seed.service.in
+@@ -19,3 +19,4 @@ Type=oneshot
+ RemainAfterExit=yes
+ ExecStart=@rootlibexecdir@/systemd-random-seed load
+ ExecStop=@rootlibexecdir@/systemd-random-seed save
++X-RestartIfChanged=false
+diff --git a/units/systemd-rfkill@.service.in b/units/systemd-rfkill@.service.in
+index 0e9851b..9f8fa0d 100644
+--- a/units/systemd-rfkill@.service.in
++++ b/units/systemd-rfkill@.service.in
+@@ -19,3 +19,4 @@ Type=oneshot
+ RemainAfterExit=yes
+ ExecStart=@rootlibexecdir@/systemd-rfkill load %I
+ ExecStop=@rootlibexecdir@/systemd-rfkill save %I
++X-RestartIfChanged=false
+diff --git a/units/systemd-tmpfiles-setup.service.in b/units/systemd-tmpfiles-setup.service.in
+index e895cda..194146f 100644
+--- a/units/systemd-tmpfiles-setup.service.in
++++ b/units/systemd-tmpfiles-setup.service.in
+@@ -11,7 +11,7 @@ Documentation=man:tmpfiles.d(5) man:systemd-tmpfiles(8)
+ DefaultDependencies=no
+ Conflicts=shutdown.target
+ After=local-fs.target systemd-sysusers.service
+-Before=sysinit.target shutdown.target
++Before=shutdown.target
+ RefuseManualStop=yes
+ 
+ [Service]
+diff --git a/units/systemd-update-utmp.service.in b/units/systemd-update-utmp.service.in
+index 163eccd..7357c12 100644
+--- a/units/systemd-update-utmp.service.in
++++ b/units/systemd-update-utmp.service.in
+@@ -11,7 +11,7 @@ Documentation=man:systemd-update-utmp.service(8) man:utmp(5)
+ DefaultDependencies=no
+ RequiresMountsFor=/var/log/wtmp
+ Conflicts=shutdown.target
+-After=systemd-remount-fs.service systemd-tmpfiles-setup.service auditd.service
++After=systemd-remount-fs.service auditd.service
+ Before=sysinit.target shutdown.target
+ 
+ [Service]
+@@ -19,3 +19,4 @@ Type=oneshot
+ RemainAfterExit=yes
+ ExecStart=@rootlibexecdir@/systemd-update-utmp reboot
+ ExecStop=@rootlibexecdir@/systemd-update-utmp shutdown
++X-RestartIfChanged=false
+diff --git a/units/systemd-user-sessions.service.in b/units/systemd-user-sessions.service.in
+index 0869e73..b6ed958 100644
+--- a/units/systemd-user-sessions.service.in
++++ b/units/systemd-user-sessions.service.in
+@@ -15,3 +15,6 @@ Type=oneshot
+ RemainAfterExit=yes
+ ExecStart=@rootlibexecdir@/systemd-user-sessions start
+ ExecStop=@rootlibexecdir@/systemd-user-sessions stop
++
++# Restart kills all active sessions.
++X-RestartIfChanged=no

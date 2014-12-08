@@ -1,27 +1,39 @@
-{ stdenv, fetchurl, SDL, ffmpeg, libdv, libsamplerate, libvorbis
-, libxml2 , pkgconfig, qt4, sox }:
+{ stdenv, fetchurl, SDL, ffmpeg, frei0r, jack2, libdv, libsamplerate
+, libvorbis, libxml2, makeWrapper, movit, pkgconfig, qt, sox
+}:
 
 stdenv.mkDerivation rec {
   name = "mlt-${version}";
-  version = "0.8.0";
+  version = "0.9.2";
 
   src = fetchurl {
-    url = "mirror://sourceforge/mlt/${name}.tar.gz";
-    sha256 = "1pf61imb5xzgzf65g54kybjr67235rxi20691023mcv34qwppl3v";
+    url = "https://github.com/mltframework/mlt/archive/v${version}.tar.gz";
+    sha256 = "0vk1i2yrny6dbip4aha25ibgv4m2rdhpxmz6a74q9wz1cgzbb766";
   };
 
-  buildInputs = 
-    [ SDL ffmpeg libdv libsamplerate libvorbis libxml2 pkgconfig qt4
-      sox
-    ];
+  buildInputs = [
+    SDL ffmpeg frei0r jack2 libdv libsamplerate libvorbis libxml2
+    makeWrapper movit pkgconfig qt sox
+  ];
 
   # Mostly taken from:
   # http://www.kdenlive.org/user-manual/downloading-and-installing-kdenlive/installing-source/installing-mlt-rendering-engine
-  configureFlags = [ "--enable-gpl" "--avformat-swscale" ];
+  configureFlags = [
+    "--avformat-swscale" "--enable-gpl" "--enable-gpl" "--enable-gpl3"
+    "--enable-opengl"
+  ];
 
-  meta = {
-    homepage = http://www.mltframework.org/;
+  enableParallelBuilding = true;
+
+  postInstall = ''
+    wrapProgram $out/bin/melt --prefix FREI0R_PATH : ${frei0r}/lib/frei0r-1
+  '';
+
+  meta = with stdenv.lib; {
     description = "Open source multimedia framework, designed for television broadcasting";
-    license = "GPLv2+";
+    homepage = http://www.mltframework.org/;
+    license = licenses.gpl3;
+    maintainers = [ maintainers.goibhniu ];
+    platforms = platforms.linux;
   };
 }

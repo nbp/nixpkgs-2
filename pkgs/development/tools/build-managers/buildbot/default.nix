@@ -1,12 +1,20 @@
-{ fetchurl, stdenv, buildPythonPackage, twisted, texinfo }:
+{ stdenv, buildPythonPackage, fetchurl, twisted, dateutil, jinja2
+, sqlalchemy , sqlalchemy_migrate
+, enableDebugClient ? false, pygobject ? null, pyGtkGlade ? null
+}:
+
+# enableDebugClient enables "buildbot debugclient", a Gtk-based debug control
+# panel. Its mostly for developers.
+
+assert enableDebugClient -> pygobject != null && pyGtkGlade != null;
 
 buildPythonPackage (rec {
-  name = "buildbot-0.7.11p3";
+  name = "buildbot-0.8.8";
   namePrefix = "";
 
   src = fetchurl {
-    url = "mirror://sourceforge/buildbot/${name}.tar.gz";
-    sha256 = "0h77ijf5iqvc8bnfxpsh3hvpr7wj23pkcywd3hcyphv1wwlhmhjv";
+    url = "http://buildbot.googlecode.com/files/${name}.tar.gz";
+    sha256 = "1l1rsy82zv8582wypw00ac0k0wsr82ky74f3np4clbrxv3ry64sh";
   };
 
   patchPhase =
@@ -19,25 +27,35 @@ buildPythonPackage (rec {
        done
     '';
 
-  buildInputs = [ texinfo ];
-  propagatedBuildInputs = [ twisted ];
+  buildInputs = [ ];
 
-  # FIXME: Some tests fail.
+  propagatedBuildInputs =
+    [ twisted dateutil jinja2 sqlalchemy sqlalchemy_migrate
+    ] ++ stdenv.lib.optional enableDebugClient [ pygobject pyGtkGlade ];
+
+  # What's up with this?! 'trial' should be 'test', no?
+  #
+  # running tests
+  # usage: setup.py [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
+  #    or: setup.py --help [cmd1 cmd2 ...]
+  #    or: setup.py --help-commands
+  #    or: setup.py cmd --help
+  #
+  # error: invalid command 'trial'
   doCheck = false;
 
-  postInstall =
-    '' mkdir -p "$out/share/info"
-       make -C docs buildbot.info
-       cp -v "docs/buildbot.info"* "$out/share/info"
-    '';
+  postInstall = ''
+    mkdir -p "$out/share/man/man1"
+    cp docs/buildbot.1 "$out/share/man/man1"
+  '';
 
-  meta = {
+  meta = with stdenv.lib; {
     homepage = http://buildbot.net/;
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
     # Of course, we don't really need that on NixOS.  :-)
-    description = "BuildBot, a system to automate the software compile/test cycle";
+    description = "Continuous integration system that automates the build/test cycle";
 
     longDescription =
       '' The BuildBot is a system to automate the compile/test cycle
@@ -62,7 +80,7 @@ buildPythonPackage (rec {
          in code.
       '';
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
-    platforms = stdenv.lib.platforms.all;
+    maintainers = with maintainers; [ bjornfor ];
+    platforms = platforms.all;
   };
 })

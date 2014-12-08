@@ -11,7 +11,7 @@ in
     src = fetchsvn {
       url = "https://jdee.svn.sourceforge.net/svnroot/jdee/trunk/jdee";
       rev = revision;
-      sha256 = "1qj5cv74dp6nf6060jyvnlcbmc4sz8a09806gwa1zfiwz6mm9zrs";
+      sha256 = "1z1y957glbqm7z3dhah9h4jysw3173pq1gpx5agfwcw614n516xz";
     };
 
     patchFlags = "-p1 --ignore-whitespace";
@@ -26,8 +26,8 @@ in
       mkdir -p "dist"
       cat > build.properties <<EOF
         dist.lisp.dir = dist/share/emacs/site-lisp
-        dist.java.lib.dir = dist/lib/java
-        dist.jar.jde.file = dist/lib/java/jde.jar
+        dist.java.lib.dir = dist/share/java
+        dist.jar.jde.file = dist/share/java/jde.jar
         dist.java.src.dir = dist/src/${name}/java
         dist.doc.dir  dist/doc/${name}
         prefix.dir = $out
@@ -40,7 +40,7 @@ in
       for i in "lisp/"*.el
       do
         sed -i "$i" -e "s|@out@|$out|g ;
-                        s|@javadir@|$out/lib/java|g ;
+                        s|@javadir@|$out/share/java|g ;
                         s|@datadir@|$out/share/${name}|g"
       done
     '';
@@ -55,7 +55,7 @@ in
 
       # Move everything that's not a JAR to $datadir.  This includes
       # `sun_checks.xml', license files, etc.
-      cd "$out/lib/java"
+      cd "$out/share/java"
       for i in *
       do
         if echo $i | grep -qv '\.jar''$'
@@ -89,9 +89,11 @@ in
         * Java source interpreter (Pat Neimeyer's BeanShell)
       '';
 
-      license = "GPLv2+";
+      license = stdenv.lib.licenses.gpl2Plus;
 
-      maintainers = [ stdenv.lib.maintainers.ludo ];
+      maintainers = [ ];
       platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
+
+      broken = true;
     };
   }

@@ -3,14 +3,17 @@
 assert stdenv.isLinux;
 
 stdenv.mkDerivation rec {
-  name = "psmisc-22.13";
+  name = "psmisc-22.21";
 
   src = fetchurl {
     url = "mirror://sourceforge/psmisc/${name}.tar.gz";
-    sha256 = "06d25e8ebb4722dbcede98a787c39a9ed341f8e58fde10c0b2d6b35990b35daa";
+    sha256 = "0nhlm1vrrwn4a845p6y4nnnb4liq70n74zbdd5dq844jc6nkqclp";
   };
 
   buildInputs = [ncurses];
+
+  # From upstream, will be in next release.
+  patches = [ ./0001-Typo-in-fuser-makes-M-on-all-the-time.patch ];
 
   meta = {
     homepage = http://psmisc.sourceforge.net/;

@@ -1,10 +1,10 @@
 {stdenv, fetchurl}:
 
-stdenv.mkDerivation {
-  name = "unixODBC-2.2.11";
+stdenv.mkDerivation rec {
+  name = "unixODBC-2.3.2";
   src = fetchurl {
-    url = mirror://sourceforge/unixodbc/unixODBC-2.2.11.tar.gz;
-    md5 = "9ae806396844e38244cf65ad26ba0f23";
+    url = "ftp://ftp.unixodbc.org/pub/unixODBC/${name}.tar.gz";
+    sha256 = "16jw5fq7wgfky6ak1h2j2pqx99jivsdl4q8aq6immpr55xs5jd4w";
   };
   configureFlags = "--disable-gui --sysconfdir=/etc";
 }

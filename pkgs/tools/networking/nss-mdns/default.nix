@@ -31,11 +31,11 @@ stdenv.mkDerivation rec {
     '';
 
     homepage = http://0pointer.de/lennart/projects/nss-mdns/;
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
 
     # Supports both the GNU and FreeBSD NSS.
     platforms = stdenv.lib.platforms.gnu ++ stdenv.lib.platforms.freebsd;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
   };
 }

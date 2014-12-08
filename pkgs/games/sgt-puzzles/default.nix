@@ -10,8 +10,8 @@ in
 rec {
   src = fetchsvn {
    url = svn://svn.tartarus.org/sgt/puzzles;
-   rev = "9437";
-   sha256 = "4820ce1e54e017a64dd9cb8991c020d0628329605a37af2a99b78bffbde43e85";
+   rev = "9773";
+   sha256 = "1m0mmxbcj0zi44dlmhk4h30d9hdy8g9f59r7k7906pgnnyf49611";
   } + "/";
 
   inherit buildInputs;
@@ -27,6 +27,7 @@ rec {
 
   setVars = a.noDepEntry ''
     export NIX_LDFLAGS="$NIX_LDFLAGS -lX11"
+    export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -Wno-error"
   '';
 
   /* doConfigure should be removed if not needed */

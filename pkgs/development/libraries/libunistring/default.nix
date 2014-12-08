@@ -8,6 +8,8 @@ stdenv.mkDerivation (rec {
     sha256 = "18q620269xzpw39dwvr9zpilnl2dkw5z5kz3mxaadnpv4k3kw3b1";
   };
 
+  patches = stdenv.lib.optional stdenv.isDarwin [ ./clang.patch ];
+
   propagatedBuildInputs =
     stdenv.lib.optional ((! (stdenv ? glibc))
                          || (stdenv ? cross &&
@@ -21,7 +23,7 @@ stdenv.mkDerivation (rec {
   meta = {
     homepage = http://www.gnu.org/software/libunistring/;
 
-    description = "GNU Libunistring, a Unicode string library";
+    description = "Unicode string library";
 
     longDescription = ''
       This library provides functions for manipulating Unicode strings
@@ -44,7 +46,7 @@ stdenv.mkDerivation (rec {
       strings as internal in-memory representation.
     '';
 
-    license = "LGPLv3+";
+    license = stdenv.lib.licenses.lgpl3Plus;
 
     maintainers = [ stdenv.lib.maintainers.ludo ];
     platforms = stdenv.lib.platforms.all;

@@ -1,11 +1,11 @@
 { fetchurl, stdenv, perl }:
 
 stdenv.mkDerivation rec {
-  name = "namazu-2.0.20";
+  name = "namazu-2.0.21";
 
   src = fetchurl {
     url = "http://namazu.org/stable/${name}.tar.gz";
-    sha256 = "1czw3l6wmz8887wfjpgds9di8hcg0hsmbc0mc6bkahj8g7lvrnyd";
+    sha256 = "1xvi7hrprdchdpzhg3fvk4yifaakzgydza5c0m50h1yvg6vay62w";
   };
 
   buildInputs = [ perl ];
@@ -27,7 +27,7 @@ stdenv.mkDerivation rec {
   doCheck = !stdenv.isLinux;
 
   meta = {
-    description = "Namazu, a full-text search engine";
+    description = "Full-text search engine";
 
     longDescription = ''
       Namazu is a full-text search engine intended for easy use.  Not
@@ -35,10 +35,10 @@ stdenv.mkDerivation rec {
       but also as a personal search system for email or other files.
     '';
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
     homepage = http://namazu.org/;
 
     platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
   };
 }

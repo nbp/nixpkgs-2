@@ -21,7 +21,7 @@ stdenv.mkDerivation rec {
 
   makeFlags = [ "CC=i586-pc-gnu-gcc" ];
   buildInputs = [ hurd machHeaders ];
-  buildNativeInputs = [ mig ];
+  nativeBuildInputs = [ mig ];
 
   installPhase =
     '' mkdir -p "$out/hurd"
@@ -36,7 +36,7 @@ stdenv.mkDerivation rec {
 
     homepage = http://www.gnu.org/software/hurd/hurd/translator/unionfs.html;
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
     maintainers = [ stdenv.lib.maintainers.ludo ];
   };

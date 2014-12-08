@@ -2,11 +2,11 @@
 , pkgconfig }:
 
 stdenv.mkDerivation rec {
-  name = "soprano-2.7.5";
+  name = "soprano-2.9.4";
 
   src = fetchurl {
     url = "mirror://sourceforge/soprano/${name}.tar.bz2";
-    sha256 = "0g9vi4z82dwz0hkg3b9gvi11akji1mzphjxwz3fw55213c0f0a3c";
+    sha256 = "1rg0x7yg0a1cbnxz7kqk52580wla8jbnj4d4r3j7l7g7ajyny1k4";
   };
 
   patches = [ ./find-virtuoso.patch ];
@@ -14,7 +14,7 @@ stdenv.mkDerivation rec {
   # We disable the Java backend, since we do not need them and they make the closure size much bigger
   buildInputs = [ qt4 clucene_core librdf_redland libiodbc ];
 
-  buildNativeInputs = [ cmake pkgconfig ];
+  nativeBuildInputs = [ cmake pkgconfig ];
 
   meta = {
     homepage = http://soprano.sourceforge.net/;

@@ -1,6 +1,7 @@
 { stdenv, fetchurl, cmake, qt4, perl, shared_mime_info, libvorbis, taglib
 , flac, libsamplerate, libdvdread, lame, libsndfile, libmad, gettext
-, kdelibs, kdemultimedia, automoc4, phonon
+, transcode, cdrdao, dvdplusrwtools, vcdimager
+, kdelibs, kdemultimedia, automoc4, phonon, libkcddb ? null
 }:
 
 stdenv.mkDerivation rec {
@@ -16,14 +17,20 @@ stdenv.mkDerivation rec {
       flac libsamplerate libdvdread lame libsndfile
       libmad gettext stdenv.gcc.libc
       kdelibs kdemultimedia automoc4 phonon
+      libkcddb
     ];
 
   enableParallelBuilding = true;
+
+  # at runtime, k3b needs the executables cdrdao, cdrecord, dvd+rw-format,
+  # eMovix, growisofs, mkisofs, normalize, readcd, transcode, vcdxbuild,
+  # vcdxminfo, and vcdxrip
+  propagatedUserEnvPkgs = [ transcode dvdplusrwtools cdrdao vcdimager ];
                   
   meta = with stdenv.lib; {
     description = "CD/DVD Burning Application for KDE";
     license = licenses.gpl2Plus;
-    maintainers = [ maintainers.sander maintainers.urkud ];
+    maintainers = [ maintainers.sander maintainers.urkud maintainers.phreedom ];
     platforms = with stdenv.lib.platforms; linux;
   };
 }

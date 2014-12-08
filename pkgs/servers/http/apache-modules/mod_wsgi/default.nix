@@ -1,11 +1,12 @@
 { stdenv, fetchurl, apacheHttpd, python }:
 
-stdenv.mkDerivation {
-  name = "mod_wsgi-3.3";
+stdenv.mkDerivation rec {
+  name = "mod_wsgi-${version}";
+  version = "3.5";
 
   src = fetchurl {
-    url = "http://modwsgi.googlecode.com/files/mod_wsgi-3.3.tar.gz";
-    sha256 = "0hrjksym0dlqn1ka1yf3x6ar801zqxfykwcxazjwz104k5w10vnr";
+    url = "https://github.com/GrahamDumpleton/mod_wsgi/archive/${version}.tar.gz";
+    sha256 = "14xz422jlakdhxzsl8xs9if86yf1fnkwdg0havjyqs7my0w4qrzh";
   };
 
   buildInputs = [ apacheHttpd python ];
@@ -17,9 +18,9 @@ stdenv.mkDerivation {
   '';
 
   meta = {
-    homepage = "http://code.google.com/p/modwsgi/";
+    homepage = http://code.google.com/p/modwsgi/;
     description = "Host Python applications in Apache through the WSGI interface";
-    license = "ASL2.0";
+    license = stdenv.lib.licenses.asl20;
 
     platforms = stdenv.lib.platforms.linux;
     maintainers = [ stdenv.lib.maintainers.simons ];

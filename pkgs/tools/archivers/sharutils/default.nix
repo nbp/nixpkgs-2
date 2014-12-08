@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, gettext }:
+{ stdenv, fetchurl, gettext, coreutils }:
 
 stdenv.mkDerivation rec {
   name = "sharutils-4.11.1";
@@ -8,13 +8,24 @@ stdenv.mkDerivation rec {
     sha256 = "1mallg1gprimlggdisfzdmh1xi676jsfdlfyvanlcw72ny8fsj3g";
   };
 
+  preConfigure =
+    ''
+       # Fix for building on Glibc 2.16.  Won't be needed once the
+       # gnulib in sharutils is updated.
+       sed -i ${stdenv.lib.optionalString (stdenv.isBSD && stdenv.gcc.nativeTools) "''"} '/gets is a security hole/d' lib/stdio.in.h
+    '';
+
   # GNU Gettext is needed on non-GNU platforms.
-  buildInputs = [ gettext ];
+  buildInputs = [ gettext coreutils ];
 
   doCheck = true;
 
+  crossAttrs = {
+    patches = [ ./sharutils-4.11.1-cross-binary-mode-popen.patch ];
+  };
+
   meta = {
-    description = "GNU Sharutils, tools for remote synchronization and `shell archives'";
+    description = "Tools for remote synchronization and `shell archives'";
 
     longDescription =
       '' GNU shar makes so-called shell archives out of many files, preparing
@@ -35,9 +46,9 @@ stdenv.mkDerivation rec {
 
     homepage = http://www.gnu.org/software/sharutils/;
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
     platforms = stdenv.lib.platforms.all;
   };
 }

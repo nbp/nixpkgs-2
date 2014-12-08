@@ -1,13 +1,14 @@
 {stdenv, fetchurl}:
 stdenv.mkDerivation {
-  name = "units-1.86";
+  name = "units-2.11";
 
   src = fetchurl {
-    url = ftp://ftp.gnu.org/gnu/units/units-1.86.tar.gz;
-    sha256 = "1syc4d3x1wb03hcxnz7rkgapk96biazfk2qqn2wfyx54bq829lhi";
+    url = mirror://gnu/units/units-2.11.tar.gz;
+    sha256 = "1gjs3wc212aaiq4r76hx9nl1h3fa39n0ljwl9420d6ixl3rdmdjk";
   };
 
   meta = {
-    description = "Unit conversion tool.";
+    description = "Unit conversion tool";
+    platforms = stdenv.lib.platforms.linux;
   };
 }

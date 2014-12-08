@@ -1,19 +1,31 @@
-{stdenv, fetchurl, yacc, flex, pkgconfig, glib, xz}:
+{ stdenv, fetchurl, pkgconfig, flex, bison, libxslt
+, glib, libiconvOrEmpty, libintlOrEmpty
+}:
 
+let
+  major = "0.23";
+  minor = "2";
+  sha256 = "0g22ss9qbm3fqhx4fxhsyfmdc5g1hgdw4dz9d37f4489kl0qf8pl";
+in
 stdenv.mkDerivation rec {
-  name = "vala-0.14.2";
-
-  src = fetchurl {
-    url = mirror://gnome/sources/vala/0.14/vala-0.14.2.tar.xz;
-    sha256 = "1l5kllw9vpwv24lzv9fp64l3sad46wpxgvsgryrwlrjg91w6jzl0";
-  };
-
-  buildNativeInputs = [ yacc flex pkgconfig xz ];
-
-  buildInputs = [ glib ];
+  name = "vala-${major}.${minor}";
 
   meta = {
-    description = "Compiler for the GObject type system";
+    description = "Compiler for GObject type system";
     homepage = "http://live.gnome.org/Vala";
+    license = stdenv.lib.licenses.lgpl21Plus;
+    platforms = stdenv.lib.platforms.unix;
+    maintainers = with stdenv.lib.maintainers; [ antono ];
   };
+
+  src = fetchurl {
+    url = "mirror://gnome/sources/vala/${major}/${name}.tar.xz";
+    inherit sha256;
+  };
+
+  nativeBuildInputs = [ pkgconfig flex bison libxslt ];
+
+  buildInputs = [ glib ]
+    ++ libiconvOrEmpty
+    ++ libintlOrEmpty;
 }

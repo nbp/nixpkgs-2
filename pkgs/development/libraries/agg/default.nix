@@ -8,12 +8,17 @@ stdenv.mkDerivation rec {
     sha256 = "07wii4i824vy9qsvjsgqxppgqmfdxq0xa87i5yk53fijriadq7mb";
   };
   buildInputs = [ autoconf automake libtool pkgconfig freetype SDL libX11 ];
-  preConfigure = "sh autogen.sh";
+
+  # fix build with new automake, from Gentoo ebuild
+  preConfigure = ''
+    sed -i '/^AM_C_PROTOTYPES/d' configure.in
+    sh autogen.sh
+  '';
 
   configureFlags = "--x-includes=${libX11}/include --x-libraries=${libX11}/lib";
 
   meta = {
-    description = "The Anti-Grain Geometry (AGG) library, a high quality rendering engine for C++";
+    description = "High quality rendering engine for C++";
 
     longDescription = ''
       Anti-Grain Geometry (AGG) is an Open Source, free of charge
@@ -25,7 +30,7 @@ stdenv.mkDerivation rec {
       of course, AGG can do much more than that.
     '';
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
     homepage = http://www.antigrain.com/;
   };
 }

@@ -1,28 +1,28 @@
-{stdenv, fetchurl, ncurses, libevent}:
+{stdenv, fetchurl, ncurses, libevent, pkgconfig}:
 
 stdenv.mkDerivation rec {
   pname = "tmux";
-  version = "1.5";
+  version = "1.9a";
   name = "${pname}-${version}";
 
   src = fetchurl {
     url = "mirror://sourceforge/${pname}/${name}.tar.gz";
-    sha256 = "eb8215b57c05b765d2446d9acb2bc5edcdb3eb4ea31af89ee127a27e90056306";
+    sha256 = "1x9k4wfd4l5jg6fh7xkr3yyilizha6ka8m5b1nr0kw8wj0mv5qy5";
   };
 
-  makeFlags = "PREFIX=\${out}";
-
-  crossAttrs = {
-    preBuild = ''
-      makeFlags=" $makeFlags CC=${stdenv.cross.config}-gcc "
-    '';
-  };
+  nativeBuildInputs = [ pkgconfig ];
 
   buildInputs = [ ncurses libevent ];
 
+  postInstall =
+    ''
+      mkdir -p $out/etc/bash_completion.d
+      cp -v examples/bash_completion_tmux.sh $out/etc/bash_completion.d/tmux
+    '';
+
   meta = {
     homepage = http://tmux.sourceforge.net/;
-    description = "tmux is a terminal multiplexer";
+    description = "Terminal multiplexer";
 
     longDescription =
       '' tmux is intended to be a modern, BSD-licensed alternative to programs such as GNU screen. Major features include:
@@ -35,12 +35,12 @@ stdenv.mkDerivation rec {
           * Interactive menus to select windows, sessions or clients.
           * Change the current window by searching for text in the target.
           * Terminal locking, manually or after a timeout.
-          * A clean, easily extended, BSD-licensed codebase, under active development. 
+          * A clean, easily extended, BSD-licensed codebase, under active development.
       '';
 
     license = stdenv.lib.licenses.bsd3;
 
     platforms = stdenv.lib.platforms.unix;
-    maintainers = [ stdenv.lib.maintainers.thammers ];
+    maintainers = with stdenv.lib.maintainers; [ shlevy thammers ];
   };
 }

@@ -20,10 +20,12 @@ stdenv.mkDerivation rec {
     "--with-gcc=${stdenv.gcc}/bin/gcc"
   ];
 
+  NIX_CFLAGS_COMPILE = "-fomit-frame-pointer";
+
   meta = {
     inherit homepage;
     description = "The Glasgow Haskell Compiler";
-    platforms = ghc.meta.platforms;
+    inherit (ghc.meta) license platforms;
   };
 
   passthru = {

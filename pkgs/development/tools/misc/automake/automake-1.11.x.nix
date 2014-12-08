@@ -1,7 +1,7 @@
-{stdenv, fetchurl, perl, autoconf, makeWrapper, doCheck ? true}:
+{ stdenv, fetchurl, perl, autoconf, makeWrapper }:
 
 stdenv.mkDerivation rec {
-  name = "automake-1.11.2";
+  name = "automake-1.11.6";
 
   # TODO: Remove the `aclocal' wrapper when $ACLOCAL_PATH support is
   # available upstream; see
@@ -11,13 +11,13 @@ stdenv.mkDerivation rec {
   setupHook = ./setup-hook.sh;
 
   src = fetchurl {
-    url = "mirror://gnu/automake/${name}.tar.bz2";
-    sha256 = "06476qbd16dlasz29drmljqmr4gwx4qgcl075033b2hc73wx2ijg";
+    url = "mirror://gnu/automake/${name}.tar.xz";
+    sha256 = "1ffbc6cc41f0ea6c864fbe9485b981679dc5e350f6c4bc6c3512f5a4226936b5";
   };
 
-  buildInputs = [perl autoconf makeWrapper];
+  patches = [ ./fix-test-autoconf-2.69.patch ];
 
-  inherit doCheck;
+  buildInputs = [perl autoconf makeWrapper];
 
   # Disable indented log output from Make, otherwise "make.test" will
   # fail.
@@ -27,9 +27,13 @@ stdenv.mkDerivation rec {
   # "fixed" path in generated files!
   dontPatchShebangs = true;
 
+  # Run the test suite in parallel.
+  enableParallelBuilding = true;
+
   meta = {
+    branch = "1.11";
     homepage = http://www.gnu.org/software/automake/;
-    description = "GNU Automake, a GNU standard-compliant makefile generator";
+    description = "GNU standard-compliant makefile generator";
 
     longDescription = ''
       GNU Automake is a tool for automatically generating
@@ -37,7 +41,7 @@ stdenv.mkDerivation rec {
       Standards.  Automake requires the use of Autoconf.
     '';
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
     maintainers = [ stdenv.lib.maintainers.ludo ];
   };

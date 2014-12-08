@@ -1,18 +1,35 @@
-{ stdenv, fetchurl, fetchgit, telepathy_qt, kdelibs, gettext, pkgconfig
-, qt_gstreamer }:
+{ stdenv, fetchurl, fetchgit, telepathy_qt, kdelibs, kde_workspace, gettext, dbus_libs, farstream
+, pkgconfigUpstream , qt_gstreamer1, telepathy_glib, telepathy_logger, qjson, flex, bison, qca2 }:
 
 let
-  version = "0.3.0";
+  pkgconfig = pkgconfigUpstream;
+  version = "0.8.80";
   manifest = import (./. + "/${version}.nix");
+
   overrides = {
-    presence_applet = x : (x // { patches = [ ./presence-applet-po.patch ]; });
-    contact_applet = x: (x // { patches = [ ./contact-applet-po.patch ]; });
+    telepathy_logger_qt = x : x // {
+      NIX_CFLAGS_COMPILE = "-I${dbus_libs}/include/dbus-1.0";
+    };
   };
+
+  extraBuildInputs = {
+    auth_handler = [ qjson qca2 ];
+    call_ui = [ qt_gstreamer1 telepathy_glib farstream ];
+    contact_applet = [ kde_workspace ];
+    telepathy_logger_qt = [ telepathy_logger qt_gstreamer1 ];
+    text_ui = [ qt_gstreamer1 telepathy_logger qjson ];
+    common_internals = [ telepathy_qt ];
+  };
+
+  extraNativeBuildInputs = {
+    telepathy_logger_qt = [ flex bison ];
+  };
+
   ktpFun = { name, key, sha256 }:
   {
     name = key;
     value = stdenv.mkDerivation (
-      (if builtins.hasAttr key overrides then builtins.getAttr key overrides else (x: x))
+      (stdenv.lib.attrByPath [ key ] (x : x) overrides)
       {
         name = "${name}-${version}";
 
@@ -21,9 +38,10 @@ let
           inherit sha256;
         };
 
-        buildNativeInputs = [ gettext pkgconfig ];
+        nativeBuildInputs = [ gettext pkgconfig ] ++ (stdenv.lib.attrByPath [ key ] [] extraNativeBuildInputs);
         buildInputs = [ kdelibs telepathy_qt ]
-          ++ stdenv.lib.optional (name != "ktp-common-internals") common_internals;
+          ++ stdenv.lib.optional (name != "ktp-common-internals") ktp.common_internals
+          ++ (stdenv.lib.attrByPath [ key ] [] extraBuildInputs);
 
         meta = {
           inherit (kdelibs.meta) platforms;
@@ -33,26 +51,10 @@ let
     );
   };
 
-  stable = builtins.listToAttrs (map ktpFun manifest);
-  unstable = {
-    call_ui = stdenv.mkDerivation {
-      name = "ktp-call-ui-20120314";
-
-      src = fetchgit {
-        url = git://anongit.kde.org/ktp-call-ui;
-        rev = "3587166d1ace83b115e113853514a7acc04d9d86";
-        sha256 = "0yv386rqy4vkwmd38wvvsrbam59sbv5k2lwimv96kf93xgkp5g0l";
-      };
-
-      buildInputs = [ kdelibs telepathy_qt common_internals qt_gstreamer ];
-      buildNativeInputs = [ gettext pkgconfig ];
-    };
-  };
-  common_internals = pkgs.common_internals;
-  pkgs = unstable // stable;
+  ktp = builtins.listToAttrs (map ktpFun manifest);
 in
-pkgs // {
+ktp // {
   inherit version;
   recurseForDerivations = true;
-  full = stdenv.lib.attrValues stable;
+  full = stdenv.lib.attrValues ktp;
 }

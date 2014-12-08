@@ -1,9 +1,9 @@
 args: with args;
 rec {
-  name = "texlive-beamer-2007";
+  name = "texlive-beamer-2013";
   src = fetchurl {
-    url = mirror://debian/pool/main/l/latex-beamer/latex-beamer_3.07.orig.tar.gz;
-    sha256 = "07ldhg5f0hcnhjgzg5g8ailqacn8zhqc8nl2jkxc43c2qxbvswbv";
+    url = mirror://debian/pool/main/l/latex-beamer/latex-beamer_3.24.orig.tar.gz;
+    sha256 = "0rzjlbs67kzmvlh7lwga4yxgddvrvfkkhhx1ajdn4lqy2w9zxiv8";
   };
 
   buildInputs = [texLive];
@@ -20,5 +20,6 @@ rec {
 
   meta = {
     description = "Extra components for TeXLive: beamer class";
+    maintainers = [ stdenv.lib.maintainers.mornfall stdenv.lib.maintainers.jwiegley ];
   };
 }

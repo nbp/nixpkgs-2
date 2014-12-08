@@ -1,22 +1,34 @@
-{ stdenv, fetchurl, pkgconfig, gtk, libid3tag, id3lib, libvorbis, libogg, flac }:
+{ stdenv, fetchurl, pkgconfig, intltool, gtk3, glib, libid3tag, id3lib, taglib
+, libvorbis, libogg, flac, itstool, libxml2, gsettings_desktop_schemas
+, makeWrapper, gnome_icon_theme
+}:
 
-let
-
-  version = "2.1.7";
-  sha256 = "bfed34cbdce96aca299a0db2b531dbc66feb489b911a34f0a9c67f2eb6ee9301";
-
-in stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   name = "easytag-${version}";
+  version = "2.3.1";
+
   src = fetchurl {
-    url = "mirror://sourceforge/easytag/easytag-${version}.tar.bz2";
-    inherit sha256;
+    url = "mirror://gnome/sources/easytag/2.3/${name}.tar.xz";
+    sha256 = "19cdx4hma4nl38m1zrc3mq9cjg6knw970abk5anhg7cvpc1371s7";
   };
 
-  buildInputs = [ pkgconfig gtk libid3tag id3lib libvorbis libogg flac ];
+  preFixup = ''
+    wrapProgram $out/bin/easytag \
+      --prefix XDG_DATA_DIRS : "$XDG_ICON_DIRS:$GSETTINGS_SCHEMAS_PATH:$out/share"
+  '';
+
+  NIX_LDFLAGS = "-lid3tag -lz";
+
+  nativeBuildInputs = [ makeWrapper ];
+  buildInputs = [
+    pkgconfig intltool gtk3 glib libid3tag id3lib taglib libvorbis libogg flac
+    itstool libxml2 gsettings_desktop_schemas gnome_icon_theme
+  ];
 
   meta = {
-    description = "an utility for viewing and editing tags for various audio files";
-    homepage = http://http://easytag.sourceforge.net/;
-    license = stdenv.lib.licenses.gpl2;
+    description = "View and edit tags for various audio files";
+    homepage = "http://projects.gnome.org/easytag/";
+    license = stdenv.lib.licenses.gpl2Plus;
+    maintainers = with stdenv.lib.maintainers; [ fuuzetsu ];
   };
 }

@@ -11,15 +11,19 @@ let
     (builtins.attrNames (builtins.removeAttrs x helperArgNames));
   sourceInfo = rec {
     baseName="TPTP";
-    version="5.3.0";
+    version="6.1.0";
     name="${baseName}-${version}";
-    url="http://www.cs.miami.edu/~tptp/TPTP/Distribution/TPTP-v${version}.tgz";
-    hash="0xzybh332x53q4cmb3i47ygln0x6rd2nx810la1hmja9d1ixnz9b";
+    urls=
+    [
+    "http://www.cs.miami.edu/~tptp/TPTP/Distribution/TPTP-v${version}.tgz"
+    "http://www.cs.miami.edu/~tptp/TPTP/Archive/TPTP-v${version}/TPTP-v${version}.tgz"
+    ];
+    hash="054p0kx9qh619ixslxpb4qcwvcqr4kan154b3a87b546b78k7kv4";
   };
 in
 rec {
   src = a.fetchurl {
-    url = sourceInfo.url;
+    urls = sourceInfo.urls;
     sha256 = sourceInfo.hash;
   };
 
@@ -74,8 +78,7 @@ rec {
     # A GiB of data. Installation is unpacking and editing a few files.
     # No sense in letting Hydra build it.
     # Also, it is unclear what is covered by "verbatim" - we will edit configs
-    platforms = with a.lib.platforms;
-      [];
+    hydraPlatforms = [];
     license = "verbatim-redistribution";
   };
   passthru = {

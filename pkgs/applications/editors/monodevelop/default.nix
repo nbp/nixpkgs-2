@@ -2,7 +2,7 @@
 , gtkmozembedsharp, monodoc
 , perl, perlXMLParser, pkgconfig
 , glib, gtk, GConf, gnome_vfs, libbonobo, libglade, libgnome
-, mozilla
+, mozilla, makeWrapper
 }:
 
 stdenv.mkDerivation {
@@ -10,12 +10,10 @@ stdenv.mkDerivation {
   builder = ./builder.sh;
 
   src = fetchurl {
-    url = http://nixos.org/tarballs/monodevelop-0.6-pre2315.tar.bz2;
+    url = http://tarballs.nixos.org/monodevelop-0.6-pre2315.tar.bz2;
     md5 = "8c33df5629b0676b7ab552854c1de6fd";
   };
 
-  makeWrapper = ../../../build-support/make-wrapper/make-wrapper.sh;
-  
   patches = [./prefix.patch];
   
   buildInputs = [
@@ -24,5 +22,5 @@ stdenv.mkDerivation {
     gtkmozembedsharp monodoc
   ];
   
-  inherit mozilla monodoc gtksharp gtkmozembedsharp gtksourceviewsharp;
+  inherit mozilla monodoc gtksharp gtkmozembedsharp gtksourceviewsharp makeWrapper;
 }

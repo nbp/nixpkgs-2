@@ -1,16 +1,12 @@
-{ stdenv, fetchurl, zlib, ncurses ? null, perl ? null }:
+{ stdenv, fetchurl, zlib, ncurses ? null, perl ? null, pam }:
 
 stdenv.mkDerivation rec {
-  name = "util-linux-2.20.1";
+  name = "util-linux-2.25.1";
 
   src = fetchurl {
-    # This used to be mirror://kernel/linux/utils/util-linux, but it
-    # disappeared in the kernel.org meltdown.
-    url = "mirror://gentoo/distfiles/${name}.tar.bz2";
-    sha256 = "1q5vjcvw4f067c63vj2n3xggvk5prm11571x6vnqiav47vdbqvni";
+    url = "mirror://kernel/linux/utils/util-linux/v2.25/${name}.tar.xz";
+    sha256 = "4701305ae22790c3a92ce48e50794fa05b7ee01f4227f419a171c100d08986e8";
   };
-
-  patches = [ ./linux-specific-header.patch ];
 
   crossAttrs = {
     # Work around use of `AC_RUN_IFELSE'.
@@ -22,12 +18,28 @@ stdenv.mkDerivation rec {
   # somewhat risky because we have to consider that mount can setuid
   # root...
   configureFlags = ''
-    --disable-use-tty-group
     --enable-write
+    --enable-last
+    --enable-mesg
+    --enable-ddate
+    --disable-use-tty-group
     --enable-fs-paths-default=/var/setuid-wrappers:/var/run/current-system/sw/sbin:/sbin
     ${if ncurses == null then "--without-ncurses" else ""}
   '';
 
-  buildInputs = [ zlib ] ++ stdenv.lib.optional (ncurses != null) ncurses
-             ++ stdenv.lib.optional (perl != null) perl;
+  buildInputs =
+    [ zlib pam ]
+    ++ stdenv.lib.optional (ncurses != null) ncurses
+    ++ stdenv.lib.optional (perl != null) perl;
+
+  postInstall = ''
+    rm $out/bin/su # su should be supplied by the su package (shadow)
+  '';
+
+  enableParallelBuilding = true;
+
+  meta = {
+    homepage = http://www.kernel.org/pub/linux/utils/util-linux/;
+    description = "A set of system utilities for Linux";
+  };
 }

@@ -1,63 +1,41 @@
-x@{builderDefsPackage
-  , ...}:
-builderDefsPackage
-(a :  
-let 
-  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++ 
-    [];
+{ stdenv, fetchurl, autoconf }:
 
-  buildInputs = map (n: builtins.getAttr n x)
-    (builtins.attrNames (builtins.removeAttrs x helperArgNames));
-  sourceInfo = rec {
-    baseName="dd_rescue";
-    version="1.22";
-    name="${baseName}-${version}";
+stdenv.mkDerivation rec {
+  version = "1.46";
+  name = "dd_rescue-${version}";
+
+  src = fetchurl {
+    sha256 = "1fhs4jl5pkyn4aq75fxczrgnsj2m0kz9hfa7dhxy93vp7xcba2cy";
     url="http://www.garloff.de/kurt/linux/ddrescue/${name}.tar.gz";
-    hash="0n0vs4cn5csdcsmlndg3z36ws68zlckj17zrbm6wynrbs8iirclp";
-  };
-in
-rec {
-  src = a.fetchurl {
-    url = sourceInfo.url;
-    sha256 = sourceInfo.hash;
-  };
-  dd_rhelp_src = a.fetchurl {
-    url = "http://www.kalysto.org/pkg/dd_rhelp-0.1.2.tar.gz";
-    sha256 = "0fhzkflg1ygiaj5ha0bf594d76vlgjsfwlpcmwrbady9frxvlkvv";
   };
 
-  inherit (sourceInfo) name version;
-  inherit buildInputs;
+  dd_rhelp_src = fetchurl {
+    url = "http://www.kalysto.org/pkg/dd_rhelp-0.3.0.tar.gz";
+    sha256 = "0br6fs23ybmic3i5s1w4k4l8c2ph85ax94gfp2lzjpxbvl73cz1g";
+  };
 
-  /* doConfigure should be removed if not needed */
-  phaseNames = ["doMakeInstall" "install_dd_rhelp" "fixPaths"];
-  makeFlags=[
-    ''prefix="$out"''
-    ''DESTDIR="$out"''
-    ''INSTASROOT=''
-  ];
+  buildInputs = [ autoconf ];
 
-  fixPaths = a.doPatchShebangs ''$out/bin'';
+  preBuild = ''
+    substituteInPlace Makefile \
+      --replace "\$(DESTDIR)/usr" "$out" \
+      --replace "-o root" "" \
+      --replace "-g root" "" 
+  '';
+  makeFlags = [ "LIBDIR=$out" ];
 
-  install_dd_rhelp = a.fullDepEntry (''
+  postInstall = ''
     mkdir -p "$out/share/dd_rescue" "$out/bin"
     tar xf "${dd_rhelp_src}" -C "$out/share/dd_rescue"
     cp "$out/share/dd_rescue"/dd_rhelp*/dd_rhelp "$out/bin"
-  '') ["minInit" "defEnsureDir"];
+  '';
       
-  meta = {
+  meta = with stdenv.lib; {
     description = "A tool to copy data from a damaged block device";
-    maintainers = with a.lib.maintainers;
-    [
-      raskin
-    ];
-    platforms = with a.lib.platforms;
-      linux;
+    maintainers = with maintainers; [ raskin iElectric ];
+    platforms = with platforms; linux;
+    downloadPage = "http://www.garloff.de/kurt/linux/ddrescue/";
+    inherit version;
+    updateWalker = true;
   };
-  passthru = {
-    updateInfo = {
-      downloadPage = "http://www.garloff.de/kurt/linux/ddrescue/";
-    };
-  };
-}) x
-
+}

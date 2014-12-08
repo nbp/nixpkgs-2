@@ -28,6 +28,14 @@ stdenv.mkDerivation {
        cp -v pthread.h semaphore.h sched.h "$out/include"
     '';
 
+  postFixup =
+    # By default `mingw_headers' is propagated.  Prevent that, because
+    # otherwise MinGW headers appear twice in `-I', and thus the
+    # "#include_next <float.h>" in MinGW's <float.h> picks up itself instead
+    # of picking up GCC's (hence, FLT_RADIX is left undefined, for instance.)
+    '' rm -f "$out/nix-support/propagated-build-inputs"
+    '';
+
   meta = {
     description = "POSIX threads for Woe32";
 
@@ -48,6 +56,6 @@ stdenv.mkDerivation {
 
     homepage = http://sourceware.org/pthreads-win32/;
 
-    license = "LGPLv2.1+";
+    license = stdenv.lib.licenses.lgpl21Plus;
   };
 }

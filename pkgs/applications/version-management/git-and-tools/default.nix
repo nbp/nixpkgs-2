@@ -4,13 +4,12 @@
 args: with args; with pkgs;
 let
   inherit (pkgs) stdenv fetchgit fetchurl subversion;
-in
-rec {
 
-  git = lib.makeOverridable (import ./git) {
+  gitBase = lib.makeOverridable (import ./git) {
     inherit fetchurl stdenv curl openssl zlib expat perl python gettext gnugrep
-      asciidoc texinfo xmlto docbook2x docbook_xsl docbook_xml_dtd_45 libxslt
-      cpio tcl tk makeWrapper subversionClient;
+      asciidoc xmlto docbook2x docbook_xsl docbook_xml_dtd_45 libxslt cpio tcl
+      tk makeWrapper subversionClient gzip;
+    texinfo = texinfo5;
     svnSupport = false;		# for git-svn support
     guiSupport = false;		# requires tcl/tk
     sendEmailSupport = false;	# requires plenty of perl libraries
@@ -23,6 +22,9 @@ rec {
     ];
   };
 
+in
+rec {
+
   # support for bugzilla
   gitBz = import ./git-bz {
     inherit fetchgit stdenv makeWrapper python asciidoc xmlto # docbook2x docbook_xsl docbook_xml_dtd_45 libxslt
@@ -30,24 +32,21 @@ rec {
     inherit (pythonPackages) pysqlite;
   };
 
+  git = appendToName "minimal" gitBase;
+
   # Git with SVN support, but without GUI.
-  gitSVN = lowPrio (appendToName "with-svn" (git.override {
+  gitSVN = lowPrio (appendToName "with-svn" (gitBase.override {
     svnSupport = true;
   }));
 
   # The full-featured Git.
-  gitFull = appendToName "full" (git.override {
+  gitFull = gitBase.override {
     svnSupport = true;
     guiSupport = true;
-    sendEmailSupport = stdenv.isDarwin == false;
-  });
-
-  gitAnnex = lib.makeOverridable (import ./git-annex) {
-    inherit stdenv fetchurl libuuid rsync findutils curl perl git ikiwiki which coreutils;
-    inherit (haskellPackages_ghc741) ghc MissingH utf8String pcreLight SHA dataenc
-      HTTP testpack hS3 mtl network hslogger hxt json liftedBase monadControl IfElse
-      QuickCheck2 bloomfilter editDistance;
+    sendEmailSupport = !stdenv.isDarwin;
   };
+
+  gitAnnex = pkgs.haskellPackages.gitAnnex;
 
   qgit = import ./qgit {
     inherit fetchurl stdenv;
@@ -66,25 +65,16 @@ rec {
   };
 
   topGit = lib.makeOverridable (import ./topgit) {
-    inherit stdenv fetchurl unzip;
+    inherit stdenv fetchurl;
   };
 
-  tig = stdenv.mkDerivation {
-    name = "tig-0.16";
-    src = fetchurl {
-      url = "http://jonas.nitro.dk/tig/releases/tig-0.16.tar.gz";
-      sha256 = "167kak44n66wqjj6jrv8q4ijjac07cw22rlpqjqz3brlhx4cb3ix";
-    };
-    buildInputs = [ncurses asciidoc xmlto docbook_xsl];
-    installPhase = ''
-      make install
-      make install-doc
-    '';
-    meta = {
-      description = "console git repository browser that additionally can act as a pager for output from various git commands";
-      homepage = http://jonas.nitro.dk/tig/;
-      license = "GPLv2";
-    };
+  tig = import ./tig {
+    inherit stdenv fetchurl ncurses asciidoc xmlto docbook_xsl docbook_xml_dtd_45 readline;
+  };
+
+  hub = import ./hub {
+    inherit (rubyLibs) rake;
+    inherit stdenv fetchurl groff makeWrapper;
   };
 
   gitFastExport = import ./fast-export {
@@ -96,13 +86,19 @@ rec {
   };
 
   svn2git = import ./svn2git {
-    inherit stdenv fetchgit ruby makeWrapper;
+    inherit stdenv fetchurl ruby makeWrapper;
     git = gitSVN;
   };
 
   svn2git_kde = callPackage ./svn2git-kde { };
 
-  gitSubtree = import ./git-subtree {
-    inherit stdenv fetchurl git asciidoc xmlto docbook_xsl docbook_xml_dtd_45 libxslt;
-  };
+  darcsToGit = callPackage ./darcs-to-git { };
+
+  gitflow = callPackage ./gitflow { };
+
+  git-remote-hg = callPackage ./git-remote-hg { };
+
+  gitRemoteGcrypt = callPackage ./git-remote-gcrypt { };
+
+  git-extras = callPackage ./git-extras { };
 }

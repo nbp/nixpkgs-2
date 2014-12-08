@@ -1,16 +1,17 @@
 { fetchurl, stdenv, pkgconfig, libdaemon, dbus, perl, perlXMLParser
-, expat, gettext, intltool, glib, qt4 ? null, libiconvOrEmpty
+, expat, gettext, intltool, glib, libiconvOrEmpty
+, qt4 ? null
 , qt4Support ? false
 , withLibdnssdCompat ? false }:
 
 assert qt4Support -> qt4 != null;
 
 stdenv.mkDerivation rec {
-  name = "avahi-0.6.30";
+  name = "avahi-0.6.31";
 
   src = fetchurl {
     url = "${meta.homepage}/download/${name}.tar.gz";
-    sha256 = "07zzaxs81rbrfhj0rnq616c3j37f3g84dn7d4q3h5l1r4dn33r7r";
+    sha256 = "0j5b5ld6bjyh3qhd2nw0jb84znq0wqai7fsrdzg7bpg24jdp2wl3";
   };
 
   patches = [ ./no-mkdir-localstatedir.patch ];
@@ -19,29 +20,42 @@ stdenv.mkDerivation rec {
     ++ (stdenv.lib.optional qt4Support qt4)
     ++ libiconvOrEmpty;
 
-  buildNativeInputs = [ pkgconfig gettext intltool ];
+  nativeBuildInputs = [ pkgconfig gettext intltool ];
 
   configureFlags =
     [ "--disable-qt3" "--disable-gdbm" "--disable-mono"
       "--disable-gtk" "--disable-gtk3"
       "--${if qt4Support then "enable" else "disable"}-qt4"
-      "--disable-python"
-      "--with-distro=none" "--localstatedir=/var"
-    ] ++ stdenv.lib.optional withLibdnssdCompat "--enable-compat-libdns_sd";
+      "--disable-python" "--localstatedir=/var" "--with-distro=none" ]
+    ++ stdenv.lib.optional withLibdnssdCompat "--enable-compat-libdns_sd"
+    # autoipd won't build on darwin
+    ++ stdenv.lib.optional stdenv.isDarwin "--disable-autoipd";
 
-  meta = {
-    description = "Avahi, an mDNS/DNS-SD implementation";
+  preBuild = stdenv.lib.optionalString stdenv.isDarwin ''
+    sed -i '20 i\
+    #define __APPLE_USE_RFC_2292' \
+    avahi-core/socket.c
+  '';
+
+  postInstall = ''
+    # Maintain compat for mdnsresponder and howl
+    ${if withLibdnssdCompat then "ln -s avahi-compat-libdns_sd/dns_sd.h $out/include/dns_sd.h" else ""}
+    ln -s avahi-compat-howl $out/include/howl
+    ln -s avahi-compat-howl.pc $out/lib/pkgconfig/howl.pc
+  '';
+
+  meta = with stdenv.lib; {
+    description = "mDNS/DNS-SD implementation";
+    homepage    = http://avahi.org;
+    license     = licenses.lgpl2Plus;
+    platforms   = platforms.unix;
+    maintainers = with maintainers; [ lovek323 ];
+
     longDescription = ''
       Avahi is a system which facilitates service discovery on a local
       network.  It is an implementation of the mDNS (for "Multicast
       DNS") and DNS-SD (for "DNS-Based Service Discovery")
       protocols.
     '';
-
-    homepage = http://avahi.org;
-    license = "LGPLv2+";
-
-    platforms = stdenv.lib.platforms.linux;  # arbitrary choice
-    maintainers = [ stdenv.lib.maintainers.ludo ];
   };
 }

@@ -2,29 +2,33 @@
   flex, libtiff, libjpeg, libpng, libexif, zlib, perl, libX11,
   perlXMLParser, python, pygtk, gettext, intltool, babl, gegl,
   glib, makedepend, xf86vidmodeproto, xineramaproto, libXmu, openexr,
-  mesa, libXext, libXpm, libXxf86vm, pixman, libpthreadstubs } :
+  mesa, libXext, libXpm, libXau, libXxf86vm, pixman, libpthreadstubs, fltk } :
 
 stdenv.mkDerivation rec {
-  name = "cinepaint-1.0";
+  name = "cinepaint-1.1";
 
   src = fetchurl {
     url = "mirror://sourceforge/cinepaint/${name}.tgz";
-    sha256 = "02mbpsykd7sfr9h6c6gxld6i3bdwnsgvm70b5yff01gwi69w2wi7";
+    sha256 = "0b5g4bkq62yiz1cnb2vfij0a8fw5w5z202v5dm4dh89k7cj0yq4w";
   };
 
-  buildInputs = [ gtk freetype fontconfig lcms flex libtiff libjpeg libpng
+  buildInputs = [ libpng gtk freetype fontconfig lcms flex libtiff libjpeg
     libexif zlib perl libX11 perlXMLParser python pygtk gettext intltool babl
     gegl glib makedepend xf86vidmodeproto xineramaproto libXmu openexr mesa
-    libXext libXpm libXxf86vm pixman libpthreadstubs
+    libXext libXpm libXau libXxf86vm pixman libpthreadstubs fltk
   ];
 
-  buildNativeInputs = [ cmake pkgconfig ];
+  patches = [ ./install.patch ];
 
-  NIX_CFLAGS_COMPILE = "-I.";
+  nativeBuildInputs = [ cmake pkgconfig ];
+
+  NIX_LDFLAGS = "-llcms -ljpeg -lX11";
+
+  # NIX_CFLAGS_COMPILE = "-I.";
 
   meta = {
     homepage = http://www.cinepaint.org/;
-    license = "free";
+    license = stdenv.lib.licenses.free;
     description = "Image editor which supports images over 8bpp and ICC profiles";
     maintainers = with stdenv.lib.maintainers; [viric];
     platforms = stdenv.lib.platforms.linux;

@@ -1,20 +1,20 @@
-{ fetchurl, stdenv, libcdio, zlib, bzip2, readline, acl }:
+{ fetchurl, stdenv, libcdio, zlib, bzip2, readline, acl, attr }:
 
 stdenv.mkDerivation rec {
-  name = "xorriso-1.2.2";
+  name = "xorriso-1.3.8";
 
   src = fetchurl {
     url = "mirror://gnu/xorriso/${name}.tar.gz";
-    sha256 = "0kw4fiqn24vya3zhay6minzrbz10zlxm8sjs272z7l5s2kwcjypx";
+    sha256 = "0zhhj9lr9z7hnb2alac54mc28w1l0mbanphhpmy3ylsi8rih84lh";
   };
 
   doCheck = true;
 
-  buildInputs = [ libcdio zlib bzip2 readline ]
+  buildInputs = [ libcdio zlib bzip2 readline attr ]
     ++ stdenv.lib.optional stdenv.isLinux acl;
 
   meta = {
-    description = "GNU xorriso, an ISO 9660 Rock Ridge file system manipulator";
+    description = "ISO 9660 Rock Ridge file system manipulator";
 
     longDescription =
       '' GNU xorriso copies file objects from POSIX compliant filesystems
@@ -26,11 +26,11 @@ stdenv.mkDerivation rec {
          filesystems.
       '';
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
     homepage = http://www.gnu.org/software/xorriso/;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
     platforms = stdenv.lib.platforms.unix;
   };
 }

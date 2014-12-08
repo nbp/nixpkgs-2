@@ -7,10 +7,8 @@
 , threadSupport ? true
 , mysqlSupport ? false, mysql ? null
 , openglSupport ? false, mesa ? null, libXmu ? null
-, x11, xextproto, zlib, libjpeg, libpng12, which
+, x11, xextproto, zlib, libjpeg, libpng, which
 }:
-
-let libpng = libpng12; in
 
 assert xftSupport -> libXft != null;
 assert xrenderSupport -> xftSupport && libXrender != null;
@@ -31,8 +29,8 @@ stdenv.mkDerivation {
     sha256 = "0jd4g3bwkgk2s4flbmgisyihm7cam964gzb3pawjlkhas01zghz8";
   };
 
-  buildNativeInputs = [ which ];
-  propagatedBuildInputs = [x11 libXft libXrender zlib libjpeg libpng];
+  nativeBuildInputs = [ which ];
+  propagatedBuildInputs = [libpng x11 libXft libXrender zlib libjpeg];
 
   configureFlags = "
     -v
@@ -59,10 +57,10 @@ stdenv.mkDerivation {
   patches = [
     # Don't strip everything so we can get useful backtraces.
     ./strip.patch
-    
+
     # Build on NixOS.
     ./qt-pwd.patch
-    
+
     # randr.h and Xrandr.h need not be in the same prefix.
     ./xrandr.patch
 

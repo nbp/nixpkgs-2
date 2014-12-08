@@ -9,7 +9,7 @@ stdenv.mkDerivation rec {
   };
 
   buildInputs = [ ois ogre libX11 boost ];
-  buildNativeInputs = [ cmake pkgconfig ];
+  nativeBuildInputs = [ cmake pkgconfig ];
 
   cmakeFlags = "-DPAGEDGEOMETRY_BUILD_SAMPLES=OFF";
 
@@ -18,6 +18,6 @@ stdenv.mkDerivation rec {
   meta = {
     description = "Paged Geometry for Ogre3D";
     homepage = http://code.google.com/p/ogre-paged/;
-    license = "MIT";
+    license = stdenv.lib.licenses.mit;
   };
 }

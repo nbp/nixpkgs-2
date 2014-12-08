@@ -1,7 +1,7 @@
 {stdenv, fetchurl}:
 
 stdenv.mkDerivation rec {
-  name = "ncompress-4.2.4.3";
+  name = "ncompress-4.2.4.4";
 
   builder = ./builder.sh;
 
@@ -9,12 +9,12 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "mirror://sourceforge/project/ncompress/${name}.tar.gz";
-    sha256 = "1y44ixc1w2vfvj1lm4dkcljlwv882ynrvm5i6l0lg1gf883j246l";
+    sha256 = "0yjiwv1hwb253x3m6r1dq2k7m5c9nz0ib2j7fnm3hark7y6s42xh";
   };
 
   meta = {
     homepage = http://ncompress.sourceforge.net/;
-    license = "public domain";
+    license = stdenv.lib.licenses.publicDomain;
     description = "A fast, simple LZW file compressor";
   };
 }

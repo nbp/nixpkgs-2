@@ -1,27 +1,45 @@
 { stdenv, fetchurl, ghostscript, texinfo, imagemagick, texi2html, guile
-, python, gettext, flex, perl, bison, pkgconfig, texLive
-, fontconfig, freetype, pango, fontforge, help2man }:
+, python, gettext, flex, perl, bison, pkgconfig, texLive, dblatex
+, fontconfig, freetype, pango, fontforge, help2man, zip, netpbm, groff
+, fetchsvn, makeWrapper, t1utils
+}:
 
 stdenv.mkDerivation rec{
-  majorVersion="2.13";
-  minorVersion="46";
+  majorVersion="2.18";
+  minorVersion="2";
   version="${majorVersion}.${minorVersion}";
   name = "lilypond-${version}";
 
-  src = fetchurl {
-    url = "http://download.linuxaudio.org/lilypond/sources/v${majorVersion}/lilypond-${version}.tar.gz";
-    sha256 = "370f59d10a3fc74c5790111f7a69e04304eda5384513c95838dda3cc087904e6";
+  urwfonts = fetchsvn {
+    url = "http://svn.ghostscript.com/ghostscript/tags/urw-fonts-1.0.7pre44";
+    sha256 = "0al5vdsb66db6yzwi0qgs1dnd1i1fb77cigdjxg8zxhhwf6hhwpn";
   };
 
-  configureFlags = [ "--disable-documentation" "--with-ncsb-dir=${ghostscript}/share/ghostscript/fonts"];
+  src = fetchurl {
+    url = "http://download.linuxaudio.org/lilypond/sources/v${majorVersion}/lilypond-${version}.tar.gz";
+    sha256 = "01xs9x2wjj7w9appaaqdhk15r1xvvdbz9qwahzhppfmhclvp779j";
+  };
+
+  preConfigure=''
+    sed -e "s@mem=mf2pt1@mem=$PWD/mf/mf2pt1@" -i scripts/build/mf2pt1.pl
+  '';
+
+  postInstall = ''
+    for f in "$out/bin/"*; do
+        wrapProgram "$f" --set GUILE_AUTO_COMPILE 0 \
+                         --set PATH "${ghostscript}/bin"
+    done
+  '';
+
+  configureFlags = [ "--disable-documentation" "--with-ncsb-dir=${urwfonts}"];
 
   buildInputs =
-    [ ghostscript texinfo imagemagick texi2html guile
+    [ ghostscript texinfo imagemagick texi2html guile dblatex zip netpbm
       python gettext flex perl bison pkgconfig texLive fontconfig freetype pango
-      fontforge help2man
+      fontforge help2man groff makeWrapper t1utils
     ];
 
-  meta = { 
+  meta = {
     description = "Music typesetting system";
     homepage = http://lilypond.org/;
     license = "GPL";

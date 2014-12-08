@@ -1,20 +1,20 @@
-{ stdenv, fetchurl, disnix, socat, pkgconfig }:
+{ stdenv, fetchurl, disnix, socat, pkgconfig, getopt }:
 
 stdenv.mkDerivation {
-  name = "disnixos-0.2pre33586";
+  name = "disnixos-0.2prec3310e2d8975c45e4ffacec940049fb781739b8d";
   
   src = fetchurl {
-    url = http://hydra.nixos.org/build/2368187/download/3/disnixos-0.2pre33586.tar.gz;
-    sha256 = "110vn4390447dws343py8ss6s8jizx8yg7yl38i64nlqh0bcn4ny";
+    url = http://hydra.nixos.org/build/14721464/download/3/disnixos-0.2prec3310e2d8975c45e4ffacec940049fb781739b8d.tar.gz;
+    sha256 = "0wd0bhzwipn62lb90fk2s9s52aq60ndriyw7ymah6x3xm40d2cl9";
   };
   
-  buildInputs = [ socat pkgconfig disnix ];
+  buildInputs = [ socat pkgconfig disnix getopt ];
   
   dontStrip = true;
   
   meta = {
     description = "Provides complementary NixOS infrastructure deployment to Disnix";
-    license = "LGPLv2.1+";
+    license = stdenv.lib.licenses.lgpl21Plus;
     maintainers = [ stdenv.lib.maintainers.sander ];
   };
 }

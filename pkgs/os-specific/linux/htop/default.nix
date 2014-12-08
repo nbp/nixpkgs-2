@@ -1,11 +1,11 @@
 { fetchurl, stdenv, ncurses }:
 
 stdenv.mkDerivation rec {
-  name = "htop-1.0.1";
+  name = "htop-1.0.3";
 
   src = fetchurl {
-    url = "mirror://sourceforge/htop/${name}.tar.gz";
-    sha256 = "1wh62mb102nxd5h3pnzakdf0lcyapv1yq44ndcc9wpw30az2rnq7";
+    url = "http://hisham.hm/htop/releases/1.0.3/htop-1.0.3.tar.gz";
+    sha256 = "0a8qbpsifzjwc4f45xfwm48jhm59g6q5hlib4bf7z13mgy95fp05";
   };
 
   buildInputs = [ ncurses ];
@@ -14,6 +14,6 @@ stdenv.mkDerivation rec {
     description = "An interactive process viewer for Linux";
     homepage = "http://htop.sourceforge.net";
     platforms = stdenv.lib.platforms.linux;
-    maintainers = [ stdenv.lib.maintainers.rob ];
+    maintainers = with stdenv.lib.maintainers; [ rob simons relrod ];
   };
 }

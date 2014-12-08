@@ -21,7 +21,7 @@ stdenv.mkDerivation {
 
   buildInputs = [ SDL SDL_mixer openal libxml2 libvorbis libpng mesa zlib ];
 
-  buildNativeInputs = [ pkgconfig makeWrapper ];
+  nativeBuildInputs = [ pkgconfig makeWrapper ];
 
   NIX_CFLAGS_COMPILE="-include ${zlib}/include/zlib.h";
 
@@ -34,8 +34,9 @@ stdenv.mkDerivation {
   meta = {
     description = "2D action/rpg space game";
     homepage = http://www.naev.org;
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
     maintainers = with stdenv.lib.maintainers; [viric];
-    platforms = with stdenv.lib.platforms; linux;
+    platforms = stdenv.lib.platforms.linux;
+    hydraPlatforms = [];
   };
 }

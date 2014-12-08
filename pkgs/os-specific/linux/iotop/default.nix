@@ -1,12 +1,12 @@
 { stdenv, fetchurl, buildPythonPackage, pythonPackages }:
 
 buildPythonPackage rec {
-  name = "iotop-0.4.1";
+  name = "iotop-0.6";
   namePrefix = "";
 
   src = fetchurl {
     url = "http://guichaz.free.fr/iotop/files/${name}.tar.bz2";
-    sha256 = "1dfvw3khr2rvqllvs9wad9ca3ld4i7szqf0ibq87rn36ickrf3ll";
+    sha256 = "0nzprs6zqax0cwq8h7hnszdl3d2m4c2d4vjfxfxbnjfs9sia5pis";
   };
 
   pythonPath = [ pythonPackages.curses ];

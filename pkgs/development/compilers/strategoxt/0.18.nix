@@ -4,20 +4,6 @@ rec {
 
   inherit aterm;
 
-  atermStatic = stdenv.mkDerivation ( rec {
-    name = "${aterm.name}-static";
-    configureFlags = "--enable-shared=no --enable-static=yes";
-
-    inherit (aterm) src meta patches; 
-  } // ( if stdenv.system == "i686-cygwin" then { inherit (sdf) CFLAGS; } else {} ) ) ;
-  
-  sdfStatic = stdenv.mkDerivation ( rec {
-    name = "${sdf.name}-static";
-    configureFlags = "--enable-shared=no --enable-static=yes";
-
-    inherit (sdf) src buildInputs preConfigure meta; 
-  } // ( if stdenv.system == "i686-cygwin" then { inherit (sdf) CFLAGS; } else {} ) ) ;
-  
   sdf = stdenv.mkDerivation ( rec {
     name = "sdf2-bundle-2.4";
 
@@ -69,11 +55,12 @@ rec {
     meta = {
       homepage = http://strategoxt.org/;
       meta = "A language and toolset for program transformation";
+      broken = true;
     };
   };
 
   javafront = stdenv.mkDerivation (rec {
-    name = "java-front-0.9.1";
+    name = "java-front-0.9.1pre20122";
 
     src = fetchurl {
       url = "http://hydra.nixos.org/build/766286/download/1/java-front-0.9.1pre20122.tar.gz";
@@ -106,7 +93,7 @@ rec {
   } // ( if stdenv.system == "i686-cygwin" then { CFLAGS = "-O2"; } else {} ) ) ;
 
   dryad = stdenv.mkDerivation rec {
-    name = "dryad-0.2pre1835518355";
+    name = "dryad-0.2pre18355";
 
     src = fetchurl {
       url = "http://releases.strategoxt.org/dryad/${name}-zbqfh1rm/dryad-0.2pre18355.tar.gz";
@@ -118,6 +105,7 @@ rec {
     meta = {
       homepage = http://strategoxt.org/Stratego/TheDryad;
       meta = "A collection of tools for developing transformation systems for Java source and bytecode";
+      broken = true;
     };
   };
 

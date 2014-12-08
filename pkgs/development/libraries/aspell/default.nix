@@ -4,13 +4,24 @@ stdenv.mkDerivation rec {
   name = "aspell-0.60.6.1";
 
   src = fetchurl {
-    url = "ftp://ftp.gnu.org/gnu/aspell/${name}.tar.gz";
+    url = "mirror://gnu/aspell/${name}.tar.gz";
     sha256 = "1qgn5psfyhbrnap275xjfrzppf5a83fb67gpql0kfqv37al869gm";
   };
+
+  patchPhase = ''
+    patch interfaces/cc/aspell.h < ${./clang.patch}
+  '';
 
   buildInputs = [ perl ];
 
   doCheck = true;
+
+  preConfigure = ''
+    configureFlagsArray=(
+      --enable-pkglibdir=$out/lib/aspell
+      --enable-pkgdatadir=$out/lib/aspell
+    );
+  '';
 
   # Note: Users should define the `ASPELL_CONF' environment variable to
   # `dict-dir $HOME/.nix-profile/lib/aspell/' so that they can access
@@ -20,9 +31,10 @@ stdenv.mkDerivation rec {
   # doesn't expand environment variables such as `$HOME'.
 
   meta = {
-    description = "GNU Aspell, A spell checker for many languages";
+    description = "Spell checker for many languages";
     homepage = http://aspell.net/;
-    license = "LGPLv2+";
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    license = stdenv.lib.licenses.lgpl2Plus;
+    maintainers = [ ];
+    platforms = with stdenv.lib.platforms; all;
   };
 }

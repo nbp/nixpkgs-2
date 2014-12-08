@@ -1,19 +1,21 @@
 { fetchurl, stdenv, gmp, mpfr }:
 
 stdenv.mkDerivation rec {
-  name = "mpc-0.9";
+  name = "mpc-1.0.1";
 
   src = fetchurl {
     url = "http://www.multiprecision.org/mpc/download/${name}.tar.gz";
-    sha1 = "229722d553030734d49731844abfef7617b64f1a";
+    sha1 = "vxg0rkyn4cs40wr2cp6bbcyr1nnijzlc";
   };
 
   buildInputs = [ gmp mpfr ];
 
+  CFLAGS = "-I${gmp}/include";
+
   doCheck = true;
 
   meta = {
-    description = "GNU MPC, a library for multiprecision complex arithmetic with exact rounding";
+    description = "Library for multiprecision complex arithmetic with exact rounding";
 
     longDescription =
       '' GNU MPC is a C library for the arithmetic of complex numbers with
@@ -22,7 +24,7 @@ stdenv.mkDerivation rec {
       '';
 
     homepage = http://mpc.multiprecision.org/;
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
 
     platforms = stdenv.lib.platforms.all;
     maintainers = [ stdenv.lib.maintainers.ludo ];

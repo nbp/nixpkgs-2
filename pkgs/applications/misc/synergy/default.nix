@@ -1,31 +1,54 @@
-{ stdenv, fetchurl, x11, xextproto, libXtst, inputproto, libXi
-, automake, autoconf, sourceFromHead }:
+{ stdenv, fetchFromGitHub, cmake, x11, libX11, libXi, libXtst, libXrandr
+, xinput, curl, cryptopp ? null, unzip }:
 
-stdenv.mkDerivation {
-  name = "synergy-cvs";
+assert stdenv.isLinux -> cryptopp != null;
 
-  # note: There is a fork:
-  # http://code.google.com/p/synergy-plus
+with stdenv.lib;
 
-  # REGION AUTO UPDATE:            { name="synergy"; type = "cvs"; cvsRoot = ":pserver:anonymous@synergy2.cvs.sourceforge.net:/cvsroot/synergy2"; module="syngery"; }
-  src= sourceFromHead "synergy-F_23-55-02.tar.gz"
-               (fetchurl { url = "http://mawercer.de/~nix/repos/synergy-F_23-55-02.tar.gz"; sha256 = "ae16a9b59039a32e383e71397405d7b610de6c6902c03177c2496bac440d3e28"; });
-  # END
+stdenv.mkDerivation rec {
+  name = "synergy-${version}";
+  version = "1.6.1";
 
-  buildInputs = [ x11 xextproto libXtst inputproto libXi automake autoconf ];
+  src = fetchFromGitHub {
+    owner = "synergy";
+    repo = "synergy";
+    rev = "1.6.1";
+    sha256 = "1043101c4phv1nbxiqp2jn1jhgzspv9q6v75z0kfzwgii5n5xq1c";
+  };
 
-  preConfigure = "autoreconf";
+  patches = optional stdenv.isLinux ./cryptopp.patch;
 
-  patches =
-    [ (fetchurl {
-        url = http://mawercer.de/~nix/synergy-gcc43-r2.patch.gz;
-        sha256 = "0wnj5k93ybj7jg8ml1i1brwsnszfh41117q2qh7r8xr9m37997b7";
-      })
-    ];
+  postPatch = (if stdenv.isLinux then ''
+    sed -i -e '/HAVE_X11_EXTENSIONS_XRANDR_H/c \
+      set(HAVE_X11_EXTENSIONS_XRANDR_H true)' CMakeLists.txt
+  '' else ''
+    ${unzip}/bin/unzip -d ext/cryptopp562 ext/cryptopp562.zip
+  '') + ''
+    ${unzip}/bin/unzip -d ext/gmock-1.6.0 ext/gmock-1.6.0.zip
+    ${unzip}/bin/unzip -d ext/gtest-1.6.0 ext/gtest-1.6.0.zip
+  '';
 
-  meta = { 
+  buildInputs = [ cmake x11 libX11 libXi libXtst libXrandr xinput curl ]
+             ++ optional stdenv.isLinux cryptopp;
+
+  # At this moment make install doesn't work for synergy
+  # http://synergy-foss.org/spit/issues/details/3317/
+
+  installPhase = ''
+    mkdir -p $out/bin
+    cp ../bin/synergyc $out/bin
+    cp ../bin/synergys $out/bin
+    cp ../bin/synergyd $out/bin
+  '';
+
+  doCheck = true;
+  checkPhase = "../bin/unittests";
+
+  meta = {
     description = "Tool to share the mouse keyboard and the clipboard between computers";
-    homepage = http://synergy2.sourceforge.net;
-    license = "GPL";
+    homepage = http://synergy-foss.org;
+    license = licenses.gpl2;
+    maintainers = [ maintainers.aszlig ];
+    platforms = platforms.all;
   };
 }

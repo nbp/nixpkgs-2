@@ -4,7 +4,7 @@ stdenv.mkDerivation rec {
   name = "reiserfsprogs-3.6.21";
 
   src = fetchurl {
-    url = "mirror://kernel/linux/utils/fs/reiserfs/${name}.tar.bz2";
+    url = "http://ftp.be.debian.org/pub/linux/utils/fs/reiserfs/${name}.tar.bz2";
     sha256 = "19mqzhh6jsf2gh8zr5scqi9pyk1fwivrxncd11rqnp2148c58jam";
   };
 
@@ -19,6 +19,6 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = http://www.namesys.com/;
     description = "ReiserFS utilities";
-    license = "GPL-2";
+    license = stdenv.lib.licenses.gpl2;
   };
 }

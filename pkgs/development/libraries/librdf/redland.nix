@@ -3,24 +3,24 @@
 , mysql, withMysql ? false
 , postgresql, withPostgresql ? false
 , sqlite, withSqlite ? true
-, db4, withBdb ? false
+, db, withBdb ? false
 }:
 
 stdenv.mkDerivation rec {
-  name = "redland-1.0.14";
+  name = "redland-1.0.17";
 
   src = fetchurl {
     url = "http://download.librdf.org/source/${name}.tar.gz";
-    sha256 = "1i460q9gslb7l75hjwc6w2kp2wk7fgp8lr7phamg33c6j013y30k";
+    sha256 = "de1847f7b59021c16bdc72abb4d8e2d9187cd6124d69156f3326dd34ee043681";
   };
 
-  buildNativeInputs = [ perl pkgconfig ];
+  nativeBuildInputs = [ perl pkgconfig ];
 
   buildInputs = [ openssl libxslt curl pcre libxml2 ]
     ++ stdenv.lib.optional withMysql mysql
     ++ stdenv.lib.optional withSqlite sqlite
     ++ stdenv.lib.optional withPostgresql postgresql
-    ++ stdenv.lib.optional withBdb db4;
+    ++ stdenv.lib.optional withBdb db;
 
   propagatedBuildInputs = [ librdf_rasqal ];
 
@@ -28,7 +28,7 @@ stdenv.mkDerivation rec {
 
   configureFlags =
     [ "--with-threads" ]
-    ++ stdenv.lib.optional withBdb "--with-bdb=${db4}";
+    ++ stdenv.lib.optional withBdb "--with-bdb=${db}";
 
   meta = {
     homepage = http://librdf.org/;

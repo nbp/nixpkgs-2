@@ -1,50 +1,39 @@
-x@{builderDefsPackage
-  , llvm, gmp, mpfr, readline
-  , ...}:
-builderDefsPackage
-(a :  
-let 
-  helperArgNames = ["stdenv" "fetchurl" "builderDefsPackage"] ++ 
-    [];
+{ lib, stdenv, fetchurl, makeWrapper,
+  llvm, gmp, mpfr, readline, bison, flex }:
 
-  buildInputs = map (n: builtins.getAttr n x)
-    (builtins.attrNames (builtins.removeAttrs x helperArgNames));
-  sourceInfo = rec {
-    baseName="pure";
-    project="pure-lang";
-    version="0.49";
-    name="${baseName}-${version}";
-    extension="tar.gz";
-    url="http://${project}.googlecode.com/files/${name}.${extension}";
-    hash="0kkrcmmqks82g3qlkvs3cd23v6b5948rw3xsdadd1jidh74jg33x";
-  };
-in
-rec {
-  src = a.fetchurl {
-    url = sourceInfo.url;
-    sha256 = sourceInfo.hash;
+stdenv.mkDerivation rec {
+  baseName="pure";
+  project="pure-lang";
+  version="0.63";
+  name="${baseName}-${version}";
+  extension="tar.gz";
+
+  src = fetchurl {
+    url="https://bitbucket.org/purelang/${project}/downloads/${name}.${extension}";
+    sha256="33acb2d560b21813f5e856973b493d9cfafba82bd6f539425ce07aa22f84ee29";
   };
 
-  inherit (sourceInfo) name version;
-  inherit buildInputs;
+  buildInputs = [ bison flex makeWrapper ];
+  propagatedBuildInputs = [ llvm gmp mpfr readline ];
 
-  /* doConfigure should be removed if not needed */
-  phaseNames = ["doConfigure" "doMakeInstall"];
-      
+  configureFlags = [ "--enable-release" ];
+  doCheck = true;
+  checkPhase = ''
+    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${llvm}/lib make check
+  '';
+  postInstall = ''
+    wrapProgram $out/bin/pure --prefix LD_LIBRARY_PATH : ${llvm}/lib
+  '';
+
   meta = {
-    description = "A purely functional programming language based on term rewriting";
-    maintainers = with a.lib.maintainers;
+    description = "A modern-style functional programming language based on term rewriting";
+    maintainers = with lib.maintainers;
     [
       raskin
+      asppsa
     ];
-    platforms = with a.lib.platforms;
+    platforms = with lib.platforms;
       linux;
-    license = a.lib.licenses.gpl3Plus;
+    license = lib.licenses.gpl3Plus;
   };
-  passthru = {
-    updateInfo = {
-      downloadPage = "http://code.google.com/p/pure-lang/downloads/list";
-    };
-  };
-}) x
-
+}

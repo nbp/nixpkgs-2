@@ -27,14 +27,14 @@ stdenv.mkDerivation rec {
   patchFlags = "-p0";
 
   patches =
-    let
+    (let
       patch = nr: sha256:
         fetchurl {
           url = "mirror://gnu/bash/bash-4.2-patches/bash42-${nr}";
           inherit sha256;
         };
     in
-      import ./bash-4.2-patches.nix patch;
+      import ./bash-4.2-patches.nix patch);
 
   crossAttrs = {
     configureFlags = baseConfigureFlags +
@@ -44,9 +44,13 @@ stdenv.mkDerivation rec {
   configureFlags = baseConfigureFlags;
 
   # Note: Bison is needed because the patches above modify parse.y.
-  buildNativeInputs = [bison]
+  nativeBuildInputs = [bison]
     ++ stdenv.lib.optional (texinfo != null) texinfo
     ++ stdenv.lib.optional interactive readline;
+
+  # Bash randomly fails to build because of a recursive invocation to
+  # build `version.h'.
+  enableParallelBuilding = false;
 
   postInstall = ''
     # Add an `sh' -> `bash' symlink.
@@ -70,9 +74,9 @@ stdenv.mkDerivation rec {
       Bash without modification.
     '';
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo stdenv.lib.maintainers.simons ];
+    maintainers = [ stdenv.lib.maintainers.simons ];
   };
 
   passthru = {

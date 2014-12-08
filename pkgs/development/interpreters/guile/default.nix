@@ -7,14 +7,14 @@
  else stdenv.mkDerivation)
 
 (rec {
-  name = "guile-2.0.5";
+  name = "guile-2.0.11";
 
   src = fetchurl {
     url = "mirror://gnu/guile/${name}.tar.xz";
-    sha256 = "1lycm10x316jzlv1nyag7x9gisn4d3dz8jcmbi6lbdn0z6a9skc2";
+    sha256 = "1qh3j7308qvsjgwf7h94yqgckpbgz2k3yqdkzsyhqcafvfka9l5f";
   };
 
-  buildNativeInputs = [ makeWrapper gawk pkgconfig ];
+  nativeBuildInputs = [ makeWrapper gawk pkgconfig ];
   buildInputs = [ readline libtool libunistring libffi ];
   propagatedBuildInputs = [ gmp boehmgc ]
 
@@ -25,12 +25,20 @@
     ++ [ libtool libunistring ];
 
   # A native Guile 2.0 is needed to cross-build Guile.
-  selfBuildNativeInput = true;
+  selfNativeBuildInput = true;
 
-  enableParallelBuilding = true;
+  # Guile 2.0.11 repeatable fails with 8-core parallel building because
+  # libguile/vm-i-system.i is not created in time
+  enableParallelBuilding = false;
 
-  patches = [ ./disable-gc-sensitive-tests.patch ] ++
+  patches = [ ./disable-gc-sensitive-tests.patch ./eai_system.patch ./clang.patch ] ++
     (stdenv.lib.optional (coverageAnalysis != null) ./gcov-file-name.patch);
+
+  # Explicitly link against libgcc_s, to work around the infamous
+  # "libgcc_s.so.1 must be installed for pthread_cancel to work".
+
+  # don't have "libgcc_s.so.1" on darwin
+  LDFLAGS = stdenv.lib.optionalString (!stdenv.isDarwin) "-lgcc_s";
 
   postInstall = ''
     wrapProgram $out/bin/guile-snarf --prefix PATH : "${gawk}/bin"
@@ -44,7 +52,8 @@
             s|-lltdl|-L${libtool}/lib -lltdl|g'
   '';
 
-  doCheck = true;
+  # make check doesn't work on darwin
+  doCheck = !stdenv.isDarwin;
 
   setupHook = ./setup-hook-2.0.sh;
 
@@ -58,7 +67,11 @@
 
 
   meta = {
-    description = "GNU Guile 2.0, an embeddable Scheme implementation";
+    description = "Embeddable Scheme implementation";
+    homepage    = http://www.gnu.org/software/guile/;
+    license     = stdenv.lib.licenses.lgpl3Plus;
+    maintainers = with stdenv.lib.maintainers; [ ludo lovek323 ];
+    platforms   = stdenv.lib.platforms.all;
 
     longDescription = ''
       GNU Guile is an implementation of the Scheme programming language, with
@@ -69,22 +82,34 @@
       linking, a foreign function call interface, and powerful string
       processing.
     '';
-
-    homepage = http://www.gnu.org/software/guile/;
-    license = "LGPLv3+";
-
-    maintainers = [ stdenv.lib.maintainers.ludo ];
-
-    platforms = stdenv.lib.platforms.all;
   };
 }
 
 //
 
-(if stdenv.isFreeBSD
- then {
-   # XXX: Thread support is currently broken on FreeBSD (namely the
-   # `SCM_I_IS_THREAD' assertion in `scm_spawn_thread' is hit.)
-   configureFlags = [ "--without-threads" ];
- }
- else {}))
+(stdenv.lib.optionalAttrs stdenv.isSunOS {
+  # TODO: Move me above.
+  configureFlags =
+    [
+      # Make sure the right <gmp.h> is found, and not the incompatible
+      # /usr/include/mp.h from OpenSolaris.  See
+      # <https://lists.gnu.org/archive/html/hydra-users/2012-08/msg00000.html>
+      # for details.
+      "--with-libgmp-prefix=${gmp}"
+
+      # Same for these (?).
+      "--with-libreadline-prefix=${readline}"
+      "--with-libunistring-prefix=${libunistring}"
+
+      # See below.
+      "--without-threads"
+    ];
+})
+
+//
+
+(stdenv.lib.optionalAttrs (!stdenv.isLinux) {
+  # Work around <http://bugs.gnu.org/14201>.
+  SHELL = "/bin/sh";
+  CONFIG_SHELL = "/bin/sh";
+}))

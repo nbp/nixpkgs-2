@@ -2,14 +2,14 @@
 
 let
   pkgname = "ipmitool";
-  version = "1.8.11";
+  version = "1.8.14";
 in
 stdenv.mkDerivation {
   name = "${pkgname}-${version}";
 
   src = fetchurl {
     url = "mirror://sourceforge/${pkgname}/${pkgname}-${version}.tar.gz";
-    sha256 = "5612f4835d89a6f2cede588eef978a05d63435cf2646256300d9785d8020a13e";
+    sha256 = "1avlb0lwqncd28hp6p5w3rkcnhgy84rgv1jdgkyy0gzqhx2wx6zy";
   };
 
   buildInputs = [ openssl ];

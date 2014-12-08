@@ -1,15 +1,18 @@
-{ fetchurl, stdenv, ncurses, boehmgc, perl, help2man }:
+{ fetchurl, stdenv, pkgconfig, ncurses, boehmgc, perl, help2man }:
 
 stdenv.mkDerivation rec {
-  name = "zile-2.4.7";
+  name = "zile-2.4.11";
 
   src = fetchurl {
     url = "mirror://gnu/zile/${name}.tar.gz";
-    sha256 = "1ak7qjb7s4whxg8qpkg7yixfnhinwfmzgav7rzi0kjmm93z35xcc";
+    sha256 = "1k593y1xzvlj52q0gyhcx2lllws4sg84b8r9pcginjb1vjypplhz";
   };
 
-  buildInputs = [ ncurses boehmgc ];
-  buildNativeInputs = [ help2man perl ];
+  buildInputs = [ pkgconfig ncurses boehmgc ];
+  nativeBuildInputs = [ help2man perl ];
+
+  # `help2man' wants to run Zile, which fails when cross-compiling.
+  crossAttrs.nativeBuildInputs = [];
 
   # Tests can't be run because most of them rely on the ability to
   # fiddle with the terminal.
@@ -18,8 +21,8 @@ stdenv.mkDerivation rec {
   # XXX: Work around cross-compilation-unfriendly `gl_FUNC_FSTATAT' macro.
   preConfigure = "export gl_cv_func_fstatat_zero_flag=yes";
 
-  meta = {
-    description = "GNU Zile, a lightweight Emacs clone";
+  meta = with stdenv.lib; {
+    description = "Lightweight Emacs clone";
 
     longDescription = ''
       GNU Zile, which is a lightweight Emacs clone.  Zile is short
@@ -42,8 +45,10 @@ stdenv.mkDerivation rec {
 
     homepage = http://www.gnu.org/software/zile/;
 
-    license = "GPLv3+";
+    license = licenses.gpl3Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = with maintainers; [ pSub ];
+
+    platforms = platforms.linux;
   };
 }

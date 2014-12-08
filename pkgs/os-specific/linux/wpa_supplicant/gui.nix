@@ -7,7 +7,7 @@ stdenv.mkDerivation {
 
   buildInputs = [ qt4 ];
 
-  buildNativeInputs = [ inkscape ];
+  nativeBuildInputs = [ inkscape ];
 
   prePatch = "cd wpa_supplicant/wpa_gui-qt4";
 
@@ -37,6 +37,6 @@ stdenv.mkDerivation {
 
   meta = {
     description = "Qt-based GUI for wpa_supplicant";
-    inherit (qt4.meta) platforms;
+    platforms = stdenv.lib.platforms.linux;
   };
 }

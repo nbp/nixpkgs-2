@@ -4,20 +4,22 @@
 
 stdenv.mkDerivation rec {
   pname = "wesnoth";
-  version = "1.10.2";
+  version = "1.10.7";
 
   name = "${pname}-${version}";
 
   src = fetchurl {
     url = "mirror://sourceforge/sourceforge/${pname}/${name}.tar.bz2";
-    sha256 = "0hawzq85sq0kdddj0s7y6kpx043g1hsl7cvyw1xcxqh45hkgw2ix";
+    sha256 = "0gi5fzij48hmhhqxc370jxvxig5q3d70jiz56rjn8yx514s5lfwa";
   };
 
-  buildInputs = [ SDL SDL_image SDL_mixer SDL_net SDL_ttf pango gettext zlib boost fribidi
-                  cmake freetype libpng pkgconfig lua dbus fontconfig libtool ];
+  buildInputs = [ SDL SDL_image SDL_mixer SDL_net SDL_ttf pango gettext zlib
+                  boost fribidi cmake freetype libpng pkgconfig lua
+                  dbus fontconfig libtool ];
 
-  # Make the package build with the gcc currently available in Nixpkgs.
-  NIX_CFLAGS_COMPILE = "-Wno-ignored-qualifiers";
+  cmakeFlags = [ "-DENABLE_STRICT_COMPILATION=FALSE" ]; # newer gcc problems http://gna.org/bugs/?21030
+
+  enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
     description = "The Battle for Wesnoth, a free, turn-based strategy game with a fantasy theme";

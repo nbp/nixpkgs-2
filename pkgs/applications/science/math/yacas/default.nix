@@ -9,7 +9,7 @@ stdenv.mkDerivation rec {
   };
 
   # Perl is only for the documentation
-  buildNativeInputs = [ perl ];
+  nativeBuildInputs = [ perl ];
 
   patches = [ ./gcc43.patch ];
 
@@ -35,7 +35,7 @@ stdenv.mkDerivation rec {
   meta = { 
       description = "Easy to use, general purpose Computer Algebra System";
       homepage = http://yacas.sourceforge.net/;
-      license = "GPLv2+";
+      license = stdenv.lib.licenses.gpl2Plus;
       maintainers = with stdenv.lib.maintainers; [viric];
       platforms = with stdenv.lib.platforms; all;
   };

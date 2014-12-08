@@ -14,16 +14,14 @@ stdenv.mkDerivation rec {
     cp ${libtool}/share/aclocal/libtool.m4 libtool.m4.in
   '';
 
-  buildNativeInputs = [ autoconf automake libtool wget libpcap gdbm zlib openssl rrdtool
+  nativeBuildInputs = [ autoconf automake libtool wget libpcap gdbm zlib openssl rrdtool
     python geoip ];
 
   meta = {
     description = "Traffic analysis with NetFlow and sFlow support";
-
-    license = "GLPv3+";
-
+    license = stdenv.lib.licenses.gpl3Plus;
     homepage = http://www.ntop.org/products/ntop/;
-
     platforms = stdenv.lib.platforms.linux;
+    broken = true;
   };
 }

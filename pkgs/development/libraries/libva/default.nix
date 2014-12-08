@@ -1,23 +1,21 @@
-{ stdenv, fetchurl, autoconf, automake, libtool, libX11, pkgconfig, libXext, mesa, libdrm, libXfixes, intelgen4asm }:
+{ stdenv, fetchurl, libX11, pkgconfig, libXext, mesa, libdrm, libXfixes, wayland, libffi }:
 
 stdenv.mkDerivation rec {
-  name = "libva-1.0.12";
+  name = "libva-1.3.1";
   
   src = fetchurl {
-    url = "http://cgit.freedesktop.org/libva/snapshot/${name}.tar.bz2";
-    sha256 = "1xg8zvmh75w63sc8ykagzrbzswph6g9jardy8v83glkqzilaw2p8";
+    url = "http://www.freedesktop.org/software/vaapi/releases/libva/${name}.tar.bz2";
+    sha256 = "15y27jdnfvf9krg4s3a1c29rn9pvyp43wckpwhd2rg4wrbqv32c7";
   };
 
-  buildInputs = [ autoconf automake libtool libX11 libXext pkgconfig mesa libdrm
-    libXfixes intelgen4asm ];
+  buildInputs = [ libX11 libXext pkgconfig mesa libdrm libXfixes wayland libffi ];
 
-  configureFlags = [ "--enable-i965-driver" "--enable-glx" ];
+  configureFlags = [ "--enable-glx" ];
 
-  preConfigure = "sh autogen.sh";
-
-  meta = {
+  meta = with stdenv.lib; {
     homepage = http://www.freedesktop.org/wiki/Software/vaapi;
-    license = "MIT";
+    license = licenses.mit;
     description = "VAAPI library: Video Acceleration API";
+    platforms = platforms.unix;
   };
 }

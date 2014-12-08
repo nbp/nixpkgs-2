@@ -1,31 +1,24 @@
-{stdenv, fetchurl, sqlite, ocaml, findlib}:
+{stdenv, fetchurl, sqlite, ocaml, findlib, pkgconfig}:
 
 stdenv.mkDerivation {
-  name = "ocaml-sqlite3-1.6.3";
+  name = "ocaml-sqlite3-2.0.7";
 
   src = fetchurl {
-    url = https://bitbucket.org/mmottl/sqlite3-ocaml/downloads/sqlite3-ocaml-1.6.3.tar.gz;
-    sha256 = "004wysf80bmb8r4yaa648v0bqrh2ry3kzy763gdksw4n15blghv5";
+    url = https://github.com/mmottl/sqlite3-ocaml/archive/v2.0.7.tar.gz;
+    sha256 = "04m7qz251m6l2b7slkgml2j8bnx60lwzbdbsv95vidwzqcwg7bdq";
   };
 
-  buildInputs = [ocaml findlib];
-
-  configureFlags = "--with-sqlite3=${sqlite}";
-
-  preConfigure = ''
-    export OCAMLPATH=$OCAMLPATH:$OCAMLFIND_DESTDIR
-    mkdir -p $out/bin
-  '';
+  buildInputs = [ocaml findlib pkgconfig sqlite];
 
   createFindlibDestdir = true;
 
-  meta = {
-    homepage = https://bitbucket.org/mmottl/sqlite3-ocaml;
+  meta = with stdenv.lib; {
+    homepage = http://mmottl.github.io/sqlite3-ocaml/;
     description = "OCaml bindings to the SQLite 3 database access library";
-    license = "MIT/X11";
+    license = licenses.mit;
     platforms = ocaml.meta.platforms;
-    maintainers = [
-      stdenv.lib.maintainers.z77z
+    maintainers = with maintainers; [
+      z77z vbgl
     ];
   };
 }

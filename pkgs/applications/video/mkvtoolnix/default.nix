@@ -4,26 +4,30 @@
 , libvorbis
 , file
 , boost
-, lzo
 , xdg_utils
 , expat
 , wxGTK
 , zlib
 , ruby
 , gettext
+, pkgconfig
+, curl
 }:
 
 stdenv.mkDerivation rec {
-  name = "mkvtoolnix-4.4.0";
+  version = "7.3.0";
+  name = "mkvtoolnix-${version}";
 
   src = fetchurl {
-    url = "http://www.bunkus.org/videotools/mkvtoolnix/sources/${name}.tar.bz2";
-    sha256 = "0apgmah1d4dh5x1phr4n5vgwmy0w1nym9pydzh4kdgcs167l8n6l";
+    url = "http://www.bunkus.org/videotools/mkvtoolnix/sources/${name}.tar.xz";
+    sha256 = "086lg64pki6mz00h0a735hgvz4347zbcp3wz384sigqndn99zc1c";
   };
 
-  buildInputs = [ libmatroska flac libvorbis file boost lzo xdg_utils expat wxGTK zlib ruby gettext ];
+  buildInputs = [
+    libmatroska flac libvorbis file boost xdg_utils
+    expat wxGTK zlib ruby gettext pkgconfig curl
+  ];
 
-  configureFlags = "--with-boost-libdir=${boost}/lib";
   buildPhase = ''
     ruby ./drake
   '';
@@ -35,6 +39,7 @@ stdenv.mkDerivation rec {
   meta = {
     description = "Cross-platform tools for Matroska";
     homepage = http://www.bunkus.org/videotools/mkvtoolnix/;
+    license = stdenv.lib.licenses.gpl2;
+    maintainers = with stdenv.lib.maintainers; [ fuuzetsu ];
   };
 }
-

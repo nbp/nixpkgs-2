@@ -1,11 +1,11 @@
 { fetchurl, stdenv, gnutls, pkgconfig, zlib, libgcrypt }:
 
 stdenv.mkDerivation rec {
-  name = "ucommon-5.2.2";
+  name = "ucommon-6.1.11";
 
   src = fetchurl {
-    url = mirror://gnu/commoncpp/ucommon-5.2.2.tar.gz;
-    sha256 = "1s9r7yhvqnj57aiw7sklp2p6llfzn1jxvc3hwhpli5zq3r6kypwx";
+    url = "mirror://gnu/commoncpp/${name}.tar.gz";
+    sha256 = "0hpwxiyd7c3qnzksk6vw94cdig1v8yy6khgcaa87a7hb3zbkv4zg";
   };
 
   buildInputs = [ pkgconfig gnutls zlib ];
@@ -16,11 +16,11 @@ stdenv.mkDerivation rec {
   doCheck = true;
 
   meta = {
-    description = "GNU uCommon C++, C++ library to facilitate using C++ design patterns";
+    description = "C++ library to facilitate using C++ design patterns";
     homepage = http://www.gnu.org/software/commoncpp/;
-    license = "LGPLv3+";
+    license = stdenv.lib.licenses.lgpl3Plus;
 
-    maintainers = with stdenv.lib.maintainers; [ viric ludo ];
+    maintainers = with stdenv.lib.maintainers; [ viric ];
     platforms = stdenv.lib.platforms.all;
   };
 }

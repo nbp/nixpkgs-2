@@ -1,22 +1,31 @@
-{ stdenv, fetchurl, cmake, alsaLib }:
+{ stdenv, fetchurl, cmake
+, alsaSupport ? true, alsaLib ? null
+, pulseSupport ? true, pulseaudio ? null
+}:
 
-stdenv.mkDerivation {
-#The current release is still in a testing phase, though it should be stable
-# (neither the ABI or API will break). Please try it out and let me know how it
-#  works. :-)
+assert alsaSupport -> alsaLib != null;
+assert pulseSupport -> pulseaudio != null;
 
-  name = "openal-soft-1.1.93";
+stdenv.mkDerivation rec {
+  version = "1.15.1";
+  name = "openal-soft-${version}";
 
   src = fetchurl {
-    url = http://kcat.strangesoft.net/openal-releases/openal-soft-1.1.93.tar.bz2;
-    sha256 = "162nyv4jy6qzi7s5q3wpdawfph6npyn1n4wjf21haxdxq0mmp6l7";
+    url = "http://kcat.strangesoft.net/openal-releases/${name}.tar.bz2";
+    sha256 = "0mmhdqiyb3c9dzvxspm8h2v8jibhi8pfjxnf6m0wn744y1ia2a8f";
   };
 
-  buildInputs = [ cmake alsaLib ];
-  
+  buildInputs = [ cmake ]
+    ++ stdenv.lib.optional alsaSupport alsaLib
+    ++ stdenv.lib.optional pulseSupport pulseaudio;
+
+  NIX_LDFLAGS = []
+    ++ stdenv.lib.optional alsaSupport "-lasound"
+    ++ stdenv.lib.optional pulseSupport "-lpulse";
+
   meta = {
     description = "OpenAL alternative";
     homepage = http://kcat.strangesoft.net/openal.html;
-    license = "GPL2";
+    license = stdenv.lib.licenses.gpl2;
   };
 }

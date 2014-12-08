@@ -8,6 +8,13 @@ stdenv.mkDerivation rec {
     sha256 = "1hmai3422iaqnp34kkzxdnywl7n7pvlxp11vrw66ybxn9wxg90c1";
   };
 
+  preConfigure =
+    ''
+       # Fix for building on Glibc 2.16.  Won't be needed once the
+       # gnulib in idutils is updated.
+       sed -i '/gets is a security hole/d' lib/stdio.in.h
+    '';
+
   buildInputs = stdenv.lib.optional stdenv.isLinux emacs;
 
   doCheck = true;
@@ -15,7 +22,7 @@ stdenv.mkDerivation rec {
   patches = [ ./nix-mapping.patch ];
 
   meta = {
-    description = "GNU Idutils, a text searching utility";
+    description = "Text searching utility";
 
     longDescription = ''
       An "ID database" is a binary file containing a list of file
@@ -39,9 +46,9 @@ stdenv.mkDerivation rec {
     '';
 
     homepage = http://www.gnu.org/software/idutils/;
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
     platforms = stdenv.lib.platforms.all;
   };
 }

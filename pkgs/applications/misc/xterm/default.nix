@@ -1,18 +1,18 @@
-{ stdenv, fetchurl, xorg, ncurses, freetype, pkgconfig }:
+{ stdenv, fetchurl, xorg, ncurses, freetype, fontconfig, pkgconfig }:
 
 stdenv.mkDerivation rec {
-  name = "xterm-276";
-  
+  name = "xterm-312";
+
   src = fetchurl {
     url = "ftp://invisible-island.net/xterm/${name}.tgz";
-    sha256 = "1k3k025z3vl91sc8i7f5lmnsb1rsblpbijri9vnxgpynw4wgrc7b";
+    sha256 = "0vpkhls3i12ly4r68igz91vh6s9179wihjkdy0gvwr752hdqxm7s";
   };
-  
+
   buildInputs =
     [ xorg.libXaw xorg.xproto xorg.libXt xorg.libXext xorg.libX11 xorg.libSM xorg.libICE
-      ncurses freetype pkgconfig xorg.libXft xorg.luit
+      ncurses freetype fontconfig pkgconfig xorg.libXft xorg.luit
     ];
-    
+
   configureFlags =
     ''
       --enable-wide-chars --enable-256-color
@@ -21,7 +21,7 @@ stdenv.mkDerivation rec {
     '';
 
   # Work around broken "plink.sh".
-  NIX_LDFLAGS = "-lXmu -lXt -lICE -lX11";
+  NIX_LDFLAGS = "-lXmu -lXt -lICE -lX11 -lfontconfig";
 
   # Hack to get xterm built with the feature of releasing a possible setgid of 'utmp',
   # decided by the sysadmin to allow the xterm reporting to /var/run/utmp
@@ -36,6 +36,6 @@ stdenv.mkDerivation rec {
     homepage = http://invisible-island.net/xterm;
     license = "BSD";
     maintainers = with stdenv.lib.maintainers; [viric];
-    platforms = with stdenv.lib.platforms; linux;
+    platforms = with stdenv.lib.platforms; linux ++ darwin;
   };
 }

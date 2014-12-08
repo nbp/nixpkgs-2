@@ -1,17 +1,20 @@
-{stdenv, fetchurl, openssl}:
-stdenv.mkDerivation {
-  name = "msmtp-1.4.21";
+{ stdenv, fetchurl, openssl, pkgconfig, gnutls, gsasl, libidn }:
+
+stdenv.mkDerivation rec {
+  name = "msmtp-1.4.32";
 
   src = fetchurl {
-    url = mirror://sourceforge/msmtp/msmtp-1.4.21.tar.bz2;
-    sha256 = "1yjgy56n02qs25728psg296amhbdkxq2pv1q3l484f3r9pjrpcrg";
+    url = "mirror://sourceforge/msmtp/${name}.tar.bz2";
+    sha256 = "122z38pv4q03w3mbnhrhg4w85a51258sfdg2ips0b6cgwz3wbw1b";
   };
 
-  buildInputs = [ openssl ];
+  buildInputs = [ openssl pkgconfig gnutls gsasl libidn ];
 
-  meta = { 
-      description = "a MUA";
-      homepage = http://msmtp.sourceforge.net/;
-      license = "GPL";
-    }; 
+  meta = {
+      description = "Simple and easy to use SMTP client with excellent sendmail compatibility";
+      homepage = "http://msmtp.sourceforge.net/";
+      license = stdenv.lib.licenses.gpl3;
+      maintainers = [ stdenv.lib.maintainers.garbas ];
+      platforms = stdenv.lib.platforms.linux;
+    };
 }

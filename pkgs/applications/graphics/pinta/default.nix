@@ -1,11 +1,12 @@
 {stdenv, fetchurl, mono, gtksharp, pkgconfig}:
 
 stdenv.mkDerivation {
-  name = "pinta-0.5";
+  name = "pinta-1.4";
 
   src = fetchurl {
-    url =  http://github.com/downloads/jpobst/Pinta/pinta-0.5.tar.gz; 
-    sha256 = "0qv95zswi488bkbck9b9yhmczj1sgqc96nzn4f5rwfqz516kilrl";
+    url = "https://github.com/PintaProject/Pinta/tarball/3f7ccfa93d";
+    name = "pinta-1.4.tar.gz";
+    sha256 = "1kgb4gy5l6bd0akniwhiqqkvqayr5jgdsvn2pgg1038q9raafnpn";
   };
 
   buildInputs = [mono gtksharp pkgconfig];
@@ -36,7 +37,7 @@ stdenv.mkDerivation {
   meta = {
     homepage = http://www.pinta-project.com/;
     description = "Drawing/editing program modeled after Paint.NET";
-    license = "MIT";
+    license = stdenv.lib.licenses.mit;
     maintainers = with stdenv.lib.maintainers; [viric];
     platforms = with stdenv.lib.platforms; linux;
   };

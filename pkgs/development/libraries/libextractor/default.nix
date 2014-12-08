@@ -1,12 +1,17 @@
-{ fetchurl, stdenv, libtool, gettext, zlib, bzip2, flac, libvorbis, libmpeg2
-, ffmpeg, exiv2, libgsf, rpm, pkgconfig, glib, gtk }:
+{ fetchurl, stdenv, libtool, gettext, zlib, bzip2, flac, libvorbis
+, exiv2, libgsf, rpm, pkgconfig
+, gtkSupport ? true, glib ? null, gtk3 ? null
+, videoSupport ? true, ffmpeg ? null, libmpeg2 ? null}:
+
+assert gtkSupport -> glib != null && gtk3 != null;
+assert videoSupport -> ffmpeg != null && libmpeg2 != null;
 
 stdenv.mkDerivation rec {
-  name = "libextractor-0.6.2";
+  name = "libextractor-1.2";
 
   src = fetchurl {
     url = "mirror://gnu/libextractor/${name}.tar.gz";
-    sha256 = "1pyh599717vjblyjch95r76afdxfhrzqr7nx1pz1davy5fpsw5aw";
+    sha256 = "1n7z6s5ils6xmf6b0z1xda41maxj94c1n6wlyyxmacs5lrkh2a96";
   };
 
   preConfigure =
@@ -16,10 +21,11 @@ stdenv.mkDerivation rec {
     '';
 
   buildInputs =
-   [ libtool gettext zlib bzip2 flac libvorbis libmpeg2 exiv2 ffmpeg
+   [ libtool gettext zlib bzip2 flac libvorbis exiv2
      libgsf rpm
-     pkgconfig glib gtk
-   ];
+     pkgconfig
+   ] ++ stdenv.lib.optionals gtkSupport [ glib gtk3 ]
+     ++ stdenv.lib.optionals videoSupport [ ffmpeg libmpeg2 ];
 
   configureFlags = "--disable-ltdl-install "
     + "--with-ltdl-include=${libtool}/include "
@@ -34,7 +40,7 @@ stdenv.mkDerivation rec {
   #postInstall = "make check";
 
   meta = {
-    description = "GNU libextractor, a simple library for keyword extraction";
+    description = "Simple library for keyword extraction";
 
     longDescription =
       '' GNU libextractor is a library used to extract meta-data from files
@@ -57,8 +63,8 @@ stdenv.mkDerivation rec {
          additional MIME types are detected.
       '';
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
   };
 }

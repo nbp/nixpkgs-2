@@ -1,15 +1,12 @@
 {stdenv, fetchurl, ocaml, lablgtk, fontschumachermisc, xset, makeWrapper, ncurses
 , enableX11 ? true}:
 
-let
-  nativeCode = if stdenv.isArm then false else true;
-in
 stdenv.mkDerivation (rec {
 
-  name = "unison-2.40.63";
+  name = "unison-2.40.102";
   src = fetchurl {
-    url = "http://www.seas.upenn.edu/~bcpierce/unison/download/releases/${name}/${name}.tar.gz";
-    sha256 = "17fd2bg5jxwbib87j6j2bjpwdm66whqm1fq46v70hfby79j00vkf";
+    url = "http://www.seas.upenn.edu/~bcpierce/unison/download/releases/stable/${name}.tar.gz";
+    sha256 = "0m78q5vnsric1virvkmxxx32ipaq0cnj0kbirdbg36395gq94jix";
   };
 
   buildInputs = [ ocaml makeWrapper ncurses ];
@@ -19,7 +16,7 @@ stdenv.mkDerivation (rec {
   '' else "";
 
   makeFlags = "INSTALLDIR=$(out)/bin/" + (if enableX11 then " UISTYLE=gtk2" else "")
-    + (if ! nativeCode then " NATIVE=false" else "");
+    + (if ! ocaml.nativeCompilers then " NATIVE=false" else "");
 
   preInstall = "mkdir -p $out/bin";
 
@@ -30,12 +27,12 @@ stdenv.mkDerivation (rec {
     done
   '' else "";
 
-  dontStrip = if ! nativeCode then true else false;
+  dontStrip = !ocaml.nativeCompilers;
 
   meta = {
     homepage = http://www.cis.upenn.edu/~bcpierce/unison/;
     description = "Bidirectional file synchronizer";
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
     maintainers = with stdenv.lib.maintainers; [viric];
     platforms = with stdenv.lib.platforms; linux;
   };

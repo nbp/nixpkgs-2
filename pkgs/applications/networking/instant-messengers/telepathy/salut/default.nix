@@ -1,19 +1,19 @@
 { stdenv, fetchurl, libxslt, glib, libxml2, telepathy_glib, avahi, libsoup
-, libuuid, gnutls, sqlite, pkgconfig }:
+, libuuid, gnutls, sqlite, pkgconfigUpstream }:
 
 stdenv.mkDerivation rec {
   pname = "telepathy-salut";
-  name = "${pname}-0.7.2";
+  name = "${pname}-0.8.1";
 
   src = fetchurl {
     url = "http://telepathy.freedesktop.org/releases/${pname}/${name}.tar.gz";
-    sha256 = "0vahmqi78pbmsn472kijl3d4rshz07pmihxk5xkp99hvbqd4mb1f";
+    sha256 = "13k112vrr3zghzr03pnbqc1id65qvpj0sn0virlbf4dmr2511fbh";
   };
 
   buildInputs = [ glib libxml2 telepathy_glib avahi libsoup libuuid gnutls
     sqlite ];
 
-  buildNativeInputs = [ libxslt pkgconfig ];
+  nativeBuildInputs = [ libxslt pkgconfigUpstream ];
 
   configureFlags = "--disable-avahi-tests";
 

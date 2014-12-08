@@ -33,7 +33,7 @@ if test "$noSysDirs" = "1"; then
 
         # The path to the Glibc binaries such as `crti.o'.
         glibc_libdir="$(cat $NIX_GCC/nix-support/orig-libc)/lib"
-        
+
     else
         # Hack: support impure environments.
         extraFlags="-isystem /usr/include"
@@ -196,6 +196,15 @@ postConfigure() {
 }
 
 
+preInstall() {
+    # Make ‘lib64’ a symlink to ‘lib’.
+    if [ -n "$is64bit" -a -z "$enableMultilib" ]; then
+        mkdir -p $out/lib
+        ln -s lib $out/lib64
+    fi
+}
+
+
 postInstall() {
     # Remove precompiled headers for now.  They are very big and
     # probably not very useful yet.
@@ -205,7 +214,7 @@ postInstall() {
     # previous gcc.
     rm -rf $out/libexec/gcc/*/*/install-tools
     rm -rf $out/lib/gcc/*/*/install-tools
-    
+
     # More dependencies with the previous gcc or some libs (gccbug stores the build command line)
     rm -rf $out/bin/gccbug
     # Take out the bootstrap-tools from the rpath, as it's not needed at all having $out
@@ -231,16 +240,12 @@ postInstall() {
         fi
     done
 
+    # Disable RANDMMAP on grsec, which causes segfaults when using
+    # precompiled headers.
+    # See https://bugs.gentoo.org/show_bug.cgi?id=301299#c31
+    paxmark r $out/libexec/gcc/*/*/{cc1,cc1plus}
+
     eval "$postInstallGhdl"
 }
-
-
-if test -z "$targetConfig" && test -z "$crossConfig"; then
-    if test -z "$profiledCompiler"; then
-        buildFlags="bootstrap $buildFlags"
-    else    
-        buildFlags="profiledbootstrap $buildFlags"
-    fi
-fi
 
 genericBuild

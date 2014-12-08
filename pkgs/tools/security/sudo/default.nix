@@ -1,47 +1,65 @@
-{stdenv, fetchurl, coreutils, pam, groff}:
+{ stdenv, fetchurl, coreutils, pam, groff
+, sendmailPath ? "/var/setuid-wrappers/sendmail"
+}:
 
 stdenv.mkDerivation rec {
-  name = "sudo-1.7.2";
+  name = "sudo-1.8.11";
 
   src = fetchurl {
-    urls = 
+    urls =
       [ "ftp://ftp.sudo.ws/pub/sudo/${name}.tar.gz"
         "ftp://ftp.sudo.ws/pub/sudo/OLD/${name}.tar.gz"
       ];
-    sha256 = "02hhvwxj7gnsvmq3cjh592g2xdjpkfcp1jjvwb64nxsz2kbccwy1";
+    sha256 = "0if82pvmz7m3qkj3sc9yy8mpcd7lmbn0mhrgnd1zpszvnpkps5x3";
   };
 
-  # `--with-stow' allows /etc/sudoers to be a symlink.  Only it
-  # doesn't really help because the target still has to have mode 0440,
-  # while files in the Nix store all have mode 0444.
-  #configureFlags = "--with-stow";
+  configureFlags = [
+    "--with-env-editor"
+    "--with-editor=/run/current-system/sw/bin/nano"
+    "--with-rundir=/var/run"
+    "--with-vardir=/var/db/sudo"
+    "--with-logpath=/var/log/sudo.log"
+    "--with-sendmail=${sendmailPath}"
+  ];
 
-  postConfigure = "
-    sed -e '/_PATH_MV/d; /_PATH_VI/d' -i config.h
-    echo '#define _PATH_SUDO_LOGFILE \"/var/log/sudo.log\"' >> config.h
-    echo '#define _PATH_SUDO_TIMEDIR \"/var/run/sudo\"' >> config.h
-    echo '#define _PATH_MV \"/var/run/current-system/sw/bin/mv\"' >> config.h
-    echo '#define _PATH_VI \"/var/run/current-system/sw/bin/nano\"' >> config.h
-    echo '#define EDITOR _PATH_VI' >>config.h
+  configureFlagsArray = [
+    "--with-passprompt=[sudo] password for %p: "  # intentional trailing space
+  ];
 
-    makeFlags=\"install_uid=$(id -u) install_gid=$(id -g)\"
-    installFlags=\"sudoers_uid=$(id -u) sudoers_gid=$(id -g) sysconfdir=$out/etc\"
-  ";
+  postConfigure =
+    ''
+    cat >> pathnames.h <<'EOF'
+      #undef _PATH_MV
+      #define _PATH_MV "${coreutils}/bin/mv"
+    EOF
+    makeFlags="install_uid=$(id -u) install_gid=$(id -g)"
+    installFlags="sudoers_uid=$(id -u) sudoers_gid=$(id -g) sysconfdir=$out/etc rundir=$TMPDIR/dummy vardir=$TMPDIR/dummy"
+    '';
 
-  buildInputs = [coreutils pam groff];
+  buildInputs = [ coreutils pam groff ];
+
+  enableParallelBuilding = true;
+
+  postInstall = 
+    ''
+    rm -f $out/share/doc/sudo/ChangeLog
+    '';
 
   meta = {
-    description = "sudo, a command to run commands as root";
+    description = "A command to run commands as root";
 
-    longDescription = ''
+    longDescription = 
+      ''
       Sudo (su "do") allows a system administrator to delegate
       authority to give certain users (or groups of users) the ability
       to run some (or all) commands as root or another user while
       providing an audit trail of the commands and their arguments.
-    '';
+      '';
 
     homepage = http://www.sudo.ws/;
 
     license = http://www.sudo.ws/sudo/license.html;
+
+    maintainers = [ stdenv.lib.maintainers.eelco ];
   };
 }

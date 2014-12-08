@@ -16,9 +16,10 @@ stdenv.mkDerivation rec {
     cd */
   '';
 
-  buildInputs = [ mesa freeglut libX11 plib openal freealut libXrandr xproto
-    libXext libSM libICE libXi libXt libXrender libXxf86vm libpng zlib bash 
-    p7zip SDL enet libjpeg cmake];
+  # Order important; it wants libpng12 and some x libs propagate libpng15
+  buildInputs = [ libpng mesa freeglut libX11 plib openal freealut libXrandr xproto
+    libXext libSM libICE libXi libXt libXrender libXxf86vm zlib bash 
+    p7zip SDL enet libjpeg cmake ];
 
   installTargets = "install";
 
@@ -27,8 +28,9 @@ stdenv.mkDerivation rec {
   meta = {
     description = "Car racing game - TORCS fork with more experimental approach";
     homepage = http://speed-dreams.sourceforge.net/;
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
     maintainers = with stdenv.lib.maintainers; [viric raskin];
-    platforms = with stdenv.lib.platforms; linux;
+    platforms = stdenv.lib.platforms.linux;
+    hydraPlatforms = [];
   };
 }

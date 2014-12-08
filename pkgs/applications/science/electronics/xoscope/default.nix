@@ -10,10 +10,13 @@ stdenv.mkDerivation rec {
 
   buildInputs = [ gtk pkgconfig ];
 
+  # from: https://aur.archlinux.org/packages.php?ID=12140&detail=1
+  patches = [ ./gtkdepre.diff ];
+
   meta = {
     description = "Oscilloscope through the sound card";
     homepage = http://xoscope.sourceforge.net;
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
     maintainers = with stdenv.lib.maintainers; [viric];
     platforms = with stdenv.lib.platforms; linux;
   };

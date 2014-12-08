@@ -1,9 +1,9 @@
 # this package was called gimp-print in the past
 { fetchurl, stdenv, pkgconfig, composableDerivation, cups
-, libtiff, libpng, openssl, gimp }:
+, libtiff, libpng, makeWrapper, openssl, gimp }:
 
 let
-   version = "5.2.6";
+   version = "5.2.10";
    inherit (composableDerivation) edf wwf;
 in
 
@@ -12,13 +12,14 @@ composableDerivation.composableDerivation {} {
 
   src = fetchurl {
     url = "mirror://sourceforge/gimp-print/gutenprint-${version}.tar.bz2";
-    sha256 = "0znwbv51vqf20p4isc3if4hqsgfav21rsqnsz1d8mixlmasy2i27";
+    sha256 = "0n8f6vpadnagrp6yib3mca1c3lgwl4vmma16s44riyrd84mka7s3";
   };
 
   # gimp, gui is still not working (TODO)
-  buildInputs = [ openssl pkgconfig ];
+  buildInputs = [ makeWrapper openssl pkgconfig ];
 
   configureFlags = ["--enable-static-genppd"];
+  NIX_CFLAGS_COMPILE="-include stdio.h";
   
   #preConfigure = ''
   #  configureFlags="--with-cups=$out/usr-cups $configureFlags"
@@ -36,6 +37,10 @@ composableDerivation.composableDerivation {} {
 
   installPhase = ''
     eval "make install $installArgs"
+    mkdir -p $out/lib/cups
+    ln -s $out/filter $out/lib/cups/
+    wrapProgram $out/filter/rastertogutenprint.5.2 --prefix LD_LIBRARY_PATH : $out/lib
+    wrapProgram $out/sbin/cups-genppd.5.2 --prefix LD_LIBRARY_PATH : $out/lib
   '';
 
   meta = { 
@@ -52,7 +57,7 @@ composableDerivation.composableDerivation {} {
         name = "gimp2";
         enable = {
           buildInputs = [gimp gimp.gtk];
-         installArgs = [ "gimp2_plug_indir=$out/${gimp.name}-plugins" ];
+          installArgs = [ "gimp2_plug_indir=$out/${gimp.name}-plugins" ];
         };
       }
       // {

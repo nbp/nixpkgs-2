@@ -1,8 +1,9 @@
 rec {
-  advertisedUrl="http://ftp.gnu.org/gnu/gvpe/gvpe-2.22.tar.gz";
-  version = "2.22";
-  url="http://ftp.gnu.org/gnu/gvpe/gvpe-2.22.tar.gz";
-  hash = "01p1akcib8wxpsma9i3zlnqwd78swpjhwx4drp9h57f0hp14cr7w";
-  name = "gvpe-2.22";
+   version="2.25";
+   name="gvpe-2.25";
+   hash="1gsipcysvsk80gvyn9jnk9g0xg4ng9yd5zp066jnmpgs52d2vhvk";
+   url="http://ftp.gnu.org/gnu/gvpe/gvpe-${version}.tar.gz";
+   advertisedUrl="http://ftp.gnu.org/gnu/gvpe/gvpe-2.25.tar.gz";
+  
   
 }

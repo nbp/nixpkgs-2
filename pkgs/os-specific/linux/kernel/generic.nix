@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, perl, mktemp, module_init_tools
+{ stdenv, perl, buildLinux
 
 , # The kernel source tarball.
   src
@@ -6,14 +6,11 @@
 , # The kernel version.
   version
 
+, # Overrides to the kernel config.
+  extraConfig ? ""
+
 , # The version number used for the module directory
   modDirVersion ? version
-
-, # The kernel configuration.
-  config
-
-, # The kernel configuration when cross building.
-  configCross ? {}
 
 , # An attribute set whose attributes express the availability of
   # certain features in this kernel.  E.g. `{iwlwifi = true;}'
@@ -26,29 +23,12 @@
   # symbolic name and `patch' is the actual patch.  The patch may
   # optionally be compressed with gzip or bzip2.
   kernelPatches ? []
-
-, # Whether to build a User-Mode Linux kernel.
-  userModeLinux ? false
-
-, # Allows you to set your own kernel version suffix (e.g.,
-  # "-my-kernel").
-  localVersion ? ""
-
-, preConfigure ? ""
 , extraMeta ? {}
-, ubootChooser ? null
-, postInstall ? ""
-
-, # After the builder did a 'make all' (kernel + modules)
-  # we force building the target asked: bzImage/zImage/uImage/...
-  postBuild ? "make $makeFlags $kernelTarget; make $makeFlags -C scripts unifdef"
 , ...
 }:
 
-assert stdenv.system == "i686-linux" || stdenv.system == "x86_64-linux"
-  || stdenv.isArm || stdenv.system == "mips64el-linux";
-
 assert stdenv.platform.name == "sheevaplug" -> stdenv.platform.uboot != null;
+assert stdenv.isLinux;
 
 let
 
@@ -60,90 +40,96 @@ let
         map ({extraConfig ? "", ...}: extraConfig) kernelPatches;
     in lib.concatStringsSep "\n" ([baseConfig] ++ configFromPatches);
 
-in
+  configfile = stdenv.mkDerivation {
+    name = "linux-config-${version}";
 
-stdenv.mkDerivation {
-  name = if userModeLinux then "user-mode-linux-${version}" else "linux-${version}";
+    generateConfig = ./generate-config.pl;
 
-  enableParallelBuilding = true;
+    kernelConfig = kernelConfigFun config;
 
-  passthru = {
-    inherit version modDirVersion kernelPatches;
-    # Combine the `features' attribute sets of all the kernel patches.
-    features = lib.fold (x: y: (if x ? features then x.features else {}) // y) features kernelPatches;
+    ignoreConfigErrors = stdenv.platform.name != "pc";
+
+    nativeBuildInputs = [ perl ];
+
+    platformName = stdenv.platform.name;
+    kernelBaseConfig = stdenv.platform.kernelBaseConfig;
+    kernelTarget = stdenv.platform.kernelTarget;
+    autoModules = stdenv.platform.kernelAutoModules;
+    arch = stdenv.platform.kernelArch;
+
+    crossAttrs = let
+        cp = stdenv.cross.platform;
+      in {
+        arch = cp.kernelArch;
+        platformName = cp.name;
+        kernelBaseConfig = cp.kernelBaseConfig;
+        kernelTarget = cp.kernelTarget;
+        autoModules = cp.kernelAutoModules;
+
+        # Just ignore all options that don't apply (We are lazy).
+        ignoreConfigErrors = true;
+
+        kernelConfig = kernelConfigFun configCross;
+
+        inherit (kernel.crossDrv) src patches preUnpack;
+      };
+
+    prePatch = kernel.prePatch + ''
+      # Patch kconfig to print "###" after every question so that
+      # generate-config.pl from the generic builder can answer them.
+      sed -e '/fflush(stdout);/i\printf("###");' -i scripts/kconfig/conf.c
+    '';
+
+    inherit (kernel) src patches preUnpack;
+
+    buildPhase = ''
+      cd $buildRoot
+
+      # Get a basic config file for later refinement with $generateConfig.
+      make -C ../$sourceRoot O=$PWD $kernelBaseConfig ARCH=$arch
+
+      # Create the config file.
+      echo "generating kernel configuration..."
+      echo "$kernelConfig" > kernel-config
+      DEBUG=1 ARCH=$arch KERNEL_CONFIG=kernel-config AUTO_MODULES=$autoModules \
+           SRC=../$sourceRoot perl -w $generateConfig
+    '';
+
+    installPhase = "mv .config $out";
+
+    enableParallelBuilding = true;
   };
 
-  builder = ./builder.sh;
+  kernel = buildLinux {
+    inherit version modDirVersion src kernelPatches;
 
-  generateConfig = ./generate-config.pl;
+    configfile = configfile.nativeDrv or configfile;
 
-  inherit preConfigure src module_init_tools localVersion postInstall postBuild;
+    crossConfigfile = configfile.crossDrv or configfile;
 
-  patches = map (p: p.patch) kernelPatches;
+    config = { CONFIG_MODULES = "y"; CONFIG_FW_LOADER = "m"; };
 
-  kernelConfig = kernelConfigFun config;
+    crossConfig = { CONFIG_MODULES = "y"; CONFIG_FW_LOADER = "m"; };
+  };
 
-  # For UML and non-PC, just ignore all options that don't apply (We are lazy).
-  ignoreConfigErrors = (userModeLinux || stdenv.platform.name != "pc");
+  passthru = {
+    # Combine the `features' attribute sets of all the kernel patches.
+    features = lib.fold (x: y: (x.features or {}) // y) features kernelPatches;
 
-  buildNativeInputs = [ perl mktemp ];
-  buildInputs = lib.optional (stdenv.platform.uboot != null)
-    (ubootChooser stdenv.platform.uboot);
+    meta = kernel.meta // extraMeta;
 
-  platformName = stdenv.platform.name;
-  kernelBaseConfig = stdenv.platform.kernelBaseConfig;
-  kernelTarget = stdenv.platform.kernelTarget;
-  autoModules = stdenv.platform.kernelAutoModules;
+    passthru = kernel.passthru // (removeAttrs passthru [ "passthru" "meta" ]);
+  };
 
-  # Should we trust platform.kernelArch? We can only do
-  # that once we differentiate i686/x86_64 in platforms.
-  arch =
-    if userModeLinux then "um" else
-    if stdenv.system == "i686-linux" then "i386" else
-    if stdenv.system == "x86_64-linux" then "x86_64" else
-    if stdenv.isArm then "arm" else
-    if stdenv.system == "mips64el-linux" then "mips" else
-    abort "Platform ${stdenv.system} is not supported.";
-
-  crossAttrs = let
-      cp = stdenv.cross.platform;
-    in
-      assert cp.name == "sheevaplug" -> cp.uboot != null;
-    {
-      arch = cp.kernelArch;
-      platformName = cp.name;
-      kernelBaseConfig = cp.kernelBaseConfig;
-      kernelTarget = cp.kernelTarget;
-      autoModules = cp.kernelAutoModules;
-
-      # Just ignore all options that don't apply (We are lazy).
-      ignoreConfigErrors = true;
-
-      kernelConfig = kernelConfigFun configCross;
-
-      # The substitution of crossAttrs happens *after* the stdenv cross adapter sets
-      # the parameters for the usual stdenv. Thus, we need to specify
-      # the ".hostDrv" in the buildInputs here.
-      buildInputs = lib.optional (cp.uboot != null) (ubootChooser cp.uboot).hostDrv;
+  configWithPlatform = kernelPlatform: import ./common-config.nix
+    { inherit stdenv version kernelPlatform extraConfig;
+      features = passthru.features; # Ensure we know of all extra patches, etc.
     };
 
-  meta = {
-    description =
-      (if userModeLinux then
-        "User-Mode Linux"
-       else
-        "The Linux kernel") +
-      (if kernelPatches == [] then "" else
-        " (with patches: "
-        + lib.concatStrings (lib.intersperse ", " (map (x: x.name) kernelPatches))
-        + ")");
-    license = "GPLv2";
-    homepage = http://www.kernel.org/;
-    maintainers = [
-      lib.maintainers.eelco
-      lib.maintainers.chaoflow
-    ];
-    platforms = lib.platforms.linux;
-  } // extraMeta;
-}
+  config = configWithPlatform stdenv.platform;
+  configCross = configWithPlatform stdenv.cross.platform;
 
+  nativeDrv = lib.addPassthru kernel.nativeDrv passthru;
+
+  crossDrv = lib.addPassthru kernel.crossDrv passthru;
+in if kernel ? crossDrv then nativeDrv // { inherit nativeDrv crossDrv; } else lib.addPassthru kernel passthru

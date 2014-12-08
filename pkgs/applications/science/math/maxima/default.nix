@@ -2,7 +2,7 @@
 
 let
   name    = "maxima";
-  version = "5.26.0";
+  version = "5.34.1";
 
   searchPath =
     stdenv.lib.makeSearchPath "bin"
@@ -13,7 +13,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "mirror://sourceforge/${name}/${name}-${version}.tar.gz";
-    sha256 = "887105c99a91122f3e622472aa39bdd1ca8ed6198cf09b49917f63f8396dced9";
+    sha256 = "1dw9vfzldpj7lv303xbw0wpyn6ra6i2yzwlrjbcx7j0jm5n43ji0";
   };
 
   buildInputs = [sbcl texinfo perl makeWrapper];
@@ -21,7 +21,7 @@ stdenv.mkDerivation {
   postInstall = ''
     # Make sure that maxima can find its runtime dependencies.
     for prog in "$out/bin/"*; do
-      wrapProgram "$prog" --prefix PATH ":" "${searchPath}"
+      wrapProgram "$prog" --prefix PATH ":" "$out/bin:${searchPath}"
     done
     # Move emacs modules and documentation into the right place.
     mkdir -p $out/share/emacs $out/share/doc
@@ -38,9 +38,9 @@ stdenv.mkDerivation {
   enableParallelBuilding = true;
 
   meta = {
-    description = "Maxima computer algebra system";
+    description = "Computer algebra system";
     homepage = "http://maxima.sourceforge.net";
-    license = "GPLv2";
+    license = stdenv.lib.licenses.gpl2;
 
     longDescription = ''
       Maxima is a fairly complete computer algebra system written in

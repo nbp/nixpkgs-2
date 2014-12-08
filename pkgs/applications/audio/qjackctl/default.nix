@@ -1,21 +1,24 @@
-{ stdenv, fetchurl, qt4, alsaLib, jackaudio, dbus }:
+{ stdenv, fetchurl, qt4, alsaLib, jack2, dbus }:
 
 stdenv.mkDerivation rec {
-  version = "0.3.8";
+  version = "0.3.12";
   name = "qjackctl-${version}";
 
   # some dependencies such as killall have to be installed additionally
 
   src = fetchurl {
     url = "mirror://sourceforge/qjackctl/${name}.tar.gz";
-    sha256 = "1rbipbknq7f8qfma33vwfv2ar3vxkz1p1ykp5mx6nirmcn1nj247";
+    sha256 = "14yvnc4k3hwsjflg8b2d04bc63pdl0gyqjc7vl6rdn29nbr23zwc";
   };
 
-  buildInputs = [ qt4 alsaLib jackaudio dbus ];
+  buildInputs = [ qt4 alsaLib jack2 dbus ];
+
+  configureFlags = "--enable-jack-version";
 
   meta = {
-    description = "qt jackd control gui tool";
+    description = "A Qt application to control the JACK sound server daemon";
     homepage = http://qjackctl.sourceforge.net/;
     license = "GPL";
+    platforms = stdenv.lib.platforms.linux;
   };
 }

@@ -39,10 +39,16 @@ let
         [[ -e "$out/bin/$(basename $prog)" ]]
       done
 
+      # looks like useless files which break build repeatability and consume space
+      rm $out/${ruby.gemPath}/doc/*/*/created.rid || true
+      rm $out/${ruby.gemPath}/gems/*/ext/*/mkmf.log || true
+
       runHook postInstall
     '';
 
     propagatedUserEnvPkgs = requiredGems;
+
+    passthru.isRubyGem = true;
 
   };
   mb = stdenv.lib.maybeAttr;

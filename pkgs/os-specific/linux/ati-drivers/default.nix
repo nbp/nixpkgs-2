@@ -1,8 +1,16 @@
-{ stdenv, fetchurl, kernel, xlibs, which, imake
+{ stdenv, fetchurl, kernel ? null, xlibs, which, imake
 , mesa # for fgl_glxgears
 , libXxf86vm, xf86vidmodeproto # for fglrx_gamma
 , xorg, makeWrapper, glibc, patchelf
+, unzip
+, qt4 # for amdcccle
+, # Whether to build the libraries only (i.e. not the kernel module or
+  # driver utils). Used to support 32-bit binaries on 64-bit
+  # Linux.
+  libsOnly ? false
 }:
+
+assert (!libsOnly) -> kernel != null;
 
 # If you want to use a different Xorg version probably
 # DIR_DEPENDING_ON_XORG_VERSION in builder.sh has to be adopted (?)
@@ -12,55 +20,70 @@
 # See http://thread.gmane.org/gmane.linux.distributions.nixos/4145 for a
 # workaround (TODO)
 
-# The gentoo ebuild contains much more magic..
+# The gentoo ebuild contains much more magic and is usually a great resource to
+# find patches :)
 
 # http://wiki.cchtml.com/index.php/Main_Page
 
-assert stdenv.system == "x86_64-linux";
+# There is one issue left:
+# /usr/lib/dri/fglrx_dri.so must point to /run/opengl-driver/lib/fglrx_dri.so
 
-stdenv.mkDerivation rec {
-  name = "ati-drivers-${version}-${kernel.version}";
-  version = "10-11-x86";
+with stdenv.lib;
+
+stdenv.mkDerivation {
+  name = "ati-drivers-14.4" + (optionalString (!libsOnly) "-${kernel.version}");
 
   builder = ./builder.sh;
 
   inherit libXxf86vm xf86vidmodeproto;
+  gcc = stdenv.gcc.gcc;
 
   src = fetchurl {
-    url = https://a248.e.akamai.net/f/674/9206/0/www2.ati.com/drivers/linux/ati-driver-installer-10-11-x86.x86_64.run;
-    sha256 = "1z33w831ayx1j5lm9d1xv6whkmzsz9v8li3s8c96hwnwki6zpimr";
+    url = http://www2.ati.com/drivers/linux/amd-catalyst-14-4-rev2-linux-x86-x86-64-may6.zip;
+    sha256 = "1xbhn55yifis9b0lzb3s03hc1bcq8jmy7l96m4x8d842n7ji7qlk";
+    curlOpts = "--referer http://support.amd.com/en-us/download/desktop?os=Linux%20x86_64";
   };
 
+  # most patches are taken from gentoo
+  patchPhase = "patch -p1 < ${./gentoo-patches.patch}";
+  patchPhaseSamples = "patch -p2 < ${./patch-samples.patch}";
+
   buildInputs =
-    [ xlibs.libXext xlibs.libX11
+    [ xlibs.libXext xlibs.libX11 xlibs.libXinerama
       xlibs.libXrandr which imake makeWrapper
       patchelf
+      unzip
+      mesa
+      qt4
     ];
-    
-  inherit kernel glibc /* glibc only used for setting interpreter */;
-  
+
+  inherit libsOnly;
+
+  kernel = if libsOnly then null else kernel.dev;
+
+  inherit glibc /* glibc only used for setting interpreter */;
+
   LD_LIBRARY_PATH = stdenv.lib.concatStringsSep ":"
     [ "${xorg.libXrandr}/lib"
       "${xorg.libXrender}/lib"
       "${xorg.libXext}/lib"
       "${xorg.libX11}/lib"
+      "${xorg.libXinerama}/lib"
     ];
 
-  inherit mesa; # only required to build examples
+  # without this some applications like blender don't start, but they start
+  # with nvidia. This causes them to be symlinked to $out/lib so that they
+  # appear in /run/opengl-driver/lib which get's added to LD_LIBRARY_PATH
+  extraDRIlibs = [ xorg.libXext ];
 
-  meta = {
-    description = "ati drivers";
+  inherit mesa qt4; # only required to build examples and amdcccle
+
+  meta = with stdenv.lib; {
+    description = "ATI drivers";
     homepage = http://support.amd.com/us/gpudownload/Pages/index.aspx;
-    license = "unfree";
-    maintainers = [stdenv.lib.maintainers.marcweber];
-    platforms = [ "x86_64-linux" ];
+    license = licenses.unfree;
+    maintainers = with maintainers; [ marcweber offline jgeerds ];
+    platforms = platforms.linux;
+    hydraPlatforms = [];
   };
-
-  # moved assertions here because the name is evaluated when the NixOS manual is generated
-  # Don't make that fail - fail lazily when a users tries to build this derivation only
-  dummy =
-    # assert xorg.xorgserver.name == "xorg-server-1.7.5";
-    assert stdenv.system == "x86_64-linux"; # i686-linux should work as well - however I didn't test it.
-    null;
-
 }

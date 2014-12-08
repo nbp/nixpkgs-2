@@ -1,16 +1,17 @@
 {stdenv, fetchurl, cups}:
 
 stdenv.mkDerivation rec {
-  name = "cups-bjnp-0.5.4";
+  name = "cups-bjnp-1.2.2";
 
   src = fetchurl {
     url = "mirror://sourceforge/cups-bjnp/${name}.tar.gz";
-    sha256 = "1q5npis0jgs44yvczrr6pz87glk1d9lv3vr2s4nqrk3l0q4xplf6";
+    sha256 = "0sb0vm1sf8ismzd9ba33qswxmsirj2z1b7lnyrc9v5ixm7q0bnrm";
   };
 
   preConfigure = ''configureFlags="--with-cupsbackenddir=$out/lib/cups/backend"'';
 
   buildInputs = [cups];
+  NIX_CFLAGS_COMPILE = "-include stdio.h";
 
   meta = {
     homepage = http://cups-bjnp.sourceforge.net;

@@ -1,25 +1,38 @@
-{ stdenv, fetchurl, pcre, libiconv ? null }:
+{ stdenv, fetchurl, pcre, libiconvOrNull }:
 
-let version = "2.10"; in
+let version = "2.20"; in
 
-stdenv.mkDerivation ({
+stdenv.mkDerivation {
   name = "gnugrep-${version}";
 
   src = fetchurl {
     url = "mirror://gnu/grep/grep-${version}.tar.xz";
-    sha256 = "1cvsqyfzk1p38fcaav22dn76fkd02g7bjnqna6vrpk9vy9rnfybc";
+    sha256 = "0rcs0spsxdmh6yz8y4frkqp6f5iw19mdbdl9s2v6956hq0mlbbzh";
   };
 
-  buildInputs = [ pcre ]
-    ++ (stdenv.lib.optional (libiconv != null) libiconv);
+  buildInputs = [ pcre libiconvOrNull ];
 
-  doCheck = if stdenv.isDarwin then false else true;
+  NIX_LDFLAGS = stdenv.lib.optionalString (libiconvOrNull != null) "-L${libiconvOrNull}/lib -liconv";
+
+  doCheck = !stdenv.isDarwin;
 
   # On Mac OS X, force use of mkdir -p, since Grep's fallback
   # (./install-sh) is broken.
   preConfigure = ''
     export MKDIR_P="mkdir -p"
   '';
+
+  # Fix reference to sh in bootstrap-tools, and invoke grep via
+  # absolute path rather than looking at argv[0].
+  postInstall =
+    ''
+      rm $out/bin/egrep $out/bin/fgrep
+      echo "#! /bin/sh" > $out/bin/egrep
+      echo "exec $out/bin/grep -E \"\$@\"" >> $out/bin/egrep
+      echo "#! /bin/sh" > $out/bin/fgrep
+      echo "exec $out/bin/grep -F \"\$@\"" >> $out/bin/fgrep
+      chmod +x $out/bin/egrep $out/bin/fgrep
+    '';
 
   meta = {
     homepage = http://www.gnu.org/software/grep/;
@@ -31,11 +44,11 @@ stdenv.mkDerivation ({
       prints the matching lines.
     '';
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ stdenv.lib.maintainers.eelco ];
     platforms = stdenv.lib.platforms.all;
   };
 
   passthru = {inherit pcre;};
-} // (if libiconv != null then { NIX_LDFLAGS="-L${libiconv}/lib -liconv"; } else {}) )
+}

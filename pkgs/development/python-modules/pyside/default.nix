@@ -1,12 +1,11 @@
-{ stdenv, fetchgit, cmake, pysideGeneratorrunner, pysideShiboken, qt4 }:
+{ stdenv, fetchurl, cmake, pysideGeneratorrunner, pysideShiboken, qt4 }:
 
 stdenv.mkDerivation {
-  name = "pyside-1.0.9";
+  name = "pyside-1.2.2";
 
-  src = fetchgit {
-    url = "git://github.com/PySide/PySide.git";
-    rev = "4e47b3284fd8715b68342e755cd06ba02b1df0de";
-    sha256 = "1fd302e78c5dea8a9c312bd493c04240f2383517ee745d9df2b070f15f0ab515";
+  src = fetchurl {
+    url = "http://download.qt-project.org/official_releases/pyside/pyside-qt4.8+1.2.2.tar.bz2";
+    sha256 = "1qbahpcjwl8d7zvvnc18nxpk1lbifpvjk8pi24ifbvvqcdsdzad1";
   };
 
   enableParallelBuilding = true;
@@ -16,7 +15,7 @@ stdenv.mkDerivation {
   makeFlags = "QT_PLUGIN_PATH=" + pysideShiboken + "/lib/generatorrunner";
 
   meta = {
-    description = "LGPL-licensed Python bindings for the Qt cross-platform application and UI framework.";
+    description = "LGPL-licensed Python bindings for the Qt cross-platform application and UI framework";
     license = stdenv.lib.licenses.lgpl21;
     homepage = "http://www.pyside.org";
     maintainers = [ stdenv.lib.maintainers.chaoflow ];

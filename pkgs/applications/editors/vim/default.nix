@@ -1,15 +1,20 @@
-{ stdenv, fetchurl, ncurses, gettext, pkgconfig }:
+{ stdenv, fetchhg, ncurses, gettext, pkgconfig }:
 
 stdenv.mkDerivation rec {
-  name = "vim-7.3";
- 
-  src = fetchurl {
-    url = "ftp://ftp.vim.org/pub/vim/unix/${name}.tar.bz2";
-    sha256 = "079201qk8g9yisrrb0dn52ch96z3lzw6z473dydw9fzi0xp5spaw";
+  name = "vim-${version}";
+
+  version = "7.4.410";
+
+  src = fetchhg {
+    url = "https://vim.googlecode.com/hg/";
+    rev = "v7-4-410";
+    sha256 = "145llhj6gq2bh9b7p8xkxc388krrximq80b87f3cn4w4d4k9fhqp";
   };
- 
+
+  enableParallelBuilding = true;
+
   buildInputs = [ ncurses pkgconfig ];
-  buildNativeInputs = [ gettext ];
+  nativeBuildInputs = [ gettext ];
 
   configureFlags = [
     "--enable-multibyte"
@@ -37,12 +42,14 @@ stdenv.mkDerivation rec {
   # To fix the trouble in vim73, that it cannot cross-build with this patch
   # to bypass a configure script check that cannot be done cross-building.
   # http://groups.google.com/group/vim_dev/browse_thread/thread/66c02efd1523554b?pli=1
-  patchPhase = ''
-    sed -i -e 's/as_fn_error.*int32.*/:/' src/auto/configure
-  '';
-  
-  meta = {
+  # patchPhase = ''
+  #   sed -i -e 's/as_fn_error.*int32.*/:/' src/auto/configure
+  # '';
+
+  meta = with stdenv.lib; {
     description = "The most popular clone of the VI editor";
-    homepage = http://www.vim.org;
+    homepage    = http://www.vim.org;
+    maintainers = with maintainers; [ lovek323 ];
+    platforms   = platforms.unix;
   };
 }

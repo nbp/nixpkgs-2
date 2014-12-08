@@ -4,7 +4,7 @@ stdenv.mkDerivation rec {
   name = "autobuild-3.5";
 
   src = fetchurl {
-    url = "http://josefsson.org/autobuild/releases/${name}.tar.gz";
+    url = "http://savannah.spinellicreations.com/autobuild/${name}.tar.gz";
     sha256 = "0ik13913x1yj8lsaf65chpiw13brl3q6kx7s1fa41a7s2krl1xvi";
   };
 
@@ -18,7 +18,7 @@ stdenv.mkDerivation rec {
   '';
 
   meta = {
-    description = "Simon Josefsson's Autobuild, a continuous integration tool";
+    description = "Continuous integration tool";
 
     longDescription = ''
       Autobuild is a package that process output from building
@@ -34,6 +34,6 @@ stdenv.mkDerivation rec {
     '';
 
     homepage = http://josefsson.org/autobuild/;
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
   };
 }

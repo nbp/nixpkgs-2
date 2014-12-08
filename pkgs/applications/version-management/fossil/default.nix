@@ -1,19 +1,24 @@
-{stdenv, fetchurl, zlib, openssl, tcl, readline, sqlite}:
+{stdenv, fetchurl, zlib, openssl, tcl, readline, sqlite, withJson ? true}:
 
 stdenv.mkDerivation {
-  name = "fossil-1.21";
+  name = "fossil-1.28";
 
   src = fetchurl {
-    url = http://www.fossil-scm.org/download/fossil-src-20111213135356.tar.gz;
-    sha256 = "07g78sf26v7zr4qzcwky4h4zzaaz8apy33d35bhc5ax63z6md1f9";
+    url = http://www.fossil-scm.org/download/fossil-src-20140127173344.tar.gz;
+    sha256 = "105a3f3wiqshmkw8q7f7ask3nm0jkjf0h3h2283qiqlsqfkwb9xc";
   };
 
   buildInputs = [ zlib openssl readline sqlite ];
-  buildNativeInputs = [ tcl ];
+  nativeBuildInputs = [ tcl ];
 
   doCheck = true;
 
   checkTarget = "test";
+  configureFlags = if withJson then  "--json" else  "";
+
+  preBuild=''
+    export USER=nonexistent-but-specified-user
+  '';
 
   installPhase = ''
     mkdir -p $out/bin
@@ -26,7 +31,7 @@ stdenv.mkDerivation {
   };
 
   meta = {
-    description = "Simple, high-reliability, distributed software configuration management.";
+    description = "Simple, high-reliability, distributed software configuration management";
     longDescription = ''
       Fossil is a software configuration management system.  Fossil is
       software that is designed to control and track the development of a

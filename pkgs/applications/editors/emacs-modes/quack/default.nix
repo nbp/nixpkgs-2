@@ -6,7 +6,7 @@ stdenv.mkDerivation {
   src = fetchurl {
     # XXX: Upstream URL is not versioned, which might eventually break this.
     url = "http://www.neilvandyke.org/quack/quack.el";
-    sha256 = "1w3p03f1f3l2nldxc7dig1kkgbbvy5j7zid0cfmkcrpp1qrcsqic";
+    sha256 = "1q5bsllxkibiddwp32306flqm8s3caffnpbqz5ka260avllp4jj5";
   };
 
   buildInputs = [ emacs ];
@@ -26,7 +26,7 @@ stdenv.mkDerivation {
   meta = {
     description = "Enhanced Emacs support for editing and running Scheme code";
     homepage = http://www.neilvandyke.org/quack/;
-    license = "GPLv2+";
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    license = stdenv.lib.licenses.gpl2Plus;
+    maintainers = [ ];
   };
 }

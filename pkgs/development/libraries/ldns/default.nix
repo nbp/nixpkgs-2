@@ -1,10 +1,11 @@
 {stdenv, fetchurl, openssl, perl}:
 
-stdenv.mkDerivation {
-  name = "ldns-1.6.11";
+stdenv.mkDerivation rec {
+  name = "ldns-1.6.17";
+
   src = fetchurl {
-    url = "http://www.nlnetlabs.nl/downloads/ldns/ldns-1.6.11.tar.gz";
-    sha256 = "1248c9gkgfmjdmpp3lfd56vvln94ii54kbxa5iykxvcxivmbi4b8";
+    url = "http://www.nlnetlabs.nl/downloads/ldns/${name}.tar.gz";
+    sha256 = "1kf8pkwhcssvgzhh6ha1pjjiziwvwmfaali7kaafh6118mcy124b";
   };
 
   patchPhase = ''
@@ -13,7 +14,7 @@ stdenv.mkDerivation {
 
   buildInputs = [ openssl perl ];
 
-  configureFlags = [ "--with-ssl=${openssl}" ];
+  configureFlags = [ "--with-ssl=${openssl}" "--with-drill" ];
 
   meta = {
     description = "Library with the aim of simplifying DNS programming in C";

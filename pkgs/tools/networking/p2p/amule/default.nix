@@ -1,7 +1,7 @@
 { monolithic ? true # build monolithic amule
 , daemon ? false # build amule daemon
 , httpServer ? false # build web interface for the daemon
-, client ? false # build amule remote gui 
+, client ? false # build amule remote gui
 , fetchurl, stdenv, zlib, wxGTK, perl, cryptopp, libupnp, gettext, libpng ? null
 , pkgconfig, makeWrapper }:
 
@@ -10,18 +10,20 @@ with stdenv;
 let
   # Enable/Disable Feature
   edf = enabled: flag: if enabled then "--enable-" + flag else "--disable-" + flag;
-in 
+in
 mkDerivation rec {
-  name = "aMule-2.2.6";
+  name = "aMule-2.3.1";
 
   src = fetchurl {
-    url = "mirror://sourceforge/amule/${name}.tar.bz2";
-    sha256 = "08l1931hcg1ia8yvhgx70hx64mknjnfn6l78m0ja44w13mgjpqvc";
+    url = "mirror://sourceforge/amule/${name}.tar.xz";
+    sha256 = "0hvpx3c005nvxsfand5bwfxxiq3mv0mpykajfm2lkygjh1rw2383";
   };
 
   buildInputs =
     [ zlib wxGTK perl cryptopp libupnp gettext pkgconfig makeWrapper ]
     ++ lib.optional httpServer libpng;
+
+  patches = [ ./gcc47.patch ]; # from Gentoo
 
   configureFlags = ''
     --with-crypto-prefix=${cryptopp}
@@ -46,7 +48,7 @@ mkDerivation rec {
 
   meta = {
     homepage = http://amule.org/;
-    description = "aMule, a peer-to-peer client for the eD2K and Kademlia networks";
+    description = "Peer-to-peer client for the eD2K and Kademlia networks";
 
     longDescription = ''
       aMule is an eMule-like client for the eD2k and Kademlia
@@ -59,9 +61,9 @@ mkDerivation rec {
       applications.
     '';
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
     platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
-    maintainers = [ stdenv.lib.maintainers.ludo stdenv.lib.maintainers.phreedom ];
+    maintainers = [ stdenv.lib.maintainers.phreedom ];
   };
 }

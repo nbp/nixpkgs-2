@@ -11,6 +11,9 @@
 
 use strict;
 use IPC::Open2;
+use Cwd;
+
+my $wd = getcwd;
 
 my $debug = $ENV{'DEBUG'};
 my $autoModules = $ENV{'AUTO_MODULES'};
@@ -36,7 +39,7 @@ close ANSWERS;
 sub runConfig {
 
     # Run `make config'.
-    my $pid = open2(\*IN, \*OUT, "make config SHELL=bash ARCH=$ENV{ARCH}");
+    my $pid = open2(\*IN, \*OUT, "make -C $ENV{SRC} O=$wd config SHELL=bash ARCH=$ENV{ARCH}");
 
     # Parse the output, look for questions and then send an
     # appropriate answer.
@@ -54,8 +57,8 @@ sub runConfig {
         if ($s eq "\n") {
             print STDERR "GOT: $line" if $debug;
 
-            # Remember choice alternatives ("> 1. bla (FOO)" or " 2. bla (BAR)").
-            if ($line =~ /^\s*>?\s*(\d+)\.\s+.*\(([A-Za-z0-9_]+)\)$/) {
+            # Remember choice alternatives ("> 1. bla (FOO)" or " 2. bla (BAR) (NEW)").
+            if ($line =~ /^\s*>?\s*(\d+)\.\s+.*?\(([A-Za-z0-9_]+)\)(?:\s+\(NEW\))?\s*$/) {
                 $choices{$2} = $1;
             }
 

@@ -6,11 +6,11 @@
 assert withGUI -> qt4 != null;
 
 stdenv.mkDerivation rec {
-  name = "oprofile-0.9.7";
+  name = "oprofile-0.9.9";
 
   src = fetchurl {
     url = "mirror://sourceforge/oprofile/${name}.tar.gz";
-    sha256 = "09ymfgcvp6372xnxdbq664ba8f4nzz4cxlya7wi8s1gabmym0nyb";
+    sha256 = "15vm24jhw4xfd55pfw1rlpzfsh4bl1vyjsajs78bi9xbv8038lhy";
   };
 
   patchPhase = ''
@@ -23,8 +23,7 @@ stdenv.mkDerivation rec {
   buildInputs = [ binutils zlib popt makeWrapper gawk which gnugrep pkgconfig ]
     ++ stdenv.lib.optionals withGUI [ qt4 ];
 
-  configureFlags =
-    [ "--with-kernel-support"
+  configureFlags = [
       "--disable-shared"   # needed because only the static libbfd is available
     ]
     ++ stdenv.lib.optional withGUI "--with-qt-dir=${qt4} --enable-gui=qt4";
@@ -35,7 +34,7 @@ stdenv.mkDerivation rec {
   '';
 
   meta = {
-    description = "OProfile, a system-wide profiler for Linux";
+    description = "System-wide profiler for Linux";
     longDescription = ''
       OProfile is a system-wide profiler for Linux systems, capable of
       profiling all running code at low overhead.  It consists of a
@@ -48,10 +47,10 @@ stdenv.mkDerivation rec {
       is profiled: hardware and software interrupt handlers, kernel
       modules, the kernel, shared libraries, and applications.
     '';
-    license = "GPLv2";
+    license = stdenv.lib.licenses.gpl2;
     homepage = http://oprofile.sourceforge.net/;
 
     platforms = stdenv.lib.platforms.linux;
-    maintainers = [ stdenv.lib.maintainers.ludo ];
+    maintainers = [ ];
   };
 }

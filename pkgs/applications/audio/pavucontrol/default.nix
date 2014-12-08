@@ -1,20 +1,21 @@
-{ fetchurl, stdenv, pkgconfig, pulseaudio, gtkmm, libsigcxx
-, libglademm, libcanberra, intltool, gettext }:
+{ fetchurl, stdenv, pkgconfig, intltool, pulseaudio, gtkmm3
+, libcanberra_gtk3 }:
 
 stdenv.mkDerivation rec {
-  name = "pavucontrol-0.9.10";
+  name = "pavucontrol-2.0";
 
   src = fetchurl {
-    url = "http://0pointer.de/lennart/projects/pavucontrol/${name}.tar.gz";
-    sha256 = "0g2sd9smwwpnyq8yc65dl9z0iafj2rrimi8v58wkxx98vhnnvsby";
+    url = "http://freedesktop.org/software/pulseaudio/pavucontrol/${name}.tar.xz";
+    sha256 = "02s775m1531sshwlbvfddk3pz8zjmwkv1sgzggn386ja3gc9vwi2";
   };
 
-  buildInputs = [ pkgconfig pulseaudio gtkmm libsigcxx libglademm libcanberra
-    intltool gettext ];
+  buildInputs = [ pulseaudio gtkmm3 libcanberra_gtk3 ];
 
-  configureFlags = "--disable-lynx";
+  nativeBuildInputs = [ pkgconfig intltool ];
 
-  meta = {
+  configureFlags = [ "--disable-lynx" ];
+
+  meta = with stdenv.lib; {
     description = "PulseAudio Volume Control";
 
     longDescription = ''
@@ -23,11 +24,11 @@ stdenv.mkDerivation rec {
       easily control the volume of all clients, sinks, etc.
     '';
 
-    homepage = http://0pointer.de/lennart/projects/pavucontrol/;
+    homepage = http://freedesktop.org/software/pulseaudio/pavucontrol/ ;
 
-    license = "GPLv2+";
+    license = stdenv.lib.licenses.gpl2Plus;
 
-    maintainers = [ stdenv.lib.maintainers.ludo ];
-    platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
+    maintainers = [ maintainers.abbradar ];
+    platforms = platforms.linux;
   };
 }

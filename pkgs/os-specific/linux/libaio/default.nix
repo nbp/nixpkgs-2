@@ -1,11 +1,12 @@
 { stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "libaio-0.3.109";
+  version = "0.3.110";
+  name = "libaio-${version}";
 
   src = fetchurl {
-    url = "mirror://kernel/linux/libs/aio/${name}.tar.bz2";
-    sha256 = "15772ki2wckf2mj4gm1vhrsmpd6rq20983nhlkfghjfblghgrkmm";
+    url = "https://fedorahosted.org/releases/l/i/libaio/${name}.tar.gz";
+    sha256 = "0zjzfkwd1kdvq6zpawhzisv7qbq1ffs343i5fs9p498pcf7046g0";
   };
 
   makeFlags = "prefix=$(out)";
@@ -14,5 +15,7 @@ stdenv.mkDerivation rec {
     description = "Library for asynchronous I/O in Linux";
     homepage = http://lse.sourceforge.net/io/aio.html;
     platforms = stdenv.lib.platforms.linux;
+    license = stdenv.lib.licenses.lgpl21;
+    maintainers = with stdenv.lib.maintainers; [ fuuzetsu ];
   };
 }

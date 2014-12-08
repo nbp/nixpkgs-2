@@ -3,10 +3,10 @@
   libimobiledevice, python, pygobject, mutagen }:
 
 stdenv.mkDerivation rec {
-  name = "libgpod-0.8.2";
+  name = "libgpod-0.8.3";
   src = fetchurl {
     url = "mirror://sourceforge/gtkpod/${name}.tar.bz2";
-    sha256 = "14m0amy56q4riwvcjszv04a9zp7l2xk8nx0vvhy94yqd0sqfjm00";
+    sha256 = "0pcmgv1ra0ymv73mlj4qxzgyir026z9jpl5s5bkg35afs1cpk2k3";
   };
 
   preConfigure = "configureFlagsArray=( --with-udev-dir=$out/lib/udev )";
@@ -15,7 +15,7 @@ stdenv.mkDerivation rec {
   propagatedBuildInputs = [ glib libxml2 sqlite zlib sg3_utils
     gdk_pixbuf taglib libimobiledevice python pygobject mutagen ];
 
-  buildNativeInputs = [ gettext perlXMLParser intltool pkgconfig perl
+  nativeBuildInputs = [ gettext perlXMLParser intltool pkgconfig perl
     libimobiledevice.swig ];
 
   meta = {

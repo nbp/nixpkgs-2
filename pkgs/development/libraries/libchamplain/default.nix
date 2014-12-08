@@ -13,11 +13,13 @@ stdenv.mkDerivation rec {
 
   propagatedBuildInputs = [ glib gtk3 cairo clutter_gtk sqlite libsoup ];
 
+  configureFlags = [ "--disable-introspection" ]; # not needed anywhere AFAIK
+
   meta = {
     homepage = http://projects.gnome.org/libchamplain/;
-    license = "LGPLv2+";
+    license = stdenv.lib.licenses.lgpl2Plus;
 
-    description = "libchamplain, a C library providing a ClutterActor to display maps";
+    description = "C library providing a ClutterActor to display maps";
 
     longDescription =
       '' libchamplain is a C library providing a ClutterActor to display
@@ -27,7 +29,7 @@ stdenv.mkDerivation rec {
          OpenCycleMap, OpenAerialMap, and Maps for free.
       '';
 
-     maintainers = [ stdenv.lib.maintainers.ludo ];
+     maintainers = [ ];
      platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
   };
 }

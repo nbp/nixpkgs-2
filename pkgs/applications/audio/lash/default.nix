@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, alsaLib, gtk, jackaudio, libuuid, libxml2
+{ stdenv, fetchurl, alsaLib, gtk, jack2, libuuid, libxml2
 , makeWrapper, pkgconfig, readline }:
 
 assert libuuid != null;
@@ -12,9 +12,10 @@ stdenv.mkDerivation  rec {
     sha256 = "05kc4brcx8mncai0rj2gz4s4bsrsy9q8xlnaddf75i0m8jl7snhh";
   };
 
-  patches = [ ./socket.patch ];
+  # http://permalink.gmane.org/gmane.linux.redhat.fedora.extras.cvs/822346
+  patches = [ ./socket.patch ./gcc-47.patch ];
 
-  buildInputs = [ alsaLib gtk jackaudio libuuid libxml2 makeWrapper
+  buildInputs = [ alsaLib gtk jack2 libuuid libxml2 makeWrapper
     pkgconfig readline ];
 
   postInstall = ''
@@ -24,7 +25,7 @@ stdenv.mkDerivation  rec {
   '';
 
   meta = with stdenv.lib; {
-    description = "LASH Audio Session Handler";
+    description = "A Linux Audio Session Handler";
     longDescription = ''
       Session management system for GNU/Linux audio applications.
     '';

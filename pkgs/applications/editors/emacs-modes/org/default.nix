@@ -1,30 +1,25 @@
-{ fetchurl, stdenv, emacs, texinfo, which }:
+{ fetchurl, stdenv, emacs, texinfo, which, texLive, texLiveCMSuper
+, texLiveAggregationFun }:
 
 stdenv.mkDerivation rec {
-  name = "org-7.8.03";
+  name = "org-8.2.10";
 
   src = fetchurl {
     url = "http://orgmode.org/${name}.tar.gz";
-    sha256 = "49357cca7d892e70cd2dfcc0b5d96d9fd164ef5a1f251ace3865ecb27dc1e958";
+    sha256 = "1xm8n8zwr3676rl4pd32k61rd7rimlihhrw5a7r4z7r154c4a2fz";
   };
 
-  buildInputs = [ emacs texinfo ];
-
-  patchPhase =
-    '' sed -i "lisp/org-clock.el" -e's|"which"|"${which}/bin/which"|g'
-    '';
+  buildInputs = [ emacs ];
+  nativeBuildInputs = [ (texLiveAggregationFun { paths=[ texinfo texLive texLiveCMSuper ]; }) ];
 
   configurePhase =
-    '' sed -i Makefile \
-           -e "s|^prefix=.*$|prefix=$out|g"
+    '' sed -i mk/default.mk \
+           -e "s|^prefix\t=.*$|prefix=$out/share|g"
     '';
 
-  #XXX: fails because of missing UTILITIES/manfull.pl, currently not
-  # included in the release tarball, but git.
-
-  #postBuild =
-  #  '' make doc
-  #  '';
+  postBuild =
+    '' make doc
+    '';
 
   installPhase =
     '' make install install-info
@@ -47,9 +42,9 @@ stdenv.mkDerivation rec {
          than that found in GNU Emacs.
       '';
 
-    license = "GPLv3+";
+    license = stdenv.lib.licenses.gpl3Plus;
 
-    maintainers = with stdenv.lib.maintainers; [ ludo chaoflow ];
-    platforms = stdenv.lib.platforms.gnu;
+    maintainers = with stdenv.lib.maintainers; [ chaoflow pSub ];
+    platforms = stdenv.lib.platforms.unix;
   };
 }

@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, python, pkgconfig, libgnome, GConf, pygobject, pygtk, glib, gtk, pythonDBus}:
+{ stdenv, fetchurl, python, pkgconfig, libgnome, GConf, pygobject, pygtk, glib, gtk, pythonDBus,  gnome_vfs}:
 
 with stdenv.lib;
 
@@ -7,14 +7,15 @@ stdenv.mkDerivation rec {
   name = "gnome-python-${version}.1";
 
   src = fetchurl {
-    url = "http://ftp.gnome.org/pub/GNOME/sources/gnome-python/${version}/${name}.tar.bz2";
+    url = "mirror://gnome/sources/gnome-python/${version}/${name}.tar.bz2";
     sha256 = "759ce9344cbf89cf7f8449d945822a0c9f317a494f56787782a901e4119b96d8";
   };
 
   phases = "unpackPhase configurePhase buildPhase installPhase";
 
-  # You should be using WAF instead; see the file INSTALL.WAF
+  # WAF is probably the biggest crap on this planet, btw i removed the /gtk-2.0 path thingy
   configurePhase = ''
+    sed -e "s@{PYTHONDIR}/gtk-2.0@{PYTHONDIR}/@" -i gconf/wscript
     python waf configure --prefix=$out
   '';
 
@@ -24,9 +25,10 @@ stdenv.mkDerivation rec {
 
   installPhase = ''
     python waf install
+    cp bonobo/*.{py,defs} $out/share/pygtk/2.0/defs/
   '';
 
-  buildInputs = [ python pkgconfig pygobject pygtk glib gtk GConf libgnome pythonDBus ];
+  buildInputs = [ python pkgconfig pygobject pygtk glib gtk GConf libgnome pythonDBus gnome_vfs ];
 
   doCheck = false;
 

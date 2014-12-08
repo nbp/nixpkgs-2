@@ -8,10 +8,8 @@ stdenv.mkDerivation {
     sha256 = "6aef02b92d10360ac9be0db29ae390636be55017990063a092a285c70b54e666";
   };
 
-  buildInputs = [ kernel ];
-
   makeFlags = [
-    "KBASE=${kernel}/lib/modules/${kernel.modDirVersion}"
+    "KBASE=${kernel.dev}/lib/modules/${kernel.modDirVersion}"
     "SHELL=/bin/sh"
   ];
 

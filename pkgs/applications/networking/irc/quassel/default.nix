@@ -1,24 +1,31 @@
 { monolithic ? true # build monolithic Quassel
 , daemon ? false # build Quassel daemon
 , client ? false # build Quassel client
-, withKDE ? true # enable KDE integration
+, withKDE ? stdenv.isLinux # enable KDE integration
 , ssl ? true # enable SSL support
 , previews ? false # enable webpage previews on hovering over URLs
-, stdenv, fetchurl, cmake, qt4, kdelibs, automoc4, phonon }:
+, tag ? "" # tag added to the package name
+, stdenv, fetchurl, cmake, makeWrapper, qt, kdelibs, automoc4, phonon, dconf }:
+
+assert monolithic -> !client && !daemon;
+assert client || daemon -> !monolithic;
 
 let
   edf = flag: feature: [("-D" + feature + (if flag then "=ON" else "=OFF"))];
 
 in with stdenv; mkDerivation rec {
 
-  name = "quassel-0.7.1";
+  version = "0.11.0";
+  name = "quassel${tag}-${version}";
 
   src = fetchurl {
-    url = "http://quassel-irc.org/pub/${name}.tar.bz2";
-    sha256 = "1kby1yikiv5bpzkdri5dq39pxnsj9gjrcv1gigvy2jzy3g99qjli";
+    url = "http://quassel-irc.org/pub/quassel-${version}.tar.bz2";
+    sha256 = "01251y5i1fvm6s2g9acxaczk2jdyw1byr45q41q0yh9apjw938cr";
   };
 
-  buildInputs = [ cmake qt4 ]
+  enableParallelBuilding = true;
+
+  buildInputs = [ cmake makeWrapper qt ]
     ++ lib.optional withKDE kdelibs
     ++ lib.optional withKDE automoc4
     ++ lib.optional withKDE phonon;
@@ -36,6 +43,16 @@ in with stdenv; mkDerivation rec {
     ++ edf ssl "WITH_OPENSSL"
     ++ edf previews "WITH_WEBKIT"  ;
 
+  preFixup =
+    lib.optionalString client ''
+        wrapProgram "$out/bin/quasselclient" \
+          --prefix GIO_EXTRA_MODULES : "${dconf}/lib/gio/modules"
+    '' +
+    lib.optionalString monolithic ''
+        wrapProgram "$out/bin/quassel" \
+          --prefix GIO_EXTRA_MODULES : "${dconf}/lib/gio/modules"
+    '';
+
   meta = with stdenv.lib; {
     homepage = http://quassel-irc.org/;
     description = "Qt4/KDE4 distributed IRC client suppporting a remote daemon";
@@ -46,9 +63,9 @@ in with stdenv; mkDerivation rec {
       combination of screen and a text-based IRC client such
       as WeeChat, but graphical (based on Qt4/KDE4).
     '';
-    license = "GPLv3";
+    license = stdenv.lib.licenses.gpl3;
     maintainers = [ maintainers.phreedom ];
-    inherit (qt4.meta) platforms;
+    repositories.git = https://github.com/quassel/quassel.git;
+    inherit (qt.meta) platforms;
   };
 }
-

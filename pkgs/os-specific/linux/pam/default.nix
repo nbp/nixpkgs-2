@@ -1,24 +1,23 @@
-{ stdenv, fetchurl, flex, cracklib, libxcrypt }:
+{ stdenv, fetchurl, flex, cracklib }:
 
 stdenv.mkDerivation rec {
-  name = "linux-pam-1.1.1";
+  name = "linux-pam-1.1.8";
 
   src = fetchurl {
-    url = mirror://kernel/linux/libs/pam/library/Linux-PAM-1.1.1.tar.bz2;
-    sha256 = "015r3xdkjpqwcv4lvxavq0nybdpxhfjycqpzbx8agqd5sywkx3b0";
+    url = http://www.linux-pam.org/library/Linux-PAM-1.1.8.tar.bz2;
+    sha256 = "0m8ygb40l1c13nsd4hkj1yh4p1ldawhhg8pyjqj9w5kd4cxg5cf4";
   };
 
-  buildNativeInputs = [ flex ];
-  buildInputs = [ cracklib ]
-    ++ stdenv.lib.optional
-      (!stdenv.isArm && stdenv.system != "mips64el-linux")
-      libxcrypt;
+  patches = [ ./CVE-2014-2583.patch ];
+
+  nativeBuildInputs = [ flex ];
+
+  buildInputs = [ cracklib ];
 
   crossAttrs = {
-    # Skip libxcrypt cross-building, as it fails for mips and arm
-    propagatedBuildInputs = [ flex.hostDrv cracklib.hostDrv ];
+    propagatedBuildInputs = [ flex.crossDrv cracklib.crossDrv ];
     preConfigure = preConfigure + ''
-      ar x ${flex.hostDrv}/lib/libfl.a
+      ar x ${flex.crossDrv}/lib/libfl.a
       mv libyywrap.o libyywrap-target.o
       ar x ${flex}/lib/libfl.a
       mv libyywrap.o libyywrap-host.o
@@ -27,13 +26,13 @@ stdenv.mkDerivation rec {
     '';
     postConfigure = ''
       sed -e "s@ $PWD/libyywrap-target.o@ $PWD/libyywrap-host.o@" -i doc/specs/Makefile
-    ''; 
+    '';
   };
 
   postInstall = ''
     mv -v $out/sbin/unix_chkpwd{,.orig}
     ln -sv /var/setuid-wrappers/unix_chkpwd $out/sbin/unix_chkpwd
-    '';
+  '';
 
   preConfigure = ''
     configureFlags="$configureFlags --includedir=$out/include/security"

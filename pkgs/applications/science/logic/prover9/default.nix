@@ -1,7 +1,7 @@
 {stdenv, fetchurl}:
 
 stdenv.mkDerivation {
-  name = "prover9";
+  name = "prover9-2009-11a";
 
   src = fetchurl {
     url = http://www.cs.unm.edu/~mccune/mace4/download/LADR-2009-11A.tar.gz;
@@ -31,14 +31,12 @@ stdenv.mkDerivation {
   meta = {
     homepage = "http://www.cs.unm.edu/~mccune/mace4/";
     license = "GPL";
-    description = "Prover9 is an automated theorem prover for first-order and equational logic.";
-
+    description = "Automated theorem prover for first-order and equational logic";
     longDescription = ''
       Prover9 is a resolution/paramodulation automated theorem prover
       for first-order and equational logic. Prover9 is a successor of
       the Otter Prover. This is the LADR command-line version.
     '';
-
     platforms = stdenv.lib.platforms.unix;
     maintainers = [];
   };

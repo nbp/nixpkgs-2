@@ -1,22 +1,21 @@
-{stdenv, fetchurl, pkgconfig, lua5, curl, quvi_scripts}:
+{stdenv, fetchurl, pkgconfig, lua5, curl, quvi_scripts, libproxy, libgcrypt}:
 
 stdenv.mkDerivation rec {
   name = "libquvi-${version}";
-  version="0.4.0";
+  version="0.9.4";
 
   src = fetchurl {
-    url = "mirror://sourceforge/quvi/libquvi-${version}.tar.gz";
-    sha256 = "15cm9j8dssn2zhplqvlw49piwfw511lia6b635byiwfniqf6dnwp";
+    url = "mirror://sourceforge/quvi/libquvi-${version}.tar.xz";
+    sha256 = "1cl1kbgxl1jnx2nwx4z90l0lap09lnnj1fg7hxsxk3m6aj4y4grd";
   };
 
-  buildInputs = [ pkgconfig lua5 curl quvi_scripts ];
+  buildInputs = [ pkgconfig lua5 curl quvi_scripts libproxy libgcrypt ];
 
-  meta = { 
-    description = "Quvi is a web video downloader.";
+  meta = {
+    description = "Web video downloader";
     homepage = http://quvi.sf.net;
-    license = "LGPLv2.1+";
+    license = stdenv.lib.licenses.lgpl21Plus;
     platforms = stdenv.lib.platforms.linux;
-    maintainers = [ stdenv.lib.maintainers.mornfall ]; 
+    maintainers = [ stdenv.lib.maintainers.mornfall ];
   };
 }
-

@@ -1,32 +1,59 @@
-{ stdenv, fetchurl, SDL, cmake, gettext, ilmbase, libXi, libjpeg,
-libpng, libsamplerate, libtiff, mesa, openal, openexr, openjpeg,
-python, zlib, boost }:
+{ stdenv, lib, fetchurl, fetchpatch, SDL, boost, cmake, ffmpeg, gettext, glew
+, ilmbase, libXi, libjpeg, libpng, libsamplerate, libsndfile
+, libtiff, mesa, openal, opencolorio, openexr, openimageio, openjpeg, python
+, zlib, fftw
+, jackaudioSupport ? false, jack2
+, cudaSupport ? false, cudatoolkit6
+}:
+
+with lib;
 
 stdenv.mkDerivation rec {
-  name = "blender-2.62";
+  name = "blender-2.72b";
 
   src = fetchurl {
     url = "http://download.blender.org/source/${name}.tar.gz";
-    sha256 = "19xfr5vx66p4p3hnqpglpky6f4bh3ay484mdgh7zg6j9f80dp53q";
+    sha256 = "0ixz8h3c08p4f84x8r85nzddwvc0h5lw1ci8gdg2x3m2mw2cfdj4";
   };
 
-  buildInputs = [ cmake mesa gettext python libjpeg libpng zlib openal
-    SDL openexr libsamplerate libXi libtiff ilmbase openjpeg boost ];
+  buildInputs =
+    [ SDL boost cmake ffmpeg gettext glew ilmbase libXi
+      libjpeg libpng libsamplerate libsndfile libtiff mesa openal
+      opencolorio openexr openimageio /* openjpeg */ python zlib fftw
+    ]
+    ++ optional jackaudioSupport jack2
+    ++ optional cudaSupport cudatoolkit6;
 
-  cmakeFlags = [
-    "-DOPENEXR_INC=${openexr}/include/OpenEXR"
-    "-DWITH_OPENCOLLADA=OFF"
-    "-DWITH_INSTALL_PORTABLE=OFF"
-    "-DPYTHON_LIBPATH=${python}/lib"
-  ];
+  postUnpack =
+    ''
+      substituteInPlace */doc/manpage/blender.1.py --replace /usr/bin/python ${python}/bin/python3
+    '';
 
-  NIX_CFLAGS_COMPILE = "-iquote ${ilmbase}/include/OpenEXR -I${python}/include/${python.libPrefix}";
+  cmakeFlags =
+    [ "-DWITH_OPENCOLLADA=OFF"
+      "-DWITH_MOD_OCEANSIM=ON"
+      "-DWITH_CODEC_FFMPEG=ON"
+      "-DWITH_CODEC_SNDFILE=ON"
+      "-DWITH_INSTALL_PORTABLE=OFF"
+      "-DPYTHON_LIBRARY=python${python.majorVersion}m"
+      "-DPYTHON_LIBPATH=${python}/lib"
+      "-DPYTHON_INCLUDE_DIR=${python}/include/python${python.majorVersion}m"
+      "-DPYTHON_VERSION=${python.majorVersion}"
+    ]
+    ++ optional jackaudioSupport "-DWITH_JACK=ON"
+    ++ optional cudaSupport "-DWITH_CYCLES_CUDA_BINARIES=ON";
 
-  meta = { 
+  NIX_CFLAGS_COMPILE = "-I${ilmbase}/include/OpenEXR -I${python}/include/${python.libPrefix}m";
+
+  enableParallelBuilding = true;
+
+  meta = with stdenv.lib; {
     description = "3D Creation/Animation/Publishing System";
     homepage = http://www.blender.org;
     # They comment two licenses: GPLv2 and Blender License, but they
     # say: "We've decided to cancel the BL offering for an indefinite period."
-    license = "GPLv2+";
+    license = licenses.gpl2Plus;
+    platforms = platforms.linux;
+    maintainers = [ maintainers.goibhniu ];
   };
 }

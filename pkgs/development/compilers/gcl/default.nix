@@ -16,15 +16,12 @@ assert a.stdenv.gcc.gcc != null ;
 assert a.stdenv.gcc.libc != null ;
 
 rec {
-  src = a.fetchcvs {
-    cvsRoot = ":pserver:anonymous@cvs.sv.gnu.org:/sources/gcl";
-    module = "gcl";
-    # tag = "Version_2_6_8pre";
-    date = "2010-07-01";
-    sha256 = "a61d1bf669fd11d13050e8e1ab850a5eecb38126b47c744c3e21646773c4fb4d";
+  src = a.fetchurl {
+    sha256 = "1s4hs2qbjqmn9h88l4xvsifq5c3dlc5s74lyb61rdi5grhdlkf4f";
+    url="http://gnu.spinellicreations.com/gcl/${name}.tar.gz";
   };
 
-  name = "gcl-2.6.8pre";
+  name = "gcl-2.6.12";
   inherit buildInputs;
   configureFlags = [
     "--enable-ansi"

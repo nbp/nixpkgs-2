@@ -1,4 +1,4 @@
-{ stdenv, fetchsvn, libuuid, pythonFull, iasl }:
+{ stdenv, fetchgit, libuuid, pythonFull, iasl }:
 
 let
 
@@ -10,12 +10,12 @@ else
   throw "Unsupported architecture";
 
 edk2 = stdenv.mkDerivation {
-  name = "edk2-2012-03-13";
+  name = "edk2-2014-02-01";
   
-  src = fetchsvn {
-    url = https://edk2.svn.sourceforge.net/svnroot/edk2/trunk/edk2;
-    rev = "13094";
-    sha256 = "1qfpal0y4sas204ydg3pg3634dm25q1vr94mpgmbdh6yqcviah3h";
+  src = fetchgit {
+    url = git://github.com/tianocore/edk2;
+    rev = "2818c158de6a164d012e6afb0fc145656aed4e4b";
+    sha256 = "a756b5de3a3e71d82ce1de8c7832bc69d2affb98d704894b26540571f9f5e214";
   };
 
   buildInputs = [ libuuid pythonFull ];
@@ -47,10 +47,10 @@ edk2 = stdenv.mkDerivation {
       configurePhase = ''
         mkdir -v Conf
         sed -e 's|Nt32Pkg/Nt32Pkg.dsc|${projectDscPath}|' -e \
-          's|MYTOOLS|GCC46|' -e 's|IA32|${targetArch}|' -e 's|DEBUG|RELEASE|'\
+          's|MYTOOLS|GCC48|' -e 's|IA32|${targetArch}|' -e 's|DEBUG|RELEASE|'\
           < ${edk2}/BaseTools/Conf/target.template > Conf/target.txt
-        sed -e 's|DEFINE GCC46_IA32_PREFIX       = /usr/bin/|DEFINE GCC46_IA32_PREFIX       = ""|' \
-          -e 's|DEFINE GCC46_X64_PREFIX        = /usr/bin/|DEFINE GCC46_X64_PREFIX        = ""|' \
+        sed -e 's|DEFINE GCC48_IA32_PREFIX       = /usr/bin/|DEFINE GCC48_IA32_PREFIX       = ""|' \
+          -e 's|DEFINE GCC48_X64_PREFIX        = /usr/bin/|DEFINE GCC48_X64_PREFIX        = ""|' \
           -e 's|DEFINE UNIX_IASL_BIN           = /usr/bin/iasl|DEFINE UNIX_IASL_BIN           = ${iasl}/bin/iasl|' \
           < ${edk2}/BaseTools/Conf/tools_def.template > Conf/tools_def.txt
         export WORKSPACE="$PWD"
