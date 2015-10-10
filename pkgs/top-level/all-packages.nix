@@ -1,126 +1,56 @@
-/* This file composes the Nix Packages collection.  That is, it
-   imports the functions that build the various packages, and calls
-   them with appropriate arguments.  The result is a set of all the
-   packages in the Nix Packages collection for some particular
-   platform. */
+{ # Self-reference which is mutated by the user configuration, and from
+  # which all dependencies are infered. This self-reference is similar to
+  # the `rec` keyword with overwritten packages.
+  self
 
+, # Another self-reference which is used to build the original set of
+  # packages with the overwritten dependencies.
+  pkgs
 
-{ # The system (e.g., `i686-linux') for which to build the packages.
-  system ? builtins.currentSystem
+, # The system (e.g., `i686-linux') for which to build the packages.
+  system
+, crossSystem
+, platform
 
 , # The standard environment to use.  Only used for bootstrapping.  If
   # null, the default standard environment is used.
-  bootStdenv ? null
+  bootStdenv
 
 , # Non-GNU/Linux OSes are currently "impure" platforms, with their libc
   # outside of the store.  Thus, GCC, GFortran, & co. must always look for
   # files in standard system directories (/usr/include, etc.)
-  noSysDirs ? (system != "x86_64-freebsd" && system != "i686-freebsd"
-               && system != "x86_64-kfreebsd-gnu")
+  noSysDirs
 
   # More flags for the bootstrapping of stdenv.
-, gccWithCC ? true
-, gccWithProfiling ? true
+, gccWithCC
+, gccWithProfiling
 
 , # Allow a configuration attribute set to be passed in as an
   # argument.  Otherwise, it's read from $NIXPKGS_CONFIG or
   # ~/.nixpkgs/config.nix.
-  config ? null
+  config
 
-, crossSystem ? null
-, platform ? null
+, # Default scope of packages used by callPackages to fill the named
+  # arguments of the functions which are imported by each package
+  # expression.
+  defaultScope
 }:
 
-
-let config_ = config; platform_ = platform; in # rename the function arguments
-
 let
-
   lib = import ../../lib;
+in
 
-  # The contents of the configuration file found at $NIXPKGS_CONFIG or
-  # $HOME/.nixpkgs/config.nix.
-  # for NIXOS (nixos-rebuild): use nixpkgs.config option
-  config =
-    let
-      toPath = builtins.toPath;
-      getEnv = x: if builtins ? getEnv then builtins.getEnv x else "";
-      pathExists = name:
-        builtins ? pathExists && builtins.pathExists (toPath name);
+with pkgs;
 
-      configFile = getEnv "NIXPKGS_CONFIG";
-      homeDir = getEnv "HOME";
-      configFile2 = homeDir + "/.nixpkgs/config.nix";
-
-      configExpr =
-        if config_ != null then config_
-        else if configFile != "" && pathExists configFile then import (toPath configFile)
-        else if homeDir != "" && pathExists configFile2 then import (toPath configFile2)
-        else {};
-
-    in
-      # allow both:
-      # { /* the config */ } and
-      # { pkgs, ... } : { /* the config */ }
-      if builtins.isFunction configExpr
-        then configExpr { pkgs = pkgsX; }
-        else configExpr;
-
-  # Allow setting the platform in the config file. Otherwise, let's use a reasonable default (pc)
-
-  platformAuto = let
-      platforms = (import ./platforms.nix);
-    in
-      if system == "armv6l-linux" then platforms.raspberrypi
-      else if system == "armv7l-linux" then platforms.armv7l-hf-multiplatform
-      else if system == "armv5tel-linux" then platforms.sheevaplug
-      else if system == "mips64el-linux" then platforms.fuloong2f_n32
-      else if system == "x86_64-linux" then platforms.pc64
-      else if system == "i686-linux" then platforms.pc32
-      else platforms.pcBase;
-
-  platform = if platform_ != null then platform_
-    else config.platform or platformAuto;
-
-  # The complete set of packages, after applying the overrides
-  pkgsX = lib.fix' (lib.extend (lib.extend pkgsFun stdenvOverrides) configOverrides);
-
-  stdenvOverrides =
-    # We don't want stdenv overrides in the case of cross-building,
-    # or otherwise the basic overrided packages will not be built
-    # with the crossStdenv adapter.
-    if crossSystem == null
-      then self: super: lib.optionalAttrs (super.stdenv ? overrides) (super.stdenv.overrides super)
-      else self: super: {};
-
-  # Packages can be overriden globally via the `packageOverrides'
-  # configuration option, which must be a function that takes `pkgs'
-  # as an argument and returns a set of new or overriden packages.
-  # Each attribute in the `packageOverrides' function is called with
-  # the *original* (un-overriden) attribute, if it exists, allowing
-  # packageOverrides attributes to refer to the original attributes
-  # (e.g. "foo = ... pkgs.foo ...").
-  configOverrides =
-      if config ? packageOverrides && bootStdenv == null # don't apply config overrides in stdenv boot
-        then self: super: config.packageOverrides super
-        else self: super: {};
-
-  # The package compositions.  Yes, this isn't properly indented.
-  pkgsFun = pkgs:
-    let defaultScope = pkgs // pkgs.xorg;
-        helperFunctions = pkgs_.stdenvAdapters // pkgs_.trivial-builders;
-        pkgsRet = helperFunctions // pkgs_;
-        pkgs_ = with pkgs; {
-  # Helper functions that are exported through `pkgs'.
-  trivial-builders = import ../build-support/trivial-builders.nix { inherit lib; inherit stdenv; inherit (xorg) lndir; };
-  stdenvAdapters = import ../stdenv/adapters.nix pkgs;
-
+{
   # Make some arguments passed to all-packages.nix available
   inherit system platform;
 
   # Allow callPackage to fill in the pkgs argument
   inherit pkgs;
 
+  trivial-builders = import ../build-support/trivial-builders.nix { inherit lib; inherit stdenv; inherit (xorg) lndir; };
+  stdenvAdapters = import ../stdenv/adapters.nix pkgs;
 
   # We use `callPackage' to be able to omit function arguments that
   # can be obtained from `pkgs' or `pkgs.xorg' (i.e. `defaultScope').
@@ -146,7 +76,7 @@ let
   overridePackages = f: lib.fix' (lib.extend pkgs.__unfix__ f);
 
   # Override system. This is useful to build i686 packages on x86_64-linux.
-  forceSystem = system: kernel: (import ./all-packages.nix) {
+  forceSystem = system: kernel: (import ./all-packages-wrapper.nix) {
     inherit system;
     platform = platform // { kernelArch = kernel; };
     inherit bootStdenv noSysDirs gccWithCC gccWithProfiling config
@@ -194,11 +124,11 @@ let
 
   allStdenvs = import ../stdenv {
     inherit system platform config lib;
-    allPackages = args: import ./all-packages.nix ({ inherit config system; } // args);
+    allPackages = args: import ./all-packages-wrapper.nix ({ inherit config system; } // args);
   };
 
-  # We use pkgs_ because accessing pkgs would lead to an infinite recursion
-  defaultStdenv = pkgs_.allStdenvs.stdenv // { inherit platform; };
+  # We use self because accessing pkgs would lead to an infinite recursion
+  defaultStdenv = self.allStdenvs.stdenv // { inherit platform; };
 
   stdenvCross = lowPrio (makeStdenvCross defaultStdenv crossSystem binutilsCross gccCrossStageFinal);
 
@@ -212,13 +142,13 @@ let
         in if changer != null then
           changer {
             # We import again all-packages to avoid recursivities.
-            pkgs = import ./all-packages.nix {
+            pkgs = import ./all-packages-wrapper.nix {
               # We remove packageOverrides to avoid recursivities
               config = removeAttrs config [ "replaceStdenv" ];
             };
           }
       else
-        pkgs_.defaultStdenv;
+        self.defaultStdenv;
 
   forceNativeDrv = drv : if crossSystem == null then drv else
     (drv // { crossDrv = drv.nativeDrv; });
@@ -3525,7 +3455,7 @@ let
     # load into the Ben Nanonote
     gccCross =
       let
-        pkgsCross = (import ./all-packages.nix) {
+        pkgsCross = (import ./all-packages-wrapper.nix) {
           inherit system;
           inherit bootStdenv noSysDirs gccWithCC gccWithProfiling config;
           # Ben Nanonote system
@@ -15265,58 +15195,4 @@ let
   httrack = callPackage ../tools/backup/httrack { };
 
   mg = callPackage ../applications/editors/mg { };
-
-};
-# end pkgs_ =
-
-
-  ### Deprecated aliases - for backward compatibility
-
-aliases = with pkgs; {
-  adobeReader = adobe-reader;
-  arduino_core = arduino-core;  # added 2015-02-04
-  asciidocFull = asciidoc-full;  # added 2014-06-22
-  bridge_utils = bridge-utils;  # added 2015-02-20
-  buildbotSlave = buildbot-slave;  # added 2014-12-09
-  cheetahTemplate = pythonPackages.cheetah; # 2015-06-15
-  clangAnalyzer = clang-analyzer;  # added 2015-02-20
-  cool-old-term = cool-retro-term; # added 2015-01-31
-  cv = progress; # added 2015-09-06
-  enblendenfuse = enblend-enfuse;	# 2015-09-30
-  exfat-utils = exfat;                  # 2015-09-11
-  firefoxWrapper = firefox-wrapper;
-  fuse_exfat = exfat;                   # 2015-09-11
-  haskell-ng = haskell;                 # 2015-04-19
-  haskellngPackages = haskellPackages;  # 2015-04-19
-  htmlTidy = html-tidy;  # added 2014-12-06
-  inherit (haskell.compiler) jhc uhc;   # 2015-05-15
-  inotifyTools = inotify-tools;
-  jquery_ui = jquery-ui;  # added 2014-09-07
-  libtidy = html-tidy;  # added 2014-12-21
-  lttngTools = lttng-tools;  # added 2014-07-31
-  lttngUst = lttng-ust;  # added 2014-07-31
-  nfsUtils = nfs-utils;  # added 2014-12-06
-  quassel_qt5 = kf5Packages.quassel_qt5; # added 2015-09-30
-  quasselClient_qt5 = kf5Packages.quasselClient_qt5; # added 2015-09-30
-  quasselDaemon_qt5 = kf5Packages.quasselDaemon; # added 2015-09-30
-  quassel_kf5 = kf5Packages.quassel; # added 2015-09-30
-  quasselClient_kf5 = kf5Packages.quasselClient; # added 2015-09-30
-  rdiff_backup = rdiff-backup;  # added 2014-11-23
-  rssglx = rss-glx; #added 2015-03-25
-  rxvt_unicode_with-plugins = rxvt_unicode-with-plugins; # added 2015-04-02
-  speedtest_cli = speedtest-cli;  # added 2015-02-17
-  sqliteInteractive = sqlite-interactive;  # added 2014-12-06
-  x11 = xlibsWrapper; # added 2015-09
-  xf86_video_nouveau = xorg.xf86videonouveau; # added 2015-09
-  xlibs = xorg; # added 2015-09
-  youtube-dl = pythonPackages.youtube-dl; # added 2015-06-07
-  youtubeDL = youtube-dl;  # added 2014-10-26
-  pidginlatexSF = pidginlatex; # added 2014-11-02
-};
-
-tweakAlias = _n: alias: with lib;
-  if alias.recurseForDerivations or false then
-    removeAttrs alias ["recurseForDerivations"]
-  else alias;
-
-in lib.mapAttrs tweakAlias aliases // pkgsRet; in pkgsX
+}
