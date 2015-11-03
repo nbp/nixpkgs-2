@@ -113,6 +113,7 @@ rec {
       thisPkgs = allPackages {
         inherit system platform;
         bootStdenv = thisStdenv;
+        useQuickfix = false;
       };
 
     in { stdenv = thisStdenv; pkgs = thisPkgs; };
@@ -307,7 +308,7 @@ rec {
 
 
   testBootstrapTools = let
-    defaultPkgs = allPackages { inherit system platform; };
+    defaultPkgs = allPackages { inherit system platform; useQuickfix = false; };
   in derivation {
     name = "test-bootstrap-tools";
     inherit system;
