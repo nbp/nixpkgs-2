@@ -11,7 +11,7 @@
 , tcl, tk
 , zlib
 , callPackage
-, self
+, _currentPackage
 }:
 
 assert readline != null -> ncurses != null;
@@ -78,12 +78,12 @@ stdenv.mkDerivation {
     tkSupport = (tk != null) && (tcl != null) && (libX11 != null) && (xproto != null);
     libPrefix = "python${majorVersion}";
     executable = "python3.3m";
-    buildEnv = callPackage ../wrapper.nix { python = self; };
+    buildEnv = callPackage ../wrapper.nix { python = _currentPackage; };
     isPy3 = true;
     isPy33 = true;
     is_py3k = true;  # deprecated
     sitePackages = "lib/${libPrefix}/site-packages";
-    interpreter = "${self}/bin/${executable}";
+    interpreter = "${_currentPackage}/bin/${executable}";
   };
 
   enableParallelBuilding = true;

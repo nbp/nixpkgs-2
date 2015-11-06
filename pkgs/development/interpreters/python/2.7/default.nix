@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, self, callPackage
+{ stdenv, fetchurl, _currentPackage, callPackage
 , bzip2, openssl, gettext
 
 , includeModules ? false
@@ -144,11 +144,11 @@ let
       inherit zlibSupport;
       isPy2 = true;
       isPy27 = true;
-      buildEnv = callPackage ../wrapper.nix { python = self; };
+      buildEnv = callPackage ../wrapper.nix { python = _currentPackage; };
       libPrefix = "python${majorVersion}";
       executable = libPrefix;
       sitePackages = "lib/${libPrefix}/site-packages";
-      interpreter = "${self}/bin/${executable}";
+      interpreter = "${_currentPackage}/bin/${executable}";
     };
 
     enableParallelBuilding = true;

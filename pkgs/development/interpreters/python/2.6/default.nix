@@ -1,5 +1,5 @@
-{ stdenv, fetchurl, zlib ? null, zlibSupport ? true, bzip2, includeModules ? false
-, sqlite, tcl, tk, xlibsWrapper, openssl, readline, db, ncurses, gdbm, self, callPackage }:
+{ stdenv, fetchurl, _currentPackage, zlib ? null, zlibSupport ? true, bzip2, includeModules ? false
+, sqlite, tcl, tk, xlibsWrapper, openssl, readline, db, ncurses, gdbm, callPackage }:
 
 assert zlibSupport -> zlib != null;
 
@@ -93,11 +93,11 @@ let
       inherit zlibSupport;
       isPy2 = true;
       isPy26 = true;
-      buildEnv = callPackage ../wrapper.nix { python = self; };
+      buildEnv = callPackage ../wrapper.nix { python = _currentPackage; };
       libPrefix = "python${majorVersion}";
       executable = libPrefix;
       sitePackages = "lib/${libPrefix}/site-packages";
-      interpreter = "${self}/bin/${executable}";
+      interpreter = "${_currentPackage}/bin/${executable}";
     };
 
     enableParallelBuilding = true;

@@ -5002,39 +5002,39 @@ with pkgs;
 
   python26 = callPackage ../development/interpreters/python/2.6 {
     db = db47;
-    self = python26;
+    _currentPackage = python26;
   };
   python27 = callPackage ../development/interpreters/python/2.7 {
-    self = python27;
+    _currentPackage = python27;
     inherit (darwin) CF configd;
   };
   python32 = callPackage ../development/interpreters/python/3.2 {
-    self = python32;
+    _currentPackage = python32;
   };
   python33 = callPackage ../development/interpreters/python/3.3 {
-    self = python33;
+    _currentPackage = python33;
   };
   python34 = hiPrio (callPackage ../development/interpreters/python/3.4 {
     inherit (darwin) CF configd;
-    self = python34;
+    _currentPackage = python34;
   });
   python35 = hiPrio (callPackage ../development/interpreters/python/3.5 {
     inherit (darwin) CF configd;
-    self = python35;
+    _currentPackage = python35;
   });
   pypy = callPackage ../development/interpreters/pypy {
-    self = pypy;
+    _currentPackage = pypy;
   };
 
   pythonFull = python2Full;
   python2Full = python27Full;
   python26Full = python26.override {
     includeModules = true;
-    self = python26Full;
+    _currentPackage = python26Full;
   };
   python27Full = python27.override {
     includeModules = true;
-    self = python27Full;
+    _currentPackage = python27Full;
   };
 
   python2nix = callPackage ../tools/package-management/python2nix { };

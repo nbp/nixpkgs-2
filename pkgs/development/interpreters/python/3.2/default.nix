@@ -10,7 +10,7 @@
 , tcl, tk
 , zlib
 , callPackage
-, self
+, _currentPackage
 }:
 
 assert readline != null -> ncurses != null;
@@ -71,7 +71,7 @@ stdenv.mkDerivation {
     zlibSupport = zlib != null;
     sqliteSupport = sqlite != null;
     dbSupport = db != null;
-    buildEnv = callPackage ../wrapper.nix { python = self; };
+    buildEnv = callPackage ../wrapper.nix { python = _currentPackage; };
     readlineSupport = readline != null;
     opensslSupport = openssl != null;
     tkSupport = (tk != null) && (tcl != null) && (libX11 != null) && (xproto != null);
@@ -81,7 +81,7 @@ stdenv.mkDerivation {
     isPy32 = true;
     is_py3k = true;  # deprecated
     sitePackages = "lib/${libPrefix}/site-packages";
-    interpreter = "${self}/bin/${executable}";
+    interpreter = "${_currentPackage}/bin/${executable}";
   };
 
   enableParallelBuilding = true;
