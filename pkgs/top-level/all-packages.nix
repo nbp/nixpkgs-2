@@ -3635,8 +3635,11 @@ with pkgs;
 
   eggDerivation = callPackage ../development/compilers/chicken/eggDerivation.nix { };
 
+  chicken_bootstrap = callPackage ../development/compilers/chicken {
+    bootstrap-chicken = null;
+  };
   chicken = callPackage ../development/compilers/chicken {
-    bootstrap-chicken = chicken.override { bootstrap-chicken = null; };
+    bootstrap-chicken = chicken_bootstrap;
   };
 
   egg2nix = callPackage ../development/tools/egg2nix {
