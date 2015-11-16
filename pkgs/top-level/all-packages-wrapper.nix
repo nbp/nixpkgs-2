@@ -166,15 +166,19 @@ let
             # :TODO: Optimize this function by only using runtime
             # dependencies of the original package set, and which are
             # computed ahead by the buildfamr.
+            warnIfUnableToFindDeps = drv:
+              if drv ? originalArgs then true
+              else assert __trace "Security issue: Unable to locate dependencies of `${name}`." true; true;
             getDeps = drv:
               if drv ? originalArgs then filterAttrs validDeps drv.originalArgs
-              else assert __trace "Security issue: Unable to locate dependencies of `${name}`." true; {};
+              else {};
 
             # This assumes that the originalArgs list are ordered the same
             # way, as they are both infered from the same files.
             hashesAssocList =
               let qDeps = getDeps quickfix; wDeps = getDeps whatif; in
               let names = attrNames qDeps; in
+              assert warnIfUnableToFindDeps quickfix;
               # assert __trace "qDeps: ${toString (attrNames qDeps)}\ntrace: wDeps: ${toString (attrNames wDeps)}" true;
               assert names == attrNames wDeps;
               filter differentDeps (map (name: {
