@@ -87,7 +87,15 @@ let
     else config.platform or platformAuto;
 
   # The complete set of packages, after applying the overrides
-  pkgs = lib.fix' (lib.extend (lib.extend pkgsFun stdenvOverrides) configOverrides);
+  pkgsFunWithOverride = packagesAttrs:
+    lib.extend (lib.extend (pkgsFun packagesAttrs) stdenvOverrides) configOverrides;
+  pkgs = lib.fix' (pkgsFunWithOverride defaultPackages);
+
+  # List of paths that are used to build the stable channel.
+  defaultPackages = {
+    allPackages = import ./all-packages.nix;
+    aliasedPackages = import ./all-packages-aliases.nix;
+  };
 
   stdenvOverrides =
     # We don't want stdenv overrides in the case of cross-building,
@@ -117,22 +125,19 @@ let
     if useQuickfix && builtins.pathExists ../../quickfix/pkgs/top-level/all-packages.nix then with lib;
       # assert builtins.trace "!!! Apply abiCompatiblePatches !!!" true;
       let
+        # Additional list of packages which have ABI compatible fixes for the
+        # stable packages. These are used by abiCompatiblePatches.
+        quickfixPackages = {
+          allPackages = import ../../quickfix/pkgs/top-level/all-packages.nix;
+          aliasedPackages = import ../../quickfix/pkgs/top-level/all-packages-aliases.nix;
+        };
+
         # Evaluate the set of packages from the quickfix index, with the
         # list of fixed-point packages.  These packages are unlikely to be
         # too different than the original list of packages, thus these
         # expressions should lead most of the time the same result as the
         # fixed point.
-        quickfixPkgs = import ../../quickfix/pkgs/top-level/all-packages.nix;
-        quickFixPkgsFun = deps:
-          let
-            pkgs_ = quickfixPkgs {
-              self = deps; # Do no recurse here.
-              pkgs = deps;
-              defaultScope = deps // deps.xorg; # Do not recurse here.
-              inherit system crossSystem platform bootStdenv noSysDirs
-                gccWithCC gccWithProfiling config;
-            };
-          in pkgs_.stdenvAdapters // pkgs_.trivial-builders // pkgs_;
+        quickFixPkgsFun = pkgsFunWithOverride quickfixPackages;
 
         patchDependencies = drv: hashesMap: pkgs.runCommand "quickfix-${drv.name}" { nixStore = "${pkgs.nix}/bin/nix-store"; } ''
           $nixStore --dump ${drv} | sed 's|${baseNameOf drv}|'$(basename $out)'|g;${
@@ -239,18 +244,18 @@ let
 
 
   # The package compositions.  Yes, this isn't properly indented.
-  pkgsFun = pkgs:
+  pkgsFun = { allPackages, aliasedPackages }: pkgs:
     let
       defaultScope = pkgs // pkgs.xorg;
       helperFunctions = pkgs_.stdenvAdapters // pkgs_.trivial-builders;
       pkgsRet = helperFunctions // pkgs_;
-      pkgs_ = import ./all-packages.nix {
+      pkgs_ = allPackages {
         self = pkgs_;
         inherit pkgs system crossSystem platform bootStdenv noSysDirs
           gccWithCC gccWithProfiling config defaultScope helperFunctions;
       };
 
-      aliases = import ./all-packages-aliases.nix pkgs;
+      aliases = aliasedPackages pkgs;
       tweakAlias = _n: alias: with lib;
         if alias.recurseForDerivations or false then
           removeAttrs alias ["recurseForDerivations"]
