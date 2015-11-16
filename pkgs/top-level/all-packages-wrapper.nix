@@ -247,7 +247,7 @@ let
       pkgs_ = import ./all-packages.nix {
         self = pkgs_;
         inherit pkgs system crossSystem platform bootStdenv noSysDirs
-          gccWithCC gccWithProfiling config defaultScope;
+          gccWithCC gccWithProfiling config defaultScope helperFunctions;
       };
 
       aliases = import ./all-packages-aliases.nix pkgs;

@@ -25,6 +25,10 @@
 , gccWithCC
 , gccWithProfiling
 
+  # These attribute set is a collection of trivial builders and stdenv
+  # adapters which are the direct result of this set of patckages.
+, helperFunctions
+
 , # Allow a configuration attribute set to be passed in as an
   # argument.  Otherwise, it's read from $NIXPKGS_CONFIG or
   # ~/.nixpkgs/config.nix.
