@@ -121,130 +121,133 @@ let
   # dependencies from the super set only and apply patches on the remaining
   # packages. This will recompile only programs which have changed in the
   # quickfix.
-  abiCompatiblePatches = pkgs:
-    if useQuickfix && builtins.pathExists ../../quickfix/pkgs/top-level/all-packages.nix then with lib;
-      # assert builtins.trace "!!! Apply abiCompatiblePatches !!!" true;
-      let
-        # Additional list of packages which have ABI compatible fixes for the
-        # stable packages. These are used by abiCompatiblePatches.
-        quickfixPackages = {
-          allPackages = import ../../quickfix/pkgs/top-level/all-packages.nix;
-          aliasedPackages = import ../../quickfix/pkgs/top-level/all-packages-aliases.nix;
-        };
-
-        # Evaluate the set of packages from the quickfix index, with the
-        # list of fixed-point packages.  These packages are unlikely to be
-        # too different than the original list of packages, thus these
-        # expressions should lead most of the time the same result as the
-        # fixed point.
-        quickFixPkgsFun = pkgsFunWithOverride quickfixPackages;
-
-        patchDependencies = drv: hashesMap: pkgs.runCommand "quickfix-${drv.name}" { nixStore = "${pkgs.nix}/bin/nix-store"; } ''
-          $nixStore --dump ${drv} | sed 's|${baseNameOf drv}|'$(basename $out)'|g;${
-            concatStrings (mapAttrsToList (name: value:
-              "'s|${baseNameOf name}|${baseNameOf value}|g';"
-            ) hashesMap)
-           } | $nixStore --restore $out
-        '';
-
-        # For each package, we check if we have the same dependencies.
-        quickFixAsPatches = name: pkgs: quickfix: whatif:
-          let
-            # Note, we need to check the drv.outPath to add some strictness
-            # to eliminate derivation which might assert when they are
-            # evaluated.
-            validDeps = name: drv:
-              let res = builtins.tryEval (isDerivation drv && isString drv.outPath); in
-              name != "_currentPackage" && res.success && res.value;
-
-            differentDeps = x:
-              # assert __trace "differentDeps: ${x.name}\n     :              : ${x.value} ?" true;
-              x.name != x.value;
-
-            # Based on the derivation, get the list of dependencies.
-            #
-            # :TODO: Optimize this function by only using runtime
-            # dependencies of the original package set, and which are
-            # computed ahead by the buildfamr.
-            warnIfUnableToFindDeps = drv:
-              if drv ? originalArgs then true
-              else assert __trace "Security issue: Unable to locate dependencies of `${name}`." true; true;
-            getDeps = drv:
-              if drv ? originalArgs then filterAttrs validDeps drv.originalArgs
-              else {};
-
-            # This assumes that the originalArgs list are ordered the same
-            # way, as they are both infered from the same files.
-            hashesAssocList =
-              let qDeps = getDeps quickfix; wDeps = getDeps whatif; in
-              let names = attrNames qDeps; in
-              assert warnIfUnableToFindDeps quickfix;
-              # assert __trace "qDeps: ${toString (attrNames qDeps)}\ntrace: wDeps: ${toString (attrNames wDeps)}" true;
-              assert names == attrNames wDeps;
-              filter differentDeps (map (name: {
-                name = builtins.unsafeDiscardStringContext (toString qDeps.${name});
-                value = toString wDeps.${name};
-              }) names);
-
-            # If the name of the quickfix does not have the same
-            # length, use the old name instead. This might cause a
-            # problem if people do not use --leq while updating.
-            quickfixRenamed =
-              if stringLength pkgs.name == stringLength quickfix.name
-              then quickfix
-              else
-                overrideDerivation quickfix ({
-                  name = pkgs.name;
-                });
-          in
-            if length hashesAssocList != 0 then
-              # One of the dependency is different.
-              #throw "Is about to patch ${name}, because of ${showVal (listToAttrs hashesAssocList)}."
-              patchDependencies quickfixRenamed (listToAttrs hashesAssocList)
-            else
-              quickfixRenamed;
-
-        # Recursively decent into all packages until we reach a derivation,
-        # in which case we execute the "f" function, otherwise, if we cannot
-        # decide, such as in case of functions, then we execute the
-        # "default" function with both arguments.
-        zipQuickFixAsPatches = path: pkgs: quickfix: whatif:
-          zipAttrsWith (name: values:
-            # Somebody added / removed a packaged in quickfix?
-            let pkgsName = concatStringsSep "." (path ++[name]); in
-            # assert builtins.trace "zipQuickFixAsPatches (name: ${pkgsName})" true;
-            assert builtins.length values == 3;
-            let p = head values; q = head (tail values); w = head (tail (tail values)); in
-            if name == "pkgs" then q # We should not recurse in the top-level pkgs argument.
-            else if isAttrs p then
-              assert isAttrs q && isAttrs w; # Do not mutate the derivation
-              if isDerivation p then
-                assert isDerivation q && isDerivation w;
-                addErrorContext "While evaluating package ${pkgsName}" (quickFixAsPatches pkgsName p q w)
-              else
-                zipQuickFixAsPatches (path ++ [name]) p q w
-            else
-              q
-          ) [pkgs quickfix whatif];
-
-        # Pipeline of modification involved to apply security patches:
-        #
-        #  1. We apply security patches on top of the current set of packages.
-        #
-        #  2. We check what package would be recompiled, if we were to
-        #     recompile instead of applying patches.
-        #
-        #  3. We only keep the set of packages where we only applied patches.
-        #
-        quickFix = quickFixPkgsFun pkgs;
-        whatIf = quickFixPkgsFun abiSec;
-        abiSec = zipQuickFixAsPatches ["pkgs"] pkgs quickFix whatIf;
-      in
-        abiSec
+  maybeAbiCompatiblePatches = pkgs:
+    if useQuickfix && builtins.pathExists ../../quickfix/pkgs/top-level/all-packages.nix then
+      abiCompatiblePatches pkgs
     else
       # If there is no quickfix to apply, then there is no need for extra
       # overhead, in which case we just the fix-point of packages.
       pkgs;
+
+  abiCompatiblePatches = pkgs: with lib;
+    # assert builtins.trace "!!! Apply abiCompatiblePatches !!!" true;
+    let
+      # Additional list of packages which have ABI compatible fixes for the
+      # stable packages. These are used by abiCompatiblePatches.
+      quickfixPackages = {
+        allPackages = import ../../quickfix/pkgs/top-level/all-packages.nix;
+        aliasedPackages = import ../../quickfix/pkgs/top-level/all-packages-aliases.nix;
+      };
+
+      # Evaluate the set of packages from the quickfix index, with the
+      # list of fixed-point packages.  These packages are unlikely to be
+      # too different than the original list of packages, thus these
+      # expressions should lead most of the time the same result as the
+      # fixed point.
+      quickFixPkgsFun = pkgsFunWithOverride quickfixPackages;
+
+      patchDependencies = drv: hashesMap: pkgs.runCommand "quickfix-${drv.name}" { nixStore = "${pkgs.nix}/bin/nix-store"; } ''
+        $nixStore --dump ${drv} | sed 's|${baseNameOf drv}|'$(basename $out)'|g;${
+          concatStrings (mapAttrsToList (name: value:
+            "'s|${baseNameOf name}|${baseNameOf value}|g';"
+          ) hashesMap)
+         } | $nixStore --restore $out
+      '';
+
+      # For each package, we check if we have the same dependencies.
+      quickFixAsPatches = name: pkgs: quickfix: whatif:
+        let
+          # Note, we need to check the drv.outPath to add some strictness
+          # to eliminate derivation which might assert when they are
+          # evaluated.
+          validDeps = name: drv:
+            let res = builtins.tryEval (isDerivation drv && isString drv.outPath); in
+            name != "_currentPackage" && res.success && res.value;
+
+          differentDeps = x:
+            # assert __trace "differentDeps: ${x.name}\n     :              : ${x.value} ?" true;
+            x.name != x.value;
+
+          # Based on the derivation, get the list of dependencies.
+          #
+          # :TODO: Optimize this function by only using runtime
+          # dependencies of the original package set, and which are
+          # computed ahead by the buildfamr.
+          warnIfUnableToFindDeps = drv:
+            if drv ? originalArgs then true
+            else assert __trace "Security issue: Unable to locate dependencies of `${name}`." true; true;
+          getDeps = drv:
+            if drv ? originalArgs then filterAttrs validDeps drv.originalArgs
+            else {};
+
+          # This assumes that the originalArgs list are ordered the same
+          # way, as they are both infered from the same files.
+          hashesAssocList =
+            let qDeps = getDeps quickfix; wDeps = getDeps whatif; in
+            let names = attrNames qDeps; in
+            assert warnIfUnableToFindDeps quickfix;
+            # assert __trace "qDeps: ${toString (attrNames qDeps)}\ntrace: wDeps: ${toString (attrNames wDeps)}" true;
+            assert names == attrNames wDeps;
+            filter differentDeps (map (name: {
+              name = builtins.unsafeDiscardStringContext (toString qDeps.${name});
+              value = toString wDeps.${name};
+            }) names);
+
+          # If the name of the quickfix does not have the same
+          # length, use the old name instead. This might cause a
+          # problem if people do not use --leq while updating.
+          quickfixRenamed =
+            if stringLength pkgs.name == stringLength quickfix.name
+            then quickfix
+            else
+              overrideDerivation quickfix ({
+                name = pkgs.name;
+              });
+        in
+          if length hashesAssocList != 0 then
+            # One of the dependency is different.
+            #throw "Is about to patch ${name}, because of ${showVal (listToAttrs hashesAssocList)}."
+            patchDependencies quickfixRenamed (listToAttrs hashesAssocList)
+          else
+            quickfixRenamed;
+
+      # Recursively decent into all packages until we reach a derivation,
+      # in which case we execute the "f" function, otherwise, if we cannot
+      # decide, such as in case of functions, then we execute the
+      # "default" function with both arguments.
+      zipQuickFixAsPatches = path: pkgs: quickfix: whatif:
+        zipAttrsWith (name: values:
+          # Somebody added / removed a packaged in quickfix?
+          let pkgsName = concatStringsSep "." (path ++[name]); in
+          # assert builtins.trace "zipQuickFixAsPatches (name: ${pkgsName})" true;
+          assert builtins.length values == 3;
+          let p = head values; q = head (tail values); w = head (tail (tail values)); in
+          if name == "pkgs" then q # We should not recurse in the top-level pkgs argument.
+          else if isAttrs p then
+            assert isAttrs q && isAttrs w; # Do not mutate the derivation
+            if isDerivation p then
+              assert isDerivation q && isDerivation w;
+              addErrorContext "While evaluating package ${pkgsName}" (quickFixAsPatches pkgsName p q w)
+            else
+              zipQuickFixAsPatches (path ++ [name]) p q w
+          else
+            q
+        ) [pkgs quickfix whatif];
+
+      # Pipeline of modification involved to apply security patches:
+      #
+      #  1. We apply security patches on top of the current set of packages.
+      #
+      #  2. We check what package would be recompiled, if we were to
+      #     recompile instead of applying patches.
+      #
+      #  3. We only keep the set of packages where we only applied patches.
+      #
+      quickFix = quickFixPkgsFun pkgs;
+      whatIf = quickFixPkgsFun abiSec;
+      abiSec = zipQuickFixAsPatches ["pkgs"] pkgs quickFix whatIf;
+    in
+      abiSec;
 
 
   # The package compositions.  Yes, this isn't properly indented.
@@ -267,4 +270,4 @@ let
 
     in lib.mapAttrs tweakAlias aliases // pkgsRet;
 
-in abiCompatiblePatches pkgs
+in maybeAbiCompatiblePatches pkgs
