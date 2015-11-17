@@ -1,14 +1,14 @@
-self: with self;
-
-      ### Deprecated aliases - for backward compatibility
+self: super: with super;
 
 {
+      ### Deprecated aliases - for backward compatibility
+
   adobeReader = adobe-reader;
   arduino_core = arduino-core;  # added 2015-02-04
   asciidocFull = asciidoc-full;  # added 2014-06-22
   bridge_utils = bridge-utils;  # added 2015-02-20
   buildbotSlave = buildbot-slave;  # added 2014-12-09
-  cheetahTemplate = pythonPackages.cheetah; # 2015-06-15
+  cheetahTemplate = self.pythonPackages.cheetah; # 2015-06-15
   clangAnalyzer = clang-analyzer;  # added 2015-02-20
   cool-old-term = cool-retro-term; # added 2015-01-31
   cv = progress; # added 2015-09-06
@@ -39,7 +39,163 @@ self: with self;
   x11 = xlibsWrapper; # added 2015-09
   xf86_video_nouveau = xorg.xf86videonouveau; # added 2015-09
   xlibs = xorg; # added 2015-09
-  youtube-dl = pythonPackages.youtube-dl; # added 2015-06-07
-  youtubeDL = youtube-dl;  # added 2014-10-26
+  youtube-dl = self.pythonPackages.youtube-dl; # added 2015-06-07
+  youtubeDL = self.youtube-dl;  # added 2014-10-26
   pidginlatexSF = pidginlatex; # added 2014-11-02
+
+      ### Default value aliases - for user convenience
+
+  inherit (gitAndTools) git gitFull gitSVN git-cola svn2git git-radar transcrypt;
+  inherit (self.gnome3) libcroco libgdata gsettings_desktop_schemas baobab
+    empathy epiphany evince evolution_data_server gucharmap gitg yelp;
+  inherit (xorg) xcompmgr xlsfonts;
+
+  ack = perlPackages.ack;
+  actdiag = self.pythonPackages.actdiag;
+  amdappsdk = amdappsdk28;
+  ant = apacheAnt;
+  apacheHttpd = apacheHttpd_2_4;
+  ardour = ardour4;
+  aria = aria2;
+  aterm = aterm25;
+  automake = automake115x;
+  awesome = awesome-3-5;
+  backintime = backintime-qt4;
+  bison = bison3;
+  bitcoin = altcoins.bitcoin;
+  bitcoin-xt = altcoins.bitcoin-xt;
+  bittorrentSync = bittorrentSync14;
+  bluez = bluez4;
+  boolector = boolector15;
+  boost = boost159;
+  cassandra = cassandra_2_1;
+  cdparanoia = cdparanoiaIII;
+  clucene_core = clucene_core_1;
+  cudatoolkit = cudatoolkit7;
+  db4 = db48;
+  db5 = db53;
+  db6 = db60;
+  db = self.db5;
+  djview4 = djview;
+  dmtx = dmtx-utils;
+  docbook5_xsl = docbook_xsl_ns;
+  docbook_xml_xslt = docbook_xsl;
+  dovecot = dovecot21;
+  eject = utillinux;
+  emacs = emacs24;
+  emacsMelpa = emacs24PackagesNg; # for backward compatibility
+  emacsPackages = emacs24Packages;
+  emacsPackagesNg = emacs24PackagesNg;
+  erlang = erlangR18;
+  erlang_javac = erlangR18_javac;
+  erlang_odbc = erlangR18_odbc;
+  erlang_odbc_javac = erlangR18_odbc_javac;
+  etcdctl = etcd;
+  fam = gamin;
+  ffmpeg_0 = ffmpeg_0_10;
+  ffmpeg_1 = ffmpeg_1_2;
+  ffmpeg_2 = ffmpeg_2_7;
+  ffmpeg = self.ffmpeg_2;
+  fftwFloat = fftwSinglePrec; # the configure option is just an alias
+  flex = flex_2_5_39;
+  funpidgin = carrier;
+  gcc-arm-embedded = gcc-arm-embedded-4_9;
+  gccgo = gccgo49;
+  gcj = gcj49;
+  giflib = giflib_5_1;
+  gimp = gimp_2_8;
+  glfw = glfw3;
+  gmp = gmp5;
+  gmpxx = appendToName "with-cxx" (self.gmp.override { cxx = true; });
+  gnat = gnat45; # failed to make 4.6 or 4.8 build
+  gnome3 = gnome3_16;
+  gnumake3 = gnumake382;
+  gnumake = gnumake41;
+  gnupg1 = gnupg1compat;
+  gnupg = gnupg20;
+  gnutls = gnutls34;
+  go = go_1_5;
+  goPackages = go15Packages;
+  grub2 = grub2_full;
+  kdeApps_latest = kdeApps_15_04;
+  kdeApps_stable = kdeApps_15_04;
+  kf5_latest = kf512;
+  kf5_stable = kf510;
+  libgnome_keyring3 = self.gnome3.libgnome_keyring;
+  libsysfs = sysfsutils; # Provided with sysfsutils.
+  linuxPackages_latest = linuxPackages_4_2;
+  linuxPackages = linuxPackages_4_1;
+  perlArchiveCpio = perlPackages.ArchiveCpio;
+  perlcritic = perlPackages.PerlCritic;
+  plasma5_latest = plasma53;
+  plasma5_stable = plasma53;
+  pltScheme = racket; # just to be sure
+  pyopenssl = self.pythonPackages.pyopenssl;
+  pypi2nix = python27Packages.pypi2nix;
+  pyrex = pyrex095;
+  python2Full = python27Full;
+  python2Packages = python27Packages;
+  python2 = python27;
+  python3Packages = python34Packages;
+  python3 = python34;
+  pythonDBus = dbus_python;
+  pythonFull = self.python2Full;
+  pythonPackages = self.python2Packages;
+  python = self.python2;
+  qt5 = qt54;
+  readline6 = readline63;
+  readline = self.readline6;
+  redland = librdf_redland;
+  ruby_1_8 = ruby_1_8_7;
+  ruby_1_9 = ruby_1_9_3;
+  ruby_2_0 = ruby_2_0_0;
+  ruby_2_1 = ruby_2_1_6;
+  ruby_2_2 = ruby_2_2_2;
+  ruby = self.ruby_2_2;
+  rustPlatform = rustStable;
+  sambaFull = samba4Full;
+  samba = samba4;
+  scala = scala_2_11;
+  scollector = bosun;
+  seqdiag = self.pythonPackages.seqdiag;
+  setuptools = self.pythonPackages.setuptools;
+  simpleBuildTool = sbt;
+  smbclient = self.samba;
+  softether = softether_4_18;
+  squid = squids.squid31; # has ipv6 support
+  suitesparse = suitesparse_4_4;
+  svg2tikz = python27Packages.svg2tikz;
+  swig = swig3;
+  swigWithJava = self.swig;
+  systool = sysfsutils; # Provided with sysfsutils.
+  tcl = tcl-8_6;
+  texinfo4 = texinfo413;
+  texinfoInteractive = appendToName "interactive" ( self.texinfo.override { interactive = true; });
+  texinfo = texinfo6;
+  texLivePGF = pgf3;
+  tig = gitAndTools.tig;
+  tinyxml = tinyxml2;
+  tk = tk-8_6;
+  twisted = self.pythonPackages.twisted;
+  ucommon = ucommon_openssl;
+  udev = systemd;
+  udisks = udisks1;
+  vimHugeX = vim_configurable;
+  virtuoso = virtuoso6;
+  webkit = webkitgtk;
+  wireshark = wireshark-gtk;
+  wxGTK = wxGTK28;
+  wxPython28 = self.pythonPackages.wxPython28;
+  wxPython = self.pythonPackages.wxPython;
+  xbmc = kodi;
+  xbmcPlain = kodiPlain;
+  xbmcPlugins = kodiPlugins;
+  xcb-util-cursor = xorg.xcbutilcursor;
+  xen = xen_4_5_1;
+  xfce = xfce4-12;
+  xkeyboard_config = xorg.xkeyboardconfig;
+  xneur = xneur_0_13;
+  yacc = self.bison;
+  zeromq = zeromq4;
+  ZopeInterface = self.pythonPackages.zope_interface;
 }

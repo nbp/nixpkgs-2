@@ -1,4 +1,4 @@
-{ pkgs, stdenv, python, self }:
+{ pkgs, stdenv, python, pythonAlias, self }:
 
 with pkgs.lib;
 
@@ -36,7 +36,8 @@ let
 
   pythonPackages = modules // {
 
-  inherit python isPy26 isPy27 isPy33 isPy34 isPy35 isPyPy isPy3k pythonName buildPythonPackage;
+  python = pythonAlias;
+  inherit isPy26 isPy27 isPy33 isPy34 isPy35 isPyPy isPy3k pythonName buildPythonPackage;
 
   # helpers
 
