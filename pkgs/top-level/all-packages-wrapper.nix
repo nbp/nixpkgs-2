@@ -255,12 +255,16 @@ let
           gccWithCC gccWithProfiling config defaultScope helperFunctions;
       };
 
-      aliases = aliasedPackages pkgs;
+    in aliasFun { inherit allPackages aliasedPackages; } pkgsRet;
+
+  aliasFun = { allPackages, aliasedPackages }: pkgs:
+    let
+      aliases = aliasedPackages aliases pkgs;
       tweakAlias = _n: alias: with lib;
         if alias.recurseForDerivations or false then
           removeAttrs alias ["recurseForDerivations"]
         else alias;
 
-    in lib.mapAttrs tweakAlias aliases // pkgsRet;
+    in pkgs // lib.mapAttrs tweakAlias aliases;
 
 in maybeAbiCompatiblePatches pkgs
