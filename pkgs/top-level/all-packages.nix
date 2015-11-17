@@ -4993,11 +4993,11 @@ with pkgs;
 
   python26Full = python26.override {
     includeModules = true;
-    _currentPackage = python26Full;
+    _currentPackage = self.python26Full;
   };
   python27Full = python27.override {
     includeModules = true;
-    _currentPackage = python27Full;
+    _currentPackage = self.python27Full;
   };
 
   python2nix = callPackage ../tools/package-management/python2nix { };
