@@ -87,9 +87,9 @@ let
     else config.platform or platformAuto;
 
   # The complete set of packages, after applying the overrides
-  pkgsFunWithOverride = packagesAttrs:
+  pkgsWithOverrideFun = packagesAttrs:
     lib.extend (lib.extend (pkgsFun packagesAttrs) stdenvOverrides) configOverrides;
-  pkgs = lib.fix' (pkgsFunWithOverride defaultPackages);
+  pkgs = lib.fix' (pkgsWithOverrideFun defaultPackages);
 
   # List of paths that are used to build the stable channel.
   defaultPackages = {
@@ -132,20 +132,6 @@ let
   abiCompatiblePatches = pkgs: with lib;
     # assert builtins.trace "!!! Apply abiCompatiblePatches !!!" true;
     let
-      # Additional list of packages which have ABI compatible fixes for the
-      # stable packages. These are used by abiCompatiblePatches.
-      quickfixPackages = {
-        allPackages = import ../../quickfix/pkgs/top-level/all-packages.nix;
-        aliasedPackages = import ../../quickfix/pkgs/top-level/all-packages-aliases.nix;
-      };
-
-      # Evaluate the set of packages from the quickfix index, with the
-      # list of fixed-point packages.  These packages are unlikely to be
-      # too different than the original list of packages, thus these
-      # expressions should lead most of the time the same result as the
-      # fixed point.
-      quickFixPkgsFun = pkgsFunWithOverride quickfixPackages;
-
       patchDependencies = drv: hashesMap: pkgs.runCommand "quickfix-${drv.name}" { nixStore = "${pkgs.nix}/bin/nix-store"; } ''
         $nixStore --dump ${drv} | sed 's|${baseNameOf drv}|'$(basename $out)'|g;${
           concatStrings (mapAttrsToList (name: value:
@@ -218,7 +204,7 @@ let
       zipQuickFixAsPatches = path: pkgs: quickfix: whatif:
         zipAttrsWith (name: values:
           # Somebody added / removed a packaged in quickfix?
-          let pkgsName = concatStringsSep "." (path ++[name]); in
+          let pkgsName = concatStringsSep "." (path ++ [name]); in
           # assert builtins.trace "zipQuickFixAsPatches (name: ${pkgsName})" true;
           assert builtins.length values == 3;
           let p = head values; q = head (tail values); w = head (tail (tail values)); in
@@ -234,6 +220,13 @@ let
             q
         ) [pkgs quickfix whatif];
 
+      # Additional list of packages which have ABI compatible fixes for the
+      # stable packages. These are used by abiCompatiblePatches.
+      quickfixPackages = {
+        allPackages = import ../../quickfix/pkgs/top-level/all-packages.nix;
+        aliasedPackages = import ../../quickfix/pkgs/top-level/all-packages-aliases.nix;
+      };
+
       # Pipeline of modification involved to apply security patches:
       #
       #  1. We apply security patches on top of the current set of packages.
@@ -243,8 +236,8 @@ let
       #
       #  3. We only keep the set of packages where we only applied patches.
       #
-      quickFix = quickFixPkgsFun pkgs;
-      whatIf = quickFixPkgsFun abiSec;
+      quickFix = pkgsWithOverrideFun quickfixPackages pkgs;
+      whatIf = pkgsWithOverrideFun quickfixPackages abiSec;
       abiSec = zipQuickFixAsPatches ["pkgs"] pkgs quickFix whatIf;
     in
       abiSec;
