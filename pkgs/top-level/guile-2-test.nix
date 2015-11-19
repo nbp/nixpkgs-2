@@ -4,7 +4,7 @@
    -- ludo@gnu.org  */
 
 let
-  allPackages = import ./all-packages-wrapper.nix;
+  allPackages = import ../..;
 
   pkgsFun = { system ? builtins.currentSystem }:
     allPackages {

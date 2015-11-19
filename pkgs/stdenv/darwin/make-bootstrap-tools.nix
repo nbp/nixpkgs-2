@@ -1,6 +1,6 @@
 {system ? builtins.currentSystem}:
 
-with import ../../top-level/all-packages-wrapper.nix {inherit system;};
+with import ../../.. {inherit system;};
 
 rec {
   # We want coreutils without ACL support.

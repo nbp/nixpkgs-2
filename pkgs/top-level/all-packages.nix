@@ -83,7 +83,7 @@ with pkgs;
   overridePackages = f: lib.fix' (lib.extend pkgs.__unfix__ f);
 
   # Override system. This is useful to build i686 packages on x86_64-linux.
-  forceSystem = system: kernel: (import ./all-packages-wrapper.nix) {
+  forceSystem = system: kernel: (import ../..) {
     inherit system;
     platform = platform // { kernelArch = kernel; };
     inherit bootStdenv noSysDirs gccWithCC gccWithProfiling config
@@ -131,7 +131,7 @@ with pkgs;
 
   allStdenvs = import ../stdenv {
     inherit system platform config lib;
-    allPackages = args: import ./all-packages-wrapper.nix ({ inherit config system; } // args);
+    allPackages = args: import ../.. ({ inherit config system; } // args);
   };
 
   # We use self because accessing pkgs would lead to an infinite recursion
@@ -149,7 +149,7 @@ with pkgs;
         in if changer != null then
           changer {
             # We import again all-packages to avoid recursivities.
-            pkgs = import ./all-packages-wrapper.nix {
+            pkgs = import ../.. {
               # We remove packageOverrides to avoid recursivities
               config = removeAttrs config [ "replaceStdenv" ];
             };
@@ -3446,7 +3446,7 @@ with pkgs;
     # load into the Ben Nanonote
     gccCross =
       let
-        pkgsCross = (import ./all-packages-wrapper.nix) {
+        pkgsCross = (import ../..) {
           inherit system;
           inherit bootStdenv noSysDirs gccWithCC gccWithProfiling config;
           # Ben Nanonote system
