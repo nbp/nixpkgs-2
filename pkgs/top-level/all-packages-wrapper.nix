@@ -141,7 +141,7 @@ let
       '';
 
       # For each package, we check if we have the same dependencies.
-      quickFixAsPatches = name: pkgs: quickfix: whatif:
+      quickFixAsPatches = name: pkg: quickfix: whatif:
         let
           # Note, we need to check the drv.outPath to add some strictness
           # to eliminate derivation which might assert when they are
@@ -183,11 +183,11 @@ let
           # length, use the old name instead. This might cause a
           # problem if people do not use --leq while updating.
           quickfixRenamed =
-            if stringLength pkgs.name == stringLength quickfix.name
+            if stringLength pkg.name == stringLength quickfix.name
             then quickfix
             else
               overrideDerivation quickfix ({
-                name = pkgs.name;
+                name = pkg.name;
               });
         in
           if length hashesAssocList != 0 then
