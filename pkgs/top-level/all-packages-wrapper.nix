@@ -243,7 +243,7 @@ let
       abiSec;
 
 
-  # The package compositions.  Yes, this isn't properly indented.
+  # The package compositions.
   pkgsFun = { allPackages, aliasedPackages }: pkgs:
     let
       defaultScope = pkgs // pkgs.xorg;
