@@ -1,10 +1,13 @@
-{ # Self-reference which is mutated by the user configuration, and from
-  # which all dependencies are infered. This self-reference is similar to
-  # the `rec` keyword with overwritten packages.
+{ # Reference to the original un-overridden packages returned from this
+  # file.  In particular used for stdenv bootstraping and for aliases of
+  # other packages.
   self
 
-, # Another self-reference which is used to build the original set of
-  # packages with the overwritten dependencies.
+, # Reference to the previous (and also final when used in a fix-point) set
+  # of packages with all overrides applied, from which the package
+  # dependencies are taken.
+  #
+  # :TODO: Rename it super in a follow-up patch
   pkgs
 
 , # The system (e.g., `i686-linux') for which to build the packages.
