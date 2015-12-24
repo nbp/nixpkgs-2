@@ -50,7 +50,7 @@ stdenv.mkDerivation {
     homepage = http://projects.camlcity.org/projects/findlib.html;
     description = "O'Caml library manager";
     license = stdenv.lib.licenses.mit;
-    platforms = ocaml.meta.platforms;
+    platforms = ocaml.meta.platforms or [];
     maintainers = [
       stdenv.lib.maintainers.z77z
       stdenv.lib.maintainers.vbmithr
