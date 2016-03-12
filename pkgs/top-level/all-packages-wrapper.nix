@@ -33,6 +33,19 @@
   # This should be set to false when used by stdenv functions, which in the
   # end should not rely imports of this file.
 , useQuickfix ? true
+
+  # List of paths that are used to build the stable channel.
+, defaultPackages ? {
+    allPackages = import ./all-packages.nix;
+    aliasedPackages = import ./all-packages-aliases.nix;
+  }
+
+  # Additional list of packages which have ABI compatible fixes for the
+  # stable packages. These are used by abiCompatiblePatches.
+, quickfixPackages ? {
+    allPackages = import ../../quickfix/pkgs/top-level/all-packages.nix;
+    aliasedPackages = import ../../quickfix/pkgs/top-level/all-packages-aliases.nix;
+  }
 }:
 
 
@@ -91,12 +104,6 @@ let
     lib.extend (lib.extend (pkgsFun packagesAttrs) stdenvOverrides) configOverrides;
   pkgs = lib.fix' (pkgsWithOverrideFun defaultPackages);
 
-  # List of paths that are used to build the stable channel.
-  defaultPackages = {
-    allPackages = import ./all-packages.nix;
-    aliasedPackages = import ./all-packages-aliases.nix;
-  };
-
   stdenvOverrides =
     # We don't want stdenv overrides in the case of cross-building,
     # or otherwise the basic overrided packages will not be built
@@ -132,33 +139,39 @@ let
   abiCompatiblePatches = pkgs: with lib;
     # assert builtins.trace "!!! Apply abiCompatiblePatches !!!" true;
     let
-      patchDependencies = drv: hashesMap: pkgs.runCommand "quickfix-${drv.name}" { nixStore = "${pkgs.nix}/bin/nix-store"; } ''
-        $nixStore --dump ${drv} | sed 's|${baseNameOf drv}|'$(basename $out)'|g;${
-          concatStrings (mapAttrsToList (name: value:
-            "'s|${baseNameOf name}|${baseNameOf value}|g';"
-          ) hashesMap)
-         } | $nixStore --restore $out
+      # Create a derivation which use sed to replace old hashes by hashes of
+      # the fixed packages.
+      patchDependencies = drv: hashesMap: pkgs.runCommand "${drv.name}" { nixStore = "${pkgs.nix}/bin/nix-store";
+        meta.originalArgs = assert __trace "pong?" true; {};
+      } ''
+        $nixStore --dump ${drv} | sed -e '
+          s|${baseNameOf drv}|'$(basename $out)'|g;
+          ${concatStrings (map ({old, new}:
+             ''  s|${baseNameOf old}|${baseNameOf new}|g;
+          '') hashesMap)
+         }' | $nixStore --restore $out
       '';
 
       # For each package, we check if we have the same dependencies.
       quickFixAsPatches = name: pkg: quickfix: whatif:
         let
           # Note, we need to check the drv.outPath to add some strictness
-          # to eliminate derivation which might assert when they are
-          # evaluated.
+          # such that we eliminate derivation which might assert when they
+          # are evaluated.
           validDeps = name: drv:
             let res = builtins.tryEval (isDerivation drv && isString drv.outPath); in
             name != "_currentPackage" && res.success && res.value;
 
           differentDeps = x:
-            # assert __trace "differentDeps: ${x.name}\n     :              : ${x.value} ?" true;
-            x.name != x.value;
+            # assert __trace "differentDeps: ${x.old}\n     :              : ${x.new} ?" true;
+            x.old != x.new;
 
           # Based on the derivation, get the list of dependencies.
           #
-          # :TODO: Optimize this function by only using runtime
-          # dependencies of the original package set, and which are
-          # computed ahead by the buildfamr.
+          # :TODO: We can optimize this function by only using runtime
+          # dependencies of the original package set, but to do so we would
+          # have to get the list of runtime dependencies pre-compiled by the
+          # buildfarm.
           warnIfUnableToFindDeps = drv:
             if drv ? originalArgs then true
             else assert __trace "Security issue: Unable to locate dependencies of `${name}`." true; true;
@@ -168,16 +181,28 @@ let
 
           # This assumes that the originalArgs list are ordered the same
           # way, as they are both infered from the same files.
-          hashesAssocList =
-            let qDeps = getDeps quickfix; wDeps = getDeps whatif; in
-            let names = attrNames qDeps; in
-            assert warnIfUnableToFindDeps quickfix;
-            # assert __trace "qDeps: ${toString (attrNames qDeps)}\ntrace: wDeps: ${toString (attrNames wDeps)}" true;
-            assert names == attrNames wDeps;
+          argumentsDiff = {old, new}:
+            let oldDeps = getDeps old; newDeps = getDeps new; in
+            let names = attrNames oldDeps; in
+            # assert __trace "${name}.${toString old}: oldDeps: ${toString (attrNames oldDeps)}\ntrace: ${name}.${toString new}: newDeps: ${toString (attrNames newDeps)}" true;
+            assert names == attrNames newDeps;
             filter differentDeps (map (name: {
-              name = builtins.unsafeDiscardStringContext (toString qDeps.${name});
-              value = toString wDeps.${name};
+              old = oldDeps.${name};
+              new = newDeps.${name};
             }) names);
+
+          # Derivation might be different because of the dependency of the
+          # fixed derivation is different. We have to recursively append all
+          # the differencies.
+          recursiveArgumentsDiff = {old, new}@args:
+            let depDiffs = argumentsDiff args; in
+            depDiffs ++ concatMap recursiveArgumentsDiff depDiffs;
+
+          dependencyDifferencies =
+             flip map (recursiveArgumentsDiff { old = quickfix; new = whatif; }) ({old, new}: {
+               old = builtins.unsafeDiscardStringContext (toString old);
+               new = toString new;
+             });
 
           # If the name of the quickfix does not have the same
           # length, use the old name instead. This might cause a
@@ -190,10 +215,14 @@ let
                 name = pkg.name;
               });
         in
-          if length hashesAssocList != 0 then
+          if length dependencyDifferencies != 0 then
             # One of the dependency is different.
-            #throw "Is about to patch ${name}, because of ${showVal (listToAttrs hashesAssocList)}."
-            patchDependencies quickfixRenamed (listToAttrs hashesAssocList)
+            # throw "Is about to patch ${name}, because of ${showVal dependencyDifferencies}."
+            assert warnIfUnableToFindDeps quickfix;
+            patchDependencies quickfixRenamed dependencyDifferencies // {
+              # Forward arguments, such that we can replace them.
+              originalArgs = whatif.originalArgs or {};
+            }
           else
             quickfixRenamed;
 
@@ -219,13 +248,6 @@ let
           else
             q
         ) [pkgs quickfix whatif];
-
-      # Additional list of packages which have ABI compatible fixes for the
-      # stable packages. These are used by abiCompatiblePatches.
-      quickfixPackages = {
-        allPackages = import ../../quickfix/pkgs/top-level/all-packages.nix;
-        aliasedPackages = import ../../quickfix/pkgs/top-level/all-packages-aliases.nix;
-      };
 
       # Pipeline of modification involved to apply security patches:
       #
