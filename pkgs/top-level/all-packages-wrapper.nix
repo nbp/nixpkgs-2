@@ -31,7 +31,7 @@
 , platform ? null
 
   # This should be set to false when used by stdenv functions, which in the
-  # end should not rely imports of this file.
+  # end should not imports of this file.
 , useQuickfix ? true
 
   # List of paths that are used to build the stable channel.
@@ -214,15 +214,25 @@ let
               overrideDerivation quickfix ({
                 name = pkg.name;
               });
+
+           # Copy the function and meta information of the whatif stage to
+           # the final package, such that one can extend and mutate as
+           # package as if this quick-fix mechanism did not exists.
+           #
+           # Also copy the originalArgs, such that we can recursively look
+           # for different dependencies.
+           forwardOverridableAttributes = drv: {}
+             // optionalAttrs (drv ? override) { inherit (drv) override; }
+             // optionalAttrs (drv ? overrideDerivation) { inherit (drv) overrideDerivation; }
+             // optionalAttrs (drv ? originalArgs) { inherit (drv) originalArgs; };
         in
           if length dependencyDifferencies != 0 then
             # One of the dependency is different.
             # throw "Is about to patch ${name}, because of ${showVal dependencyDifferencies}."
             assert warnIfUnableToFindDeps quickfix;
-            patchDependencies quickfixRenamed dependencyDifferencies // {
-              # Forward arguments, such that we can replace them.
-              originalArgs = whatif.originalArgs or {};
-            }
+
+            patchDependencies quickfixRenamed dependencyDifferencies
+            // (forwardOverridableAttributes whatif)
           else
             quickfixRenamed;
 
