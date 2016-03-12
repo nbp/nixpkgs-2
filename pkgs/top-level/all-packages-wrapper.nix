@@ -41,11 +41,13 @@
   }
 
   # Additional list of packages which have ABI compatible fixes for the
-  # stable packages. These are used by abiCompatiblePatches.
-, quickfixPackages ? {
-    allPackages = import ../../quickfix/pkgs/top-level/all-packages.nix;
-    aliasedPackages = import ../../quickfix/pkgs/top-level/all-packages-aliases.nix;
-  }
+  # default packages. These are used by abiCompatiblePatches.
+, quickfixPackages ?
+    if builtins.pathExists ../../quickfix/pkgs/top-level/all-packages.nix then
+      { allPackages = import ../../quickfix/pkgs/top-level/all-packages.nix;
+        aliasedPackages = import ../../quickfix/pkgs/top-level/all-packages-aliases.nix;
+      }
+    else null
 }:
 
 
@@ -129,7 +131,7 @@ let
   # packages. This will recompile only programs which have changed in the
   # quickfix.
   maybeAbiCompatiblePatches = pkgs:
-    if useQuickfix && builtins.pathExists ../../quickfix/pkgs/top-level/all-packages.nix then
+    if useQuickfix && quickfixPackages != null then
       abiCompatiblePatches pkgs
     else
       # If there is no quickfix to apply, then there is no need for extra
@@ -139,21 +141,60 @@ let
   abiCompatiblePatches = pkgs: with lib;
     # assert builtins.trace "!!! Apply abiCompatiblePatches !!!" true;
     let
-      # Create a derivation which use sed to replace old hashes by hashes of
-      # the fixed packages.
-      patchDependencies = drv: hashesMap: pkgs.runCommand "${drv.name}" { nixStore = "${pkgs.nix}/bin/nix-store";
-        meta.originalArgs = assert __trace "pong?" true; {};
-      } ''
-        $nixStore --dump ${drv} | sed -e '
-          s|${baseNameOf drv}|'$(basename $out)'|g;
-          ${concatStrings (map ({old, new}:
-             ''  s|${baseNameOf old}|${baseNameOf new}|g;
-          '') hashesMap)
-         }' | $nixStore --restore $out
-      '';
+      # Traverse all packages. For each package, take the quickfix version
+      # of the package, and patch it if any of its dependency is different
+      # than the one used for building it.
+      #
+      #  - pkgs: set of packages compiled by default with no quickfix
+      #          applied.
+      #
+      #  - onefix: set of packages compiled against |pkgs|, without doing a
+      #            fix point. This is used to recompiled packages which have
+      #            security fixes, without recompiling any of the packages
+      #            which are depending on them.
+      #
+      #  - recfix: set of packages compiled against the set of fixed
+      #            packages (abifix). This is used as a probe to see if any
+      #            of the dependencies got fixed or patched.
+      #
+      #  - abifix: set of fixed packaged, which are both fixed and patched.
+      #
+      zipWithUpdatedPackages = path: pkgs: onefix: recfix:
+        zipAttrsWith (name: values:
+          let pkgsName = concatStringsSep "." (path ++ [name]); in
+          # Somebody added / removed a package in quickfix?
+          assert builtins.length values == 3;
+          let p = elemAt values 0; o = elemAt values 1; r = elemAt values 2; in
+          if name == "pkgs" then o # We should not recurse in the top-level pkgs argument.
+          else if isAttrs p then assert isAttrs o && isAttrs r;
+            if isDerivation p then assert isDerivation o && isDerivation r;
+              addErrorContext "While evaluating package ${pkgsName}"
+                (patchUpdatedDependencies pkgsName p o r)
+            else
+              zipWithUpdatedPackages (path ++ [name]) p o r
+          else
+            o
+        ) [pkgs onefix recfix];
 
-      # For each package, we check if we have the same dependencies.
-      quickFixAsPatches = name: pkg: quickfix: whatif:
+      onefix = pkgsWithOverrideFun quickfixPackages pkgs;
+      recfix = pkgsWithOverrideFun quickfixPackages abifix;
+      abifix = zipWithUpdatedPackages ["pkgs"] pkgs onefix recfix;
+
+      # For each package:
+      #
+      #  1. Take the onefix version of the package.
+      #
+      #  2. Rename it, such that we can safely patch any of the packages
+      #     which depend on this one.
+      #
+      #  3. Check if the arguments of the nix expression imported by
+      #     `callPackage` are different. if none, return the renamed
+      #     package.
+      #
+      #  4. Otherwise, replace hashes of the `onefix` package, by the hashes
+      #     of the `recfix` package.
+      #
+      patchUpdatedDependencies = name: pkg: onefix: recfix:
         let
           # Note, we need to check the drv.outPath to add some strictness
           # such that we eliminate derivation which might assert when they
@@ -184,7 +225,8 @@ let
           argumentsDiff = {old, new}:
             let oldDeps = getDeps old; newDeps = getDeps new; in
             let names = attrNames oldDeps; in
-            # assert __trace "${name}.${toString old}: oldDeps: ${toString (attrNames oldDeps)}\ntrace: ${name}.${toString new}: newDeps: ${toString (attrNames newDeps)}" true;
+            # assert __trace "${name}.${toString old}: oldDeps: ${toString (attrNames oldDeps)}" true;
+            # assert __trace "${name}.${toString new}: newDeps: ${toString (attrNames newDeps)}" true;
             assert names == attrNames newDeps;
             filter differentDeps (map (name: {
               old = oldDeps.${name};
@@ -199,23 +241,23 @@ let
             depDiffs ++ concatMap recursiveArgumentsDiff depDiffs;
 
           dependencyDifferencies =
-             flip map (recursiveArgumentsDiff { old = quickfix; new = whatif; }) ({old, new}: {
+             flip map (recursiveArgumentsDiff { old = onefix; new = recfix; }) ({old, new}: {
                old = builtins.unsafeDiscardStringContext (toString old);
                new = toString new;
              });
 
-          # If the name of the quickfix does not have the same
+          # If the name of the onefix does not have the same
           # length, use the old name instead. This might cause a
           # problem if people do not use --leq while updating.
-          quickfixRenamed =
-            if stringLength pkg.name == stringLength quickfix.name
-            then quickfix
+          onefixRenamed =
+            if stringLength pkg.name == stringLength onefix.name
+            then onefix
             else
-              overrideDerivation quickfix ({
+              overrideDerivation onefix (drv: {
                 name = pkg.name;
               });
 
-           # Copy the function and meta information of the whatif stage to
+           # Copy the function and meta information of the recfix stage to
            # the final package, such that one can extend and mutate as
            # package as if this quick-fix mechanism did not exists.
            #
@@ -229,50 +271,32 @@ let
           if length dependencyDifferencies != 0 then
             # One of the dependency is different.
             # throw "Is about to patch ${name}, because of ${showVal dependencyDifferencies}."
-            assert warnIfUnableToFindDeps quickfix;
+            assert warnIfUnableToFindDeps onefix;
 
-            patchDependencies quickfixRenamed dependencyDifferencies
-            // (forwardOverridableAttributes whatif)
+            patchDependencies onefixRenamed dependencyDifferencies
+            // (forwardOverridableAttributes recfix)
           else
-            quickfixRenamed;
+            onefixRenamed;
 
-      # Recursively decent into all packages until we reach a derivation,
-      # in which case we execute the "f" function, otherwise, if we cannot
-      # decide, such as in case of functions, then we execute the
-      # "default" function with both arguments.
-      zipQuickFixAsPatches = path: pkgs: quickfix: whatif:
-        zipAttrsWith (name: values:
-          # Somebody added / removed a packaged in quickfix?
-          let pkgsName = concatStringsSep "." (path ++ [name]); in
-          # assert builtins.trace "zipQuickFixAsPatches (name: ${pkgsName})" true;
-          assert builtins.length values == 3;
-          let p = head values; q = head (tail values); w = head (tail (tail values)); in
-          if name == "pkgs" then q # We should not recurse in the top-level pkgs argument.
-          else if isAttrs p then
-            assert isAttrs q && isAttrs w; # Do not mutate the derivation
-            if isDerivation p then
-              assert isDerivation q && isDerivation w;
-              addErrorContext "While evaluating package ${pkgsName}" (quickFixAsPatches pkgsName p q w)
-            else
-              zipQuickFixAsPatches (path ++ [name]) p q w
-          else
-            q
-        ) [pkgs quickfix whatif];
+      # Create a derivation which is replace all the hashes of `pkgs`, by
+      # the patched version of the `onefix` packages.
+      patchDependencies = drv: replaceList:
+        # The list is not bounded, thus to avoid having huge command lines,
+        # we create a file with all the renamed hashes.
+        let sedExpr = {old, new}: "s|${baseNameOf old}|${baseNameOf new}|g;\n"; in
+        let sedScript = pkgs.writeTextFile {
+            name = drv.name + "-patch";
+            text = concatStrings (map sedExpr replaceList);
+          };
+        in
+          pkgs.runCommand "${drv.name}" { nixStore = "${pkgs.nix}/bin/nix-store"; } ''
+            $nixStore --dump ${drv} | \
+              sed -e 's|${baseNameOf drv}|'$(basename $out)'|g' -f ${sedScript} | \
+              $nixStore --restore $out
+          '';
 
-      # Pipeline of modification involved to apply security patches:
-      #
-      #  1. We apply security patches on top of the current set of packages.
-      #
-      #  2. We check what package would be recompiled, if we were to
-      #     recompile instead of applying patches.
-      #
-      #  3. We only keep the set of packages where we only applied patches.
-      #
-      quickFix = pkgsWithOverrideFun quickfixPackages pkgs;
-      whatIf = pkgsWithOverrideFun quickfixPackages abiSec;
-      abiSec = zipQuickFixAsPatches ["pkgs"] pkgs quickFix whatIf;
     in
-      abiSec;
+      abifix;
 
 
   # The package compositions.

@@ -21,8 +21,13 @@ let
   quickfixPackages = {
     allPackages = x: defaultPackages.allPackages x // (
       with (processAllPackagesArgs x); {
+        # Check if all packages which depend on this one are patched.
         bar = callPackage ./check-quickfix-pkgs-bar.nix {
           name = "bar-1.0.1";
+        };
+        # Check if the package is renamed because of a name length mismatch.
+        baz = callPackage ./check-quickfix-pkgs-baz.nix {
+          name = "baz-1.0.51";
         };
       });
     aliasedPackages = defaultPackages.aliasedPackages;
@@ -51,6 +56,12 @@ in
       test \! ${withoutFix.bar} = ${withFix.bar}
       test \! ${withoutFix.baz} = ${withFix.baz}
       test \! ${withoutFix.qux} = ${withFix.qux}
+
+      : Check wether packages names are correctly set.
+      test \! ${withoutFix.bar.name} = ${withFix.bar.name}
+      test ${withoutFix.baz.name} = ${withFix.baz.name}
+      grep -q "baz-1.0.0" ${withoutFix.baz}/installed
+      grep -q "baz-1.0.51" ${withFix.baz}/installed
 
       : Sanity checks
       grep -q ${withoutFix.foo} ${withoutFix.bar}/dependency
