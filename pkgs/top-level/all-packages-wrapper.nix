@@ -196,6 +196,21 @@ let
       #
       patchUpdatedDependencies = name: pkg: onefix: recfix:
         let
+          # Get dependencies added by the callPackage function, or similar.
+          #
+          # :TODO: We can optimize this function by only using runtime
+          # dependencies of the original package set, but to do so we would
+          # have to get the list of runtime dependencies pre-compiled by the
+          # buildfarm.
+          getUnfilteredDepenencies = drv:
+            drv.originalArgs or {};
+
+          # Warn if the package does not provide any way to extract the list of
+          # explict inputs needed for building the derivation.
+          warnIfUnableToFindDeps = drv:
+            if drv ? originalArgs then true
+            else assert __trace "Security issue: Unable to locate dependencies of `${name}`." true; true;
+
           # Note, we need to check the drv.outPath to add some strictness
           # such that we eliminate derivation which might assert when they
           # are evaluated.
@@ -203,25 +218,19 @@ let
             let res = builtins.tryEval (isDerivation drv && isString drv.outPath); in
             name != "_currentPackage" && res.success && res.value;
 
-          differentDeps = x:
-            # assert __trace "differentDeps: ${x.old}\n     :              : ${x.new} ?" true;
-            x.old != x.new;
-
-          # Based on the derivation, get the list of dependencies.
-          #
-          # :TODO: We can optimize this function by only using runtime
-          # dependencies of the original package set, but to do so we would
-          # have to get the list of runtime dependencies pre-compiled by the
-          # buildfarm.
-          warnIfUnableToFindDeps = drv:
-            if drv ? originalArgs then true
-            else assert __trace "Security issue: Unable to locate dependencies of `${name}`." true; true;
+          # Get the list of dependencies added by the callPackage function,
+          # but filter out any argument which cannot be properly evaluated
+          # to a derivation. The reason being that some arguments are
+          # ordinary values, and some arguments are packages specific to one
+          # architecture.
           getDeps = drv:
-            if drv ? originalArgs then filterAttrs validDeps drv.originalArgs
-            else {};
+            filterAttrs validDeps (getUnfilteredDepenencies drv);
 
-          # This assumes that the originalArgs list are ordered the same
-          # way, as they are both infered from the same files.
+          differentDeps = {old, new}:
+            old != new;
+
+          # Extract the list of dependency given as argument by callPackage,
+          # and filter packages which are identical.
           argumentsDiff = {old, new}:
             let oldDeps = getDeps old; newDeps = getDeps new; in
             let names = attrNames oldDeps; in
