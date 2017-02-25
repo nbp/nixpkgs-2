@@ -70,8 +70,8 @@ in
                 withKerberos = true;
                 kerberos = self.libkrb5;
               };
-            };
-          ) ]
+            })
+          ]
         '';
       type = types.listOf overlayType;
       description = ''
