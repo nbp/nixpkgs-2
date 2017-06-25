@@ -34,6 +34,7 @@ rec {
      virtual machine.
   */
   overrideDerivation = drv: f:
+    assert __trace "overrideDerivation" true;
     let
       newDrv = derivation (drv.drvAttrs // (f drv));
     in addPassthru newDrv (
@@ -75,15 +76,15 @@ rec {
       overrideWith = newArgs: origArgs // (if builtins.isFunction newArgs then newArgs origArgs else newArgs);
     in
       if builtins.isAttrs ff then (ff // {
-        override = newArgs: makeOverridable f (overrideWith newArgs);
+        override = assert __trace "override(attrs)" true; newArgs: makeOverridable f (overrideWith newArgs);
         overrideDerivation = fdrv:
           makeOverridable (args: overrideDerivation (f args) fdrv) origArgs;
-        ${if ff ? overrideAttrs then "overrideAttrs" else null} = fdrv:
+        ${if ff ? overrideAttrs then "overrideAttrs" else null} = assert __trace "overrideAttrs" true; fdrv:
           makeOverridable (args: (f args).overrideAttrs fdrv) origArgs;
       })
       else if builtins.isFunction ff then {
-        override = newArgs: makeOverridable f (overrideWith newArgs);
-        __functor = self: ff;
+        override = assert __trace "override(fun)" true; newArgs: makeOverridable f (overrideWith newArgs);
+        __functor = assert __trace "__functor" true; self: ff;
         overrideDerivation = throw "overrideDerivation not yet supported for functors";
       }
       else ff;
