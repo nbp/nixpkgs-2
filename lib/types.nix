@@ -1,5 +1,6 @@
 # Definitions related to run-time type checking.  Used in particular
 # to type-check NixOS configurations.
+#foo
 { lib }:
 with lib.lists;
 with lib.attrsets;
